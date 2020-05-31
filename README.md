@@ -1,6 +1,6 @@
 ## CartesianGrids.jl
 
-_A framework for working with spatial fields discretized on or immersed in Cartesian grids_
+_Tools for working with spatial fields discretized on or immersed in Cartesian grids_
 
 | Documentation | Build Status |
 |:---:|:---:|
