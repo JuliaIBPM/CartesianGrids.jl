@@ -34,10 +34,8 @@ end
       end
 end
 
-@recipe function plot(q::T) where {T <: Union{Fields.Edges,Fields.NodePair}}
-    #wx = Fields.Nodes(Dual,(NX,NY))
-    #wy = Fields.Nodes(Dual,(NX,NY))
-    #shift!((wx,wy),q)
+@recipe function plot(q::T) where {T <: Union{Edges,NodePair}}
+
     layout := (1,2)
     seriestype --> :contour
     grid --> :none
