@@ -4,7 +4,7 @@ _Tools for working with spatial fields discretized on or immersed in Cartesian g
 
 | Documentation | Build Status |
 |:---:|:---:|
-| [![docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaIBPM.github.io/CartesianGrids.jl/latest) | [![Build Status](https://img.shields.io/travis/jdeldre/CartesianGrids.jl/master.svg?label=linux)](https://travis-ci.org/jdeldre/CartesianGrids.jl) [![Build status](https://img.shields.io/appveyor/ci/jdeldre/whirl-jl/master.svg?label=windows)](https://ci.appveyor.com/project/jdeldre/whirl-jl/branch/master) [![codecov](https://codecov.io/gh/jdeldre/CartesianGrids.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jdeldre/CartesianGrids.jl) |
+| [![docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaIBPM.github.io/CartesianGrids.jl/latest) | [![Build Status](https://img.shields.io/travis/JuliaIBPM/CartesianGrids/master.svg?label=linux)](https://travis-ci.com/github/JuliaIBPM/CartesianGrids) [![Build status](https://img.shields.io/appveyor/ci/jJuliaIBPM/cartesiangrids-jl/master.svg?label=windows)](https://ci.appveyor.com/project/JuliaIBPM/cartesiangrids-jl/branch/master) [![codecov](https://codecov.io/gh/JuliaIBPM/CartesianGrids.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaIBPM/CartesianGrids.jl) |
 
 ## About the package
 
