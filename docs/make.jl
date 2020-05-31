@@ -6,7 +6,10 @@ makedocs(
     clean = true,
     pages = [
         "Home" => "index.md",
-        "Manual" => ["manual/fields.md"
+        "Manual" => ["manual/overview.md",
+                     "manual/finitediff.md",
+                     "manual/immersed.md",
+                     "manual/methods.md"
                      ]
         #"Internals" => [ "internals/properties.md"]
     ],
