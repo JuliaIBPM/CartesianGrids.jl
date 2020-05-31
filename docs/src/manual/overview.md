@@ -1,3 +1,5 @@
+# Overview of staggered grids
+
 ```@meta
 DocTestSetup = quote
   using CartesianGrids

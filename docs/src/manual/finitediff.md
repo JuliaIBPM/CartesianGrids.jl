@@ -1,3 +1,5 @@
+# Mimetic calculus on grid data 
+
 ```@meta
 DocTestSetup = quote
   using CartesianGrids

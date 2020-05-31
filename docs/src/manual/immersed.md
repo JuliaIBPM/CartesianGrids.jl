@@ -1,3 +1,5 @@
+# Immersed data and their operations 
+
 ```@meta
 DocTestSetup = quote
   using CartesianGrids

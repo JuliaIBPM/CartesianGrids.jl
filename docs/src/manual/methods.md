@@ -1,12 +1,12 @@
+# Index
+
 ```@meta
 DocTestSetup = quote
   using CartesianGrids
 end
 ```
 
-## Methods
-
 ```@autodocs
-Module  = [CartesianGrids]
+Modules  = [CartesianGrids]
 Order   = [:type, :function]
 ```
