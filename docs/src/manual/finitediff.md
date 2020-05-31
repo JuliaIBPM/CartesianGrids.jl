@@ -1,4 +1,4 @@
-# Mimetic calculus on grid data 
+# Mimetic calculus on grid data
 
 ```@meta
 DocTestSetup = quote
@@ -23,6 +23,7 @@ end
 ```@setup create
 using CartesianGrids
 using Plots
+pyplot()
 ```
 
 ## Field differencing operations
@@ -38,6 +39,8 @@ data is exactly zero. The curl of the gradient of primal nodal data is also zero
 
 Let's take the curl of the dual nodal data we constructed:
 ```@repl create
+w = Nodes(Dual,(5,4)) # hide
+w .= reshape(1:20,5,4) # hide
 curl(w)
 ```
 
