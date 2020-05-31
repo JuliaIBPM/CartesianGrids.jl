@@ -7,6 +7,7 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Manual" => ["manual/overview.md",
+                     "manual/fielddata.md",
                      "manual/finitediff.md",
                      "manual/immersed.md",
                      "manual/methods.md"

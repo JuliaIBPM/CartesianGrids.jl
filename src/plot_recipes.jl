@@ -14,6 +14,8 @@ const myblue = RGBA{Float64}(74/255,144/255,226/255,1)
   linewidth --> 1
   legend --> :none
   framestyle --> :frame
+  xlim --> (-Inf,Inf)
+  ylim --> (-Inf,Inf)
   levels --> range(minimum(w.data),stop=maximum(w.data),length=16)
   @series begin
     seriestype --> :contour
@@ -27,6 +29,8 @@ end
       linewidth --> 1
       legend --> :none
       framestyle --> :frame
+      xlim --> (-Inf,Inf)
+      ylim --> (-Inf,Inf)
       levels --> range(minimum(w.data),stop=maximum(w.data),length=16)
       @series begin
         seriestype --> :contour
@@ -47,6 +51,8 @@ end
       subplot := 1
       #levels --> range(minimum(wx.data),stop=maximum(wx.data),length=16)
       levels --> range(minimum(q.u),stop=maximum(q.u),length=16)
+      xlim --> (-Inf,Inf)
+      ylim --> (-Inf,Inf)
       #transpose(wx.data)
       transpose(q.u)
     end
@@ -55,6 +61,8 @@ end
       subplot := 2
       #levels --> range(minimum(wy.data),stop=maximum(wy.data),length=16)
       levels --> range(minimum(q.v),stop=maximum(q.v),length=16)
+      xlim --> (-Inf,Inf)
+      ylim --> (-Inf,Inf)
       #transpose(wy.data)
       transpose(q.v)
     end

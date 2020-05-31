@@ -43,25 +43,6 @@ edges in each direction on this dual grid. These values always correspond to the
 number of dual cells on the grid, for any data type. This makes it clear the
 grid is shared by all data.
 
-## Setting up field data
-
-Let's see an example of creating a blank set of dual node data and filling it with
-something:
-
-```@repl create
-w = Nodes(Dual,(5,4))
-w .= reshape(1:20,5,4)
-```
-
-Other data types on the same grid can be set up in similar fashion. To ensure
-that they have a size that is consistent with the dual node data `w`, we can use
-this in place of the size:
-```@repl create
-q = Edges(Primal,w);
-q.u[2,3] = 1;
-q
-```
-
 ## Index
 
 ```@index
