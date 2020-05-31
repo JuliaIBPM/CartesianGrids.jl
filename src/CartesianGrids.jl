@@ -94,5 +94,8 @@ include("points.jl")
 include("physicalgrid.jl")
 include("operators.jl")
 
+#== Plot Recipes ==#
+
+include("plot_recipes.jl")
 
 end
