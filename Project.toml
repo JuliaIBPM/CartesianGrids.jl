@@ -22,6 +22,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
 ColorTypes = "<0.10.1"
+Coverage = "1.1"
 FFTW = "^1"
 FastGaussQuadrature = "^0"
 Interpolations = "^0"
