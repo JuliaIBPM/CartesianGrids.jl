@@ -1,7 +1,14 @@
-import Base: -, +, *, /, ∘, zero, conj, real, imag, abs, abs2
+import Base: -, +, *, /, \, ∘, zero, conj, real, imag, abs, abs2
+
+
+# Identity operator
+
+struct Identity end
+
+(*)(::Identity,s::GridData) = s
+
 
 ### On scalar grid data ####
-
 
 # Set it to negative of itself
 function (-)(p_in::Union{ScalarGridData,VectorGridData})

@@ -1,9 +1,5 @@
 # Grid interpolation operations
 
-# Load the 1-d interpolations on which most of below are based.
-include("interpolation1d.jl")
-
-
 """
     grid_interpolate!(q::Edges{Dual},w::Nodes{Dual})
 

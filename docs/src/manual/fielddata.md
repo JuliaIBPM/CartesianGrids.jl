@@ -1,5 +1,17 @@
 # Setting up field data
 
+```@meta
+DocTestSetup = quote
+  using CartesianGrids
+end
+```
+
+```@setup create
+using CartesianGrids
+using Plots
+pyplot()
+```
+
 Let's see an example of creating a blank set of dual node data and filling it with
 something:
 

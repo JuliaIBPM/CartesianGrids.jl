@@ -76,23 +76,38 @@ end
 
 #@wraparray ScalarGridData data 2
 
-include("fieldmacros.jl")
-include("scalargrid.jl")
+include("fields/fieldmacros.jl")
+include("fields/scalargrid.jl")
 
 # Generate the scalar grid field types and associated functions
 for (wrapper,primaldn,dualdn) in SCALARLIST
     @eval @scalarfield $wrapper $primaldn $dualdn
 end
 
-include("collections.jl")
-
-include("basicoperations.jl")
-include("points.jl")
+include("fields/collections.jl")
 
 #CollectedData = Union{EdgeGradient{R,S,NX,NY,T},NodePair{R,S,NX,NY,T}} where {R,S,NX,NY,T}
 
+include("gridoperations/basicoperations.jl")
+include("gridoperations/innerproducts.jl")
+include("gridoperations/convolution.jl")
+include("gridoperations/lgf.jl")
+include("gridoperations/lgf-helmholtz.jl")
+include("gridoperations/laplacian.jl")
+include("gridoperations/helmholtz.jl")
+include("gridoperations/intfact.jl")
+include("gridoperations/diffcalculus.jl")
+include("gridoperations/differencing1d.jl")
+include("gridoperations/interpolation1d.jl")
+include("gridoperations/shift.jl")
+include("gridoperations/nlcalculus.jl")
+
+include("points/points.jl")
+include("points/ddf.jl")
+include("points/regularization.jl")
+
 include("physicalgrid.jl")
-include("operators.jl")
+
 
 #== Plot Recipes ==#
 
