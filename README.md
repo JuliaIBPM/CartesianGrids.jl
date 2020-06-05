@@ -16,12 +16,11 @@ The purpose of this package is to enable easy setup of and operations on spatial
 *  Performing operations on these co-dimension data.
 
 
-<!-- Documentation can be found at https://JuliaIBPM.github.io/CartesianGrids.jl/latest.
+Documentation can be found at https://JuliaIBPM.github.io/CartesianGrids.jl/latest.
 
-**CartesianGrids.jl** is registered in the general Julia registry. To install, enter the package manager by typing `]` and then type,
-e.g.,
+**CartesianGrids.jl** is registered in the general Julia registry. To install, enter the package manager by typing
 ```julia
-(v1.2) pkg> add CartesianGrids
+] add CartesianGrids
 ```
 
 Then, in any version, type
@@ -29,4 +28,3 @@ Then, in any version, type
 julia> using CartesianGrids
 ```
 For examples, consult the documentation or see the example Jupyter notebooks in the Examples folder.
--->
