@@ -14,8 +14,8 @@ const myblue = RGBA{Float64}(74/255,144/255,226/255,1)
   linewidth --> 1
   legend --> :none
   framestyle --> :frame
-  xlim --> (-Inf,Inf)
-  ylim --> (-Inf,Inf)
+  xlims --> (-Inf,Inf)
+  ylims --> (-Inf,Inf)
   levels --> range(minimum(w.data),stop=maximum(w.data),length=16)
   @series begin
     seriestype --> :contour
@@ -29,8 +29,8 @@ end
       linewidth --> 1
       legend --> :none
       framestyle --> :frame
-      xlim --> (-Inf,Inf)
-      ylim --> (-Inf,Inf)
+      xlims --> (-Inf,Inf)
+      ylims --> (-Inf,Inf)
       levels --> range(minimum(w.data),stop=maximum(w.data),length=16)
       @series begin
         seriestype --> :contour
@@ -47,8 +47,8 @@ end
     linewidth --> 1
     legend --> :none
     framestyle --> :frame
-    xlim --> (-Inf,Inf)
-    ylim --> (-Inf,Inf)
+    xlims --> (-Inf,Inf)
+    ylims --> (-Inf,Inf)
     @series begin
       subplot := 1
       #levels --> range(minimum(wx.data),stop=maximum(wx.data),length=16)
