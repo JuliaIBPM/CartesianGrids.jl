@@ -28,36 +28,48 @@ Printing in grid orientation (lower left is (1,1))
 ```
 """
 function laplacian!(out::Nodes{Dual,NX, NY}, w::Nodes{Dual,NX, NY}) where {NX, NY}
-    @inbounds for y in 2:NY-1, x in 2:NX-1
-        out[x,y] = w[x,y-1] + w[x-1,y] - 4w[x,y] + w[x+1,y] + w[x,y+1]
-    end
+    out[2:NX-1,2:NY-1] .= w[2:NX-1,1:NY-2] + w[1:NX-2,2:NY-1] +
+                          w[3:NX,2:NY-1] + w[2:NX-1,3:NY] - 4w[2:NX-1,2:NY-1]
+    #@inbounds for y in 2:NY-1, x in 2:NX-1
+    #    out[x,y] = w[x,y-1] + w[x-1,y] - 4w[x,y] + w[x+1,y] + w[x,y+1]
+    #end
     out
 end
 
 function laplacian!(out::Nodes{Primal,NX, NY}, w::Nodes{Primal,NX, NY}) where {NX, NY}
-    @inbounds for y in 2:NY-2, x in 2:NX-2
-        out[x,y] = w[x,y-1] + w[x-1,y] - 4w[x,y] + w[x+1,y] + w[x,y+1]
-    end
+    out[2:NX-2,2:NY-2] .= w[2:NX-2,1:NY-3] + w[1:NX-3,2:NY-2] +
+                          w[3:NX-1,2:NY-2] + w[2:NX-2,3:NY-1] - 4w[2:NX-2,2:NY-2]
+    #@inbounds for y in 2:NY-2, x in 2:NX-2
+    #    out[x,y] = w[x,y-1] + w[x-1,y] - 4w[x,y] + w[x+1,y] + w[x,y+1]
+    #end
     out
 end
 
 function laplacian!(out::Edges{Dual,NX, NY}, w::Edges{Dual,NX, NY}) where {NX, NY}
-  @inbounds for y in 2:NY-1, x in 2:NX-2
-      out.u[x,y] = w.u[x,y-1] + w.u[x-1,y] - 4w.u[x,y] + w.u[x+1,y] + w.u[x,y+1]
-  end
-  @inbounds for y in 2:NY-2, x in 2:NX-1
-      out.v[x,y] = w.v[x,y-1] + w.v[x-1,y] - 4w.v[x,y] + w.v[x+1,y] + w.v[x,y+1]
-  end
+  out.u[2:NX-2,2:NY-1] .= w.u[2:NX-2,1:NY-2] + w.u[1:NX-3,2:NY-1] +
+                          w.u[3:NX-1,2:NY-1] + w.u[2:NX-2,3:NY] - 4w.u[2:NX-2,2:NY-1]
+  out.v[2:NX-1,2:NY-2] .= w.v[2:NX-1,1:NY-3] + w.v[1:NX-2,2:NY-2] +
+                          w.v[3:NX,2:NY-2] + w.v[2:NX-1,3:NY-1] - 4w.v[2:NX-1,2:NY-2]
+  #@inbounds for y in 2:NY-1, x in 2:NX-2
+  #    out.u[x,y] = w.u[x,y-1] + w.u[x-1,y] - 4w.u[x,y] + w.u[x+1,y] + w.u[x,y+1]
+  #end
+  #@inbounds for y in 2:NY-2, x in 2:NX-1
+  #    out.v[x,y] = w.v[x,y-1] + w.v[x-1,y] - 4w.v[x,y] + w.v[x+1,y] + w.v[x,y+1]
+  #end
   out
 end
 
 function laplacian!(out::Edges{Primal,NX, NY}, w::Edges{Primal,NX, NY}) where {NX, NY}
-  @inbounds for y in 2:NY-2, x in 2:NX-1
-      out.u[x,y] = w.u[x,y-1] + w.u[x-1,y] - 4w.u[x,y] + w.u[x+1,y] + w.u[x,y+1]
-  end
-  @inbounds for y in 2:NY-1, x in 2:NX-2
-      out.v[x,y] = w.v[x,y-1] + w.v[x-1,y] - 4w.v[x,y] + w.v[x+1,y] + w.v[x,y+1]
-  end
+  out.u[2:NX-1,2:NY-2] .= w.u[2:NX-1,1:NY-3] + w.u[1:NX-2,2:NY-2] +
+                          w.u[3:NX,2:NY-2] + w.u[2:NX-1,3:NY-1] - 4w.u[2:NX-1,2:NY-2]
+  out.v[2:NX-2,2:NY-1] .= w.v[2:NX-2,1:NY-2] + w.v[1:NX-3,2:NY-1] +
+                          w.v[3:NX-1,2:NY-1] + w.v[2:NX-2,3:NY] - 4w.v[2:NX-2,2:NY-1]
+  #@inbounds for y in 2:NY-2, x in 2:NX-1
+  #    out.u[x,y] = w.u[x,y-1] + w.u[x-1,y] - 4w.u[x,y] + w.u[x+1,y] + w.u[x,y+1]
+  #end
+  #@inbounds for y in 2:NY-1, x in 2:NX-2
+  #    out.v[x,y] = w.v[x,y-1] + w.v[x-1,y] - 4w.v[x,y] + w.v[x+1,y] + w.v[x,y+1]
+  #end
   out
 end
 

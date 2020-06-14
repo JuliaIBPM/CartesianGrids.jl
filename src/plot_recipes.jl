@@ -10,7 +10,7 @@ const myblue = RGBA{Float64}(74/255,144/255,226/255,1)
 
 @recipe function plot(w::ScalarGridData{NX,NY,T}) where {NX,NY, T<:Real}
   grid --> :none
-  ratio := 1
+  aspect_ratio := 1
   linewidth --> 1
   legend --> :none
   framestyle --> :frame
@@ -25,7 +25,7 @@ end
 
 @recipe function plot(x::AbstractArray{S,1},y::AbstractArray{S,1},w::ScalarGridData{NX,NY,T};trim=0) where {S,NX,NY,T<:Real}
       grid --> :none
-      ratio := 1
+      aspect_ratio := 1
       linewidth --> 1
       legend --> :none
       framestyle --> :frame
@@ -43,7 +43,7 @@ end
     layout := (1,2)
     seriestype --> :contour
     grid --> :none
-    ratio := 1
+    aspect_ratio := 1
     linewidth --> 1
     legend --> :none
     framestyle --> :frame
