@@ -144,15 +144,23 @@ v (in grid orientation)
 """
 function grid_interpolate!(dual::Edges{Dual, NX, NY},
                 primal::Edges{Primal, NX, NY}) where {NX, NY}
+
     uₚ = primal.u
-    @inbounds for y in 2:NY-1, x in 1:NX-1
-        dual.u[x,y] = (uₚ[x,y] + uₚ[x+1,y] + uₚ[x,y-1] + uₚ[x+1,y-1])/4
-    end
+    dual.u[1:NX-1,2:NY-1] .= 0.25(uₚ[1:NX-1,2:NY-1] + uₚ[2:NX,2:NY-1] +
+                                  uₚ[1:NX-1,1:NY-2] + uₚ[2:NX,1:NY-2])
 
     vₚ = primal.v
-    @inbounds for y in 1:NY-1, x in 2:NX-1
-        dual.v[x,y] = (vₚ[x,y] + vₚ[x-1,y] + vₚ[x,y+1] + vₚ[x-1,y+1])/4
-    end
+    dual.v[2:NX-1,1:NY-1] .= 0.25(vₚ[2:NX-1,1:NY-1] + vₚ[1:NX-2,1:NY-1] +
+                                  vₚ[2:NX-1,2:NY]   + vₚ[1:NX-2,2:NY])
+
+    # @inbounds for y in 2:NY-1, x in 1:NX-1
+    #     dual.u[x,y] = (uₚ[x,y] + uₚ[x+1,y] + uₚ[x,y-1] + uₚ[x+1,y-1])/4
+    # end
+    #
+    # vₚ = primal.v
+    # @inbounds for y in 1:NY-1, x in 2:NX-1
+    #     dual.v[x,y] = (vₚ[x,y] + vₚ[x-1,y] + vₚ[x,y+1] + vₚ[x-1,y+1])/4
+    # end
     dual
 end
 
@@ -163,14 +171,19 @@ end
 function grid_interpolate!(primal::Edges{Primal, NX, NY},
                 dual::Edges{Dual, NX, NY}) where {NX, NY}
     uₚ = dual.u
-    @inbounds for y in 1:NY-1, x in 2:NX-1
-        primal.u[x,y] = (uₚ[x,y] + uₚ[x-1,y] + uₚ[x,y+1] + uₚ[x-1,y+1])/4
-    end
-
+    primal.u[2:NX-1,1:NY-1] .= 0.25(uₚ[2:NX-1,1:NY-1] + uₚ[1:NX-2,1:NY-1] +
+                                    uₚ[2:NX-1,2:NY]   + uₚ[1:NX-2,2:NY])
     vₚ = dual.v
-    @inbounds for y in 2:NY-1, x in 1:NX-1
-        primal.v[x,y] = (vₚ[x,y] + vₚ[x+1,y] + vₚ[x,y-1] + vₚ[x+1,y-1])/4
-    end
+    primal.v[1:NX-1,2:NY-1] .= 0.25(vₚ[1:NX-1,2:NY-1] + vₚ[2:NX,2:NY-1] +
+                                    vₚ[1:NX-1,1:NY-2] + vₚ[2:NX,1:NY-2])
+    # @inbounds for y in 1:NY-1, x in 2:NX-1
+    #     primal.u[x,y] = (uₚ[x,y] + uₚ[x-1,y] + uₚ[x,y+1] + uₚ[x-1,y+1])/4
+    # end
+    #
+    # vₚ = dual.v
+    # @inbounds for y in 2:NY-1, x in 1:NX-1
+    #     primal.v[x,y] = (vₚ[x,y] + vₚ[x+1,y] + vₚ[x,y-1] + vₚ[x+1,y-1])/4
+    # end
     primal
 end
 
