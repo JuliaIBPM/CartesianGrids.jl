@@ -36,13 +36,15 @@ v (in grid orientation)
 function curl!(edges::Edges{Primal, NX, NY},
                s::Nodes{Dual,NX, NY}) where {NX, NY}
 
-    @inbounds for y in 1:NY-1, x in 1:NX
-        edges.u[x,y] = s[x,y+1] - s[x,y]
-    end
+    view(edges.u,1:NX,1:NY-1) .= view(s,1:NX,2:NY) .- view(s,1:NX,1:NY-1)
+    #@inbounds for y in 1:NY-1, x in 1:NX
+    #    edges.u[x,y] = s[x,y+1] - s[x,y]
+    #end
 
-    @inbounds for y in 1:NY, x in 1:NX-1
-        edges.v[x,y] = s[x,y] - s[x+1,y]
-    end
+    view(edges.v,1:NX-1,1:NY) .= view(s,1:NX-1,1:NY) .- view(s,2:NX,1:NY)
+    #@inbounds for y in 1:NY, x in 1:NX-1
+    #    edges.v[x,y] = s[x,y] - s[x+1,y]
+    #end
     edges
 end
 
@@ -86,8 +88,8 @@ function curl!(nodes::Nodes{Dual,NX, NY},
                edges::Edges{Primal, NX, NY}) where {NX, NY}
 
     u, v = edges.u, edges.v
-    nodes[2:NX-1,2:NY-1] .= u[2:NX-1,1:NY-2] - u[2:NX-1,2:NY-1] -
-                            v[1:NX-2,2:NY-1] + v[2:NX-1,2:NY-1]
+    view(nodes,2:NX-1,2:NY-1) .= view(u,2:NX-1,1:NY-2) .- view(u,2:NX-1,2:NY-1) .-
+                                 view(v,1:NX-2,2:NY-1) .+ view(v,2:NX-1,2:NY-1)
     #@inbounds for y in 2:NY-1, x in 2:NX-1
     #    nodes[x,y] = u[x,y-1] - u[x,y] - v[x-1,y] + v[x,y]
     #end
@@ -134,8 +136,8 @@ function divergence!(nodes::Nodes{Primal, NX, NY},
 
     u, v = edges.u, edges.v
 
-    nodes[1:NX-1,1:NY-1] .= -u[1:NX-1,1:NY-1] + u[2:NX,1:NY-1] -
-                             v[1:NX-1,1:NY-1] + v[1:NX-1,2:NY]
+    view(nodes,1:NX-1,1:NY-1) .= -view(u,1:NX-1,1:NY-1) .+ view(u,2:NX,1:NY-1) .-
+                                  view(v,1:NX-1,1:NY-1) .+ view(v,1:NX-1,2:NY)
     #@inbounds for y in 1:NY-1, x in 1:NX-1
     #    nodes[x,y] = - u[x,y] + u[x+1,y] - v[x,y] + v[x,y+1]
     #end
@@ -146,8 +148,8 @@ function divergence!(nodes::Nodes{Dual, NX, NY},
                      edges::Edges{Dual, NX, NY}) where {NX, NY}
 
     u, v = edges.u, edges.v
-    nodes[2:NX-1,2:NY-1] .= -u[1:NX-2,2:NY-1] + u[2:NX-1,2:NY-1] -
-                             v[2:NX-1,1:NY-2] + v[2:NX-1,2:NY-1]
+    view(nodes,2:NX-1,2:NY-1) .= -view(u,1:NX-2,2:NY-1) .+ view(u,2:NX-1,2:NY-1) .-
+                                  view(v,2:NX-1,1:NY-2) .+ view(v,2:NX-1,2:NY-1)
     #@inbounds for y in 2:NY-1, x in 2:NX-1
     #    nodes[x,y] = - u[x-1,y] + u[x,y] - v[x,y-1] + v[x,y]
     #end
@@ -196,8 +198,8 @@ function divergence!(nodes::Union{XEdges{Primal, NX, NY},YEdges{Dual, NX, NY}},
 
     u, v = edges.u, edges.v
 
-    nodes[2:NX-1,1:NY-1] .= -u[1:NX-2,1:NY-1] + u[2:NX-1,1:NY-1] -
-                             v[2:NX-1,1:NY-1] + v[2:NX-1,2:NY]
+    view(nodes,2:NX-1,1:NY-1) .= -view(u,1:NX-2,1:NY-1) .+ view(u,2:NX-1,1:NY-1) .-
+                                  view(v,2:NX-1,1:NY-1) .+ view(v,2:NX-1,2:NY)
     #@inbounds for y in 1:NY-1, x in 2:NX-1
     #    nodes[x,y] = - u[x-1,y] + u[x,y] - v[x,y] + v[x,y+1]
     #end
@@ -208,8 +210,8 @@ function divergence!(nodes::Union{YEdges{Primal, NX, NY},XEdges{Dual, NX, NY}},
                      edges::NodePair{Dual, Primal,NX, NY}) where {NX, NY}
 
     u, v = edges.u, edges.v
-    nodes[1:NX-1,2:NY-1] .= -u[1:NX-1,2:NY-1] + u[2:NX,2:NY-1] -
-                             v[1:NX-1,1:NY-2] + v[1:NX-1,2:NY-1]
+    view(nodes,1:NX-1,2:NY-1) .= -view(u,1:NX-1,2:NY-1) .+ view(u,2:NX,2:NY-1) .-
+                                  view(v,1:NX-1,1:NY-2) .+ view(v,1:NX-1,2:NY-1)
     #@inbounds for y in 2:NY-1, x in 1:NX-1
     #    nodes[x,y] = - u[x,y] + u[x+1,y] - v[x,y-1] + v[x,y]
     #end
@@ -258,8 +260,8 @@ v (in grid orientation)
 function grad!(edges::Edges{Primal, NX, NY},
                    p::Nodes{Primal, NX, NY}) where {NX, NY}
 
-    edges.u[2:NX-1,1:NY-1] .= -p[1:NX-2,1:NY-1] + p[2:NX-1,1:NY-1]
-    edges.v[1:NX-1,2:NY-1] .= -p[1:NX-1,1:NY-2] + p[1:NX-1,2:NY-1]
+    view(edges.u,2:NX-1,1:NY-1) .= -view(p,1:NX-2,1:NY-1) .+ view(p,2:NX-1,1:NY-1)
+    view(edges.v,1:NX-1,2:NY-1) .= -view(p,1:NX-1,1:NY-2) .+ view(p,1:NX-1,2:NY-1)
     #@inbounds for y in 1:NY-1, x in 2:NX-1
     #    edges.u[x,y] = - p[x-1,y] + p[x,y]
     #end
@@ -316,8 +318,8 @@ edge data `q`.
 function grad!(edges::Edges{Dual, NX, NY},
                    p::Nodes{Dual, NX, NY}) where {NX, NY}
 
-    edges.u[1:NX-1,1:NY] .= -p[1:NX-1,1:NY] + p[2:NX,1:NY]
-    edges.v[1:NX,1:NY-1] .= -p[1:NX,1:NY-1] + p[1:NX,2:NY]
+    view(edges.u,1:NX-1,1:NY) .= -view(p,1:NX-1,1:NY) .+ view(p,2:NX,1:NY)
+    view(edges.v,1:NX,1:NY-1) .= -view(p,1:NX,1:NY-1) .+ view(p,1:NX,2:NY)
     #@inbounds for y in 1:NY, x in 1:NX-1
     #    edges.u[x,y] = - p[x,y] + p[x+1,y]
     #end
@@ -347,14 +349,14 @@ nodes and the off-diagonal entries lie at dual nodes.
 function grad!(d::EdgeGradient{Primal, Dual, NX, NY},
                      edges::Edges{Primal, NX, NY}) where {NX, NY}
 
-    d.dudx[1:NX-1,1:NY-1] .= -edges.u[1:NX-1,1:NY-1] + edges.u[2:NX,1:NY-1]
-    d.dvdy[1:NX-1,1:NY-1] .= -edges.v[1:NX-1,1:NY-1] + edges.v[1:NX-1,2:NY]
+    view(d.dudx,1:NX-1,1:NY-1) .= -view(edges.u,1:NX-1,1:NY-1) .+ view(edges.u,2:NX,1:NY-1)
+    view(d.dvdy,1:NX-1,1:NY-1) .= -view(edges.v,1:NX-1,1:NY-1) .+ view(edges.v,1:NX-1,2:NY)
     #@inbounds for y in 1:NY-1, x in 1:NX-1
     #    d.dudx[x,y] = - edges.u[x,y] + edges.u[x+1,y]
     #    d.dvdy[x,y] = - edges.v[x,y] + edges.v[x,y+1]
     #end
-    d.dudy[2:NX-1,2:NY-1] .= -edges.u[2:NX-1,1:NY-2] + edges.u[2:NX-1,2:NY-1]
-    d.dvdx[2:NX-1,2:NY-1] .= -edges.v[1:NX-2,2:NY-1] + edges.v[2:NX-1,2:NY-1]
+    view(d.dudy,2:NX-1,2:NY-1) .= -view(edges.u,2:NX-1,1:NY-2) .+ view(edges.u,2:NX-1,2:NY-1)
+    view(d.dvdx,2:NX-1,2:NY-1) .= -view(edges.v,1:NX-2,2:NY-1) .+ view(edges.v,2:NX-1,2:NY-1)
     #@inbounds for y in 2:NY-1, x in 2:NX-1
     #    d.dudy[x,y] = - edges.u[x,y-1] + edges.u[x,y]
     #    d.dvdx[x,y] = - edges.v[x-1,y] + edges.v[x,y]
@@ -372,14 +374,14 @@ nodes and the off-diagonal entries lie at primal nodes.
 function grad!(d::EdgeGradient{Dual, Primal, NX, NY},
                      edges::Edges{Dual, NX, NY}) where {NX, NY}
 
-    d.dudx[2:NX-1,2:NY-1] .= -edges.u[1:NX-2,2:NY-1] + edges.u[2:NX-1,2:NY-1]
-    d.dvdy[2:NX-1,2:NY-1] .= -edges.v[2:NX-1,1:NY-2] + edges.v[2:NX-1,2:NY-1]
+    view(d.dudx,2:NX-1,2:NY-1) .= -view(edges.u,1:NX-2,2:NY-1) .+ view(edges.u,2:NX-1,2:NY-1)
+    view(d.dvdy,2:NX-1,2:NY-1) .= -view(edges.v,2:NX-1,1:NY-2) .+ view(edges.v,2:NX-1,2:NY-1)
     #@inbounds for y in 2:NY-1, x in 2:NX-1
     #    d.dudx[x,y] = - edges.u[x-1,y] + edges.u[x,y]
     #    d.dvdy[x,y] = - edges.v[x,y-1] + edges.v[x,y]
     #end
-    d.dudy[1:NX-1,1:NY-1] .= -edges.u[1:NX-1,1:NY-1] + edges.u[1:NX-1,2:NY]
-    d.dvdx[1:NX-1,1:NY-1] .= -edges.v[1:NX-1,1:NY-1] + edges.v[2:NX,1:NY-1]
+    view(d.dudy,1:NX-1,1:NY-1) .= -view(edges.u,1:NX-1,1:NY-1) .+ view(edges.u,1:NX-1,2:NY)
+    view(d.dvdx,1:NX-1,1:NY-1) .= -view(edges.v,1:NX-1,1:NY-1) .+ view(edges.v,2:NX,1:NY-1)
     #@inbounds for y in 1:NY-1, x in 1:NX-1
     #    d.dudy[x,y] = - edges.u[x,y] + edges.u[x,y+1]
     #    d.dvdx[x,y] = - edges.v[x,y] + edges.v[x+1,y]
