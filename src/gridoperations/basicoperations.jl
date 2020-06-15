@@ -34,6 +34,11 @@ function (/)(p::T,c::Number) where {T<:Union{ScalarGridData,VectorGridData}}
   return T(p.data ./ c)
 end
 
+@inline product!(out::Nodes{T, NX, NY},
+                  p::Nodes{T, NX, NY},
+                  q::Nodes{T, NX, NY}) where {T, NX, NY} = (out .= p.*q)
+
+#=
 function product!(out::Nodes{T, NX, NY},
                   p::Nodes{T, NX, NY},
                   q::Nodes{T, NX, NY}) where {T, NX, NY}
@@ -44,6 +49,7 @@ function product!(out::Nodes{T, NX, NY},
     end
     out
 end
+=#
 
 function product(p::Nodes{T, NX, NY}, q::Nodes{T, NX, NY}) where {T, NX, NY}
     product!(Nodes(T, p), p, q)
@@ -95,10 +101,15 @@ v (in grid orientation)
  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0
 ```
 """
+@inline product!(out::Edges{T, NX, NY},
+           p::Edges{T, NX, NY},
+           q::Edges{T, NX, NY}) where {T, NX, NY} = (out .= p.*q)
+#=
 function product!(out::Edges{T, NX, NY},
                   p::Edges{T, NX, NY},
                   q::Edges{T, NX, NY}) where {T, NX, NY}
 
+    out .= p.u .* q.u
     uinds, vinds = edge_inds(T, (NX, NY))
     @inbounds for y in 1:uinds[2], x in 1:uinds[1]
         out.u[x,y] = p.u[x,y] * q.u[x,y]
@@ -109,6 +120,7 @@ function product!(out::Edges{T, NX, NY},
     end
     out
 end
+=#
 
 """
     product(p::Edges/Nodes,q::Edges/Nodes) --> Edges/Nodes

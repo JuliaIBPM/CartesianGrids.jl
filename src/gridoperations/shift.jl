@@ -146,11 +146,11 @@ function grid_interpolate!(dual::Edges{Dual, NX, NY},
                 primal::Edges{Primal, NX, NY}) where {NX, NY}
 
     uₚ = primal.u
-    view(dual.u,1:NX-1,2:NY-1) .= 0.25(view(uₚ,1:NX-1,2:NY-1) .+ view(uₚ,2:NX,2:NY-1) .+
+    view(dual.u,1:NX-1,2:NY-1) .= 0.25.*(view(uₚ,1:NX-1,2:NY-1) .+ view(uₚ,2:NX,2:NY-1) .+
                                        view(uₚ,1:NX-1,1:NY-2) .+ view(uₚ,2:NX,1:NY-2))
 
     vₚ = primal.v
-    view(dual.v,2:NX-1,1:NY-1) .= 0.25(view(vₚ,2:NX-1,1:NY-1) .+ view(vₚ,1:NX-2,1:NY-1) .+
+    view(dual.v,2:NX-1,1:NY-1) .= 0.25.*(view(vₚ,2:NX-1,1:NY-1) .+ view(vₚ,1:NX-2,1:NY-1) .+
                                        view(vₚ,2:NX-1,2:NY)   .+ view(vₚ,1:NX-2,2:NY))
 
     # @inbounds for y in 2:NY-1, x in 1:NX-1
@@ -171,10 +171,10 @@ end
 function grid_interpolate!(primal::Edges{Primal, NX, NY},
                 dual::Edges{Dual, NX, NY}) where {NX, NY}
     uₚ = dual.u
-    view(primal.u,2:NX-1,1:NY-1) .= 0.25(view(uₚ,2:NX-1,1:NY-1) .+ view(uₚ,1:NX-2,1:NY-1) .+
+    view(primal.u,2:NX-1,1:NY-1) .= 0.25.*(view(uₚ,2:NX-1,1:NY-1) .+ view(uₚ,1:NX-2,1:NY-1) .+
                                          view(uₚ,2:NX-1,2:NY)   .+ view(uₚ,1:NX-2,2:NY))
     vₚ = dual.v
-    view(primal.v,1:NX-1,2:NY-1) .= 0.25(view(vₚ,1:NX-1,2:NY-1) .+ view(vₚ,2:NX,2:NY-1) .+
+    view(primal.v,1:NX-1,2:NY-1) .= 0.25.*(view(vₚ,1:NX-1,2:NY-1) .+ view(vₚ,2:NX,2:NY-1) .+
                                          view(vₚ,1:NX-1,1:NY-2) .+ view(vₚ,2:NX,1:NY-2))
     # @inbounds for y in 1:NY-1, x in 2:NX-1
     #     primal.u[x,y] = (uₚ[x,y] + uₚ[x-1,y] + uₚ[x,y+1] + uₚ[x-1,y+1])/4

@@ -30,7 +30,7 @@ Printing in grid orientation (lower left is (1,1))
 function laplacian!(out::Nodes{Dual,NX, NY}, w::Nodes{Dual,NX, NY}) where {NX, NY}
     view(out,2:NX-1,2:NY-1) .= view(w,2:NX-1,1:NY-2) .+ view(w,1:NX-2,2:NY-1) .+
                                view(w,3:NX,2:NY-1) .+ view(w,2:NX-1,3:NY) .-
-                               4view(w,2:NX-1,2:NY-1)
+                               4.0.*view(w,2:NX-1,2:NY-1)
     #@inbounds for y in 2:NY-1, x in 2:NX-1
     #    out[x,y] = w[x,y-1] + w[x-1,y] - 4w[x,y] + w[x+1,y] + w[x,y+1]
     #end
@@ -40,7 +40,7 @@ end
 function laplacian!(out::Nodes{Primal,NX, NY}, w::Nodes{Primal,NX, NY}) where {NX, NY}
     view(out,2:NX-2,2:NY-2) .= view(w,2:NX-2,1:NY-3) .+ view(w,1:NX-3,2:NY-2) .+
                                view(w,3:NX-1,2:NY-2) .+ view(w,2:NX-2,3:NY-1) .-
-                               4view(w,2:NX-2,2:NY-2)
+                               4.0.*view(w,2:NX-2,2:NY-2)
     #@inbounds for y in 2:NY-2, x in 2:NX-2
     #    out[x,y] = w[x,y-1] + w[x-1,y] - 4w[x,y] + w[x+1,y] + w[x,y+1]
     #end
@@ -50,10 +50,10 @@ end
 function laplacian!(out::Edges{Dual,NX, NY}, w::Edges{Dual,NX, NY}) where {NX, NY}
   view(out.u,2:NX-2,2:NY-1) .= view(w.u,2:NX-2,1:NY-2) .+ view(w.u,1:NX-3,2:NY-1) .+
                           view(w.u,3:NX-1,2:NY-1) .+ view(w.u,2:NX-2,3:NY) .-
-                          4view(w.u,2:NX-2,2:NY-1)
+                          4.0.*view(w.u,2:NX-2,2:NY-1)
   view(out.v,2:NX-1,2:NY-2) .= view(w.v,2:NX-1,1:NY-3) .+ view(w.v,1:NX-2,2:NY-2) .+
                                view(w.v,3:NX,2:NY-2) .+ view(w.v,2:NX-1,3:NY-1) .-
-                               4view(w.v,2:NX-1,2:NY-2)
+                               4.0.*view(w.v,2:NX-1,2:NY-2)
   #@inbounds for y in 2:NY-1, x in 2:NX-2
   #    out.u[x,y] = w.u[x,y-1] + w.u[x-1,y] - 4w.u[x,y] + w.u[x+1,y] + w.u[x,y+1]
   #end
@@ -66,10 +66,10 @@ end
 function laplacian!(out::Edges{Primal,NX, NY}, w::Edges{Primal,NX, NY}) where {NX, NY}
   view(out.u,2:NX-1,2:NY-2) .= view(w.u,2:NX-1,1:NY-3) .+ view(w.u,1:NX-2,2:NY-2) .+
                                view(w.u,3:NX,2:NY-2) .+ view(w.u,2:NX-1,3:NY-1) .-
-                              4view(w.u,2:NX-1,2:NY-2)
+                              4.0.*view(w.u,2:NX-1,2:NY-2)
   view(out.v,2:NX-2,2:NY-1) .= view(w.v,2:NX-2,1:NY-2) .+ view(w.v,1:NX-3,2:NY-1) .+
                                 view(w.v,3:NX-1,2:NY-1) .+ view(w.v,2:NX-2,3:NY) .-
-                               4view(w.v,2:NX-2,2:NY-1)
+                               4.0.*view(w.v,2:NX-2,2:NY-1)
   #@inbounds for y in 2:NY-2, x in 2:NX-1
   #    out.u[x,y] = w.u[x,y-1] + w.u[x-1,y] - 4w.u[x,y] + w.u[x+1,y] + w.u[x,y+1]
   #end
