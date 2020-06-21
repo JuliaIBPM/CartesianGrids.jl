@@ -29,8 +29,4 @@ q.u[2,3] = 1;
 q
 ```
 
-## Index
-
-```@index
-Pages = ["fielddata.md"]
 ```

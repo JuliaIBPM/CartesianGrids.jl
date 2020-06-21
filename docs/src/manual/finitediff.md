@@ -209,9 +209,3 @@ of the same type, e.g.,
 ```@repl create
 q∘q
 ```
-
-## Index
-
-```@index
-Pages = ["finitediff.md"]
-```

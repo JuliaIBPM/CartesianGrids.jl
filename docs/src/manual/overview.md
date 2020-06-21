@@ -42,9 +42,3 @@ parameterized by `NX` and `NY`, these values do *not* correspond to the number o
 edges in each direction on this dual grid. These values always correspond to the
 number of dual cells on the grid, for any data type. This makes it clear the
 grid is shared by all data.
-
-## Index
-
-```@index
-Pages = ["overview.md"]
-```

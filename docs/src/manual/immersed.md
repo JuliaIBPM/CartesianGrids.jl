@@ -1,4 +1,4 @@
-# Immersed data and their operations 
+# Immersed data and their operations
 
 ```@meta
 DocTestSetup = quote
@@ -275,10 +275,4 @@ using LinearAlgebra
 X = VectorData(4)
 fill!(X.u,1)
 2.0×X
-```
-
-## Index
-
-```@index
-Pages = ["immersed.md"]
 ```
