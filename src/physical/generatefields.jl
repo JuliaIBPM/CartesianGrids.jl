@@ -146,8 +146,8 @@ end
 
 function GeneratedField(d::ScalarGridData,field::AbstractSpatialField,g::PhysicalGrid)
     xg, yg = coordinates(d,g)
-    GeneratedField{typeof(d)}(typeof(d)(field.(xg*ones(1,length(yg)),ones(length(xg))*yg')),
-                              field,xg,yg)
+    tmp = typeof(d)(field.(xg*ones(1,length(yg)),ones(length(xg))*yg'))
+    GeneratedField{typeof(tmp)}(tmp,field,xg,yg)
 end
 
 (f::GeneratedField)() = f.fielddata
