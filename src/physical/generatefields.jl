@@ -131,7 +131,13 @@ function (Σp::AddedFields)(x,y)
 end
 
 ## For generating an actual instance of a spatial field
+"""
+    GeneratedField(d::ScalarGridData,field::AbstractSpatialField,grid::PhysicalGrid)
 
+Create an instance of a spatial field function `field` on scalar grid data `d`,
+based on a grid `grid`. After creating the instance `g = GeneratedField(d,field,grid)`,
+then the resulting grid data can be accessed by typing `g()`.
+"""
 struct GeneratedField{T <: ScalarGridData}
     fielddata :: T
     field :: AbstractSpatialField
