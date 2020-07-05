@@ -86,8 +86,6 @@ end
 
 include("fields/collections.jl")
 
-#CollectedData = Union{EdgeGradient{R,S,NX,NY,T},NodePair{R,S,NX,NY,T}} where {R,S,NX,NY,T}
-
 include("gridoperations/basicoperations.jl")
 include("gridoperations/innerproducts.jl")
 include("gridoperations/convolution.jl")
@@ -106,7 +104,9 @@ include("points/points.jl")
 include("points/ddf.jl")
 include("points/regularization.jl")
 
-include("physicalgrid.jl")
+include("physical/physicalgrid.jl")
+include("physical/interpolation.jl")
+include("physical/generatefields.jl")
 
 
 #== Plot Recipes ==#

@@ -170,7 +170,3 @@ origin(g::PhysicalGrid) = g.I0
 Return the grid cell size of system `sys`
 """
 cellsize(g::PhysicalGrid) = g.Δx
-
-### other operations
-
-include("interpolation.jl")
