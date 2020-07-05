@@ -8,7 +8,6 @@ export AbstractSpatialField, Gaussian, radius, center, strength,
 
 abstract type AbstractSpatialField end
 
-(f::AbstractSpatialField)(x::Vector{T}) where {T <: Float64} = f(x[1],x[2])
 
 ## Empty spatial field
 
@@ -153,3 +152,9 @@ end
 
 (f::GeneratedField)() = f.fielddata
 datatype(f::GeneratedField{T}) where {T} = T
+
+## Allow all spatial fields to accept a vector argument
+
+#for T in InteractiveUtils.subtypes(AbstractSpatialField)
+#    @eval (f::$T)(x::Vector{R}) where {R <: Float64} = f(x...)
+#end

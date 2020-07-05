@@ -65,3 +65,18 @@ end
       transpose(q.v)
     end
 end
+
+@recipe function plot(field::GeneratedField;trim=0)
+      grid --> :none
+      aspect_ratio := 1
+      linewidth --> 1
+      legend --> :none
+      framestyle --> :frame
+      xlims --> (-Inf,Inf)
+      ylims --> (-Inf,Inf)
+      levels --> range(minimum(field().data),stop=maximum(field().data),length=16)
+      @series begin
+        seriestype --> :contour
+        field.xg[1+trim:end-trim],field.yg[1+trim:end-trim],transpose(field().data[1+trim:end-trim,1+trim:end-trim])
+      end
+end

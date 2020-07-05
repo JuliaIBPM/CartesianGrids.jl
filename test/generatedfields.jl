@@ -11,7 +11,7 @@ g = Gaussian(σ,0,1)
 @test strength(g) == 1
 
 g = EmptySpatialField()
-@test g(rand(2)) == 0.0
+@test g(rand(2)...) == 0.0
 
 g = SpatialGaussian(σ,σ,0.0,0.5,1)
 @test g(0,0.5+σ) ≈ g(σ,0.5) ≈ g(-σ,0.5) ≈ g(0,0.5-σ) ≈ exp(-1)/(π*σ^2)
