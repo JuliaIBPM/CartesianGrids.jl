@@ -36,16 +36,26 @@ gfield = GeneratedField(w,g,gr)
 @test gfield()[104,70] == g(xg[104],yg[70])
 @test datatype(gfield) == typeof(w)
 
+wfield = PulseField(gfield,0.5,0.1)
+
+@test maximum(wfield(0.5)) ≈ maximum(gfield()) ≈ 5.532960088678624
+@test maximum(wfield(2)) ≈ 0.0
+@test datatype(wfield) == datatype(gfield)
+
+
 q = Edges(Primal,size(gr))
 gauss = SpatialGaussian(0.5,0,0,1)
-gaussfield = GeneratedField(q.u,gauss,gr)
-q.u .= gaussfield()
+gaussfield = GeneratedField(q,gauss,EmptySpatialField(),gr)
+q .= gaussfield()
 
 ffield = PulseField(gaussfield,0.5,0.1)
 
-@test maximum(ffield(0.5)) ≈ maximum(gaussfield()) ≈ 1.272094144652253
-@test maximum(ffield(2)) ≈ 0.0
+@test maximum(ffield(0.5).u) ≈ maximum(q.u) ≈ 1.272094144652253
+@test maximum(ffield(2).u) ≈ 0.0
+@test maximum(ffield(0.5).v) ≈ maximum(q.v) ≈ 0.0
+@test maximum(ffield(2).v) ≈ maximum(q.v) ≈ 0.0
 
 @test datatype(ffield) == datatype(gaussfield)
+
 
 end

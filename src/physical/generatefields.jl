@@ -4,10 +4,12 @@ import Base: *, -, +, show
 
 export AbstractSpatialField, Gaussian, radius, center, strength,
        EmptySpatialField,
-       SpatialGaussian, GeneratedField, datatype,
+       SpatialGaussian,
+       GeneratedField, datatype, grid,
        PulseField
 
 abstract type AbstractSpatialField end
+abstract type AbstractGeneratedField end
 
 
 ## Empty spatial field
@@ -132,27 +134,41 @@ end
 
 ## For generating an actual instance of a spatial field
 """
-    GeneratedField(d::ScalarGridData,field::AbstractSpatialField,grid::PhysicalGrid)
+    GeneratedField(d::GridData,field::AbstractSpatialField...,grid::PhysicalGrid)
 
 Create an instance of a spatial field function `field` on scalar grid data `d`,
 based on a grid `grid`. After creating the instance `g = GeneratedField(d,field,grid)`,
-then the resulting grid data can be accessed by typing `g()`.
+then the resulting grid data can be accessed by typing `g()`. For vector grid data,
+a separate `field` must be supplied for each component.
 """
-struct GeneratedField{T <: ScalarGridData}
+struct GeneratedField{T <: GridData}
     fielddata :: T
-    field :: AbstractSpatialField
-    xg :: AbstractRange
-    yg :: AbstractRange
+    field :: Vector{AbstractSpatialField}
+    grid :: PhysicalGrid
 end
 
 function GeneratedField(d::ScalarGridData,field::AbstractSpatialField,g::PhysicalGrid)
     xg, yg = coordinates(d,g)
-    tmp = typeof(d)(field.(xg*ones(1,length(yg)),ones(length(xg))*yg'))
-    GeneratedField{typeof(tmp)}(tmp,field,xg,yg)
+    tmp = _generatedfield(xg,yg,field,d)
+    GeneratedField{typeof(tmp)}(tmp,AbstractSpatialField[field],g)
 end
 
-(f::GeneratedField)() = f.fielddata
+function GeneratedField(d::VectorGridData,fieldu::AbstractSpatialField,fieldv::AbstractSpatialField,g::PhysicalGrid)
+  xu, yu, xv, yv = coordinates(d,g)
+  tmp = similar(d)
+  tmp.u .= _generatedfield(xu,yu,fieldu,d.u)
+  tmp.v .= _generatedfield(xv,yv,fieldv,d.v)
+  fieldvec = AbstractSpatialField[fieldu,fieldv]
+  GeneratedField{typeof(tmp)}(tmp,fieldvec,g)
+end
+
+_generatedfield(xg,yg,field::AbstractSpatialField,d::ScalarGridData) =
+          typeof(d)(field.(xg*ones(1,length(yg)),ones(length(xg))*yg'))
+
 datatype(f::GeneratedField{T}) where {T} = T
+grid(f::GeneratedField{T}) where {T} = f.grid
+
+(f::GeneratedField{T})() where {T} = f.fielddata
 
 ## For generating a transient form of a spatial field
 
@@ -171,7 +187,9 @@ struct PulseField
   timemod :: Gaussian
 end
 
-PulseField(gfield::GeneratedField,t0::Real,σt::Real) = PulseField(gfield,Gaussian(σt,t0,sqrt(π*σt^2)))
+PulseField(gfield::GeneratedField{T},t0::Real,σt::Real) where {T <: GridData} =
+            PulseField(gfield,Gaussian(σt,t0,sqrt(π*σt^2)))
+
 
 (f::PulseField)(t) = f.timemod(t)*f.gfield()
 

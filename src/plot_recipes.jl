@@ -66,7 +66,8 @@ end
     end
 end
 
-@recipe function plot(field::GeneratedField;trim=0)
+@recipe function plot(field::GeneratedField{T};trim=0) where {T <: ScalarGridData}
+      xg, yg = coordinates(field(),grid(field))
       grid --> :none
       aspect_ratio := 1
       linewidth --> 1
@@ -77,6 +78,6 @@ end
       levels --> range(minimum(field().data),stop=maximum(field().data),length=16)
       @series begin
         seriestype --> :contour
-        field.xg[1+trim:end-trim],field.yg[1+trim:end-trim],transpose(field().data[1+trim:end-trim,1+trim:end-trim])
+        xg[1+trim:end-trim],yg[1+trim:end-trim],transpose(field().data[1+trim:end-trim,1+trim:end-trim])
       end
 end
