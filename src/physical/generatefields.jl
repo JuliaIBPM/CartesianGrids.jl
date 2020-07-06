@@ -4,7 +4,8 @@ import Base: *, -, +, show
 
 export AbstractSpatialField, Gaussian, radius, center, strength,
        EmptySpatialField,
-       SpatialGaussian, GeneratedField, datatype
+       SpatialGaussian, GeneratedField, datatype,
+       PulseField
 
 abstract type AbstractSpatialField end
 
@@ -152,6 +153,31 @@ end
 
 (f::GeneratedField)() = f.fielddata
 datatype(f::GeneratedField{T}) where {T} = T
+
+## For generating a transient form of a spatial field
+
+"""
+    PulseField(g::GeneratedField,t0,σ)
+
+Create a transient form of a generated spatial field, useful for
+introducing a short-lived forcing field onto the grid. The supplied field `g`
+is modulated by a Gaussian pulse centered at time `t0` with width `σ`. This pulse's
+maximum is unity, so that the amplitude of the overall field is set by `g`. The
+resulting object can be evaluated with a single argument (time) and returns a
+`ScalarGridData` type object of the same type contained in `g`.
+"""
+struct PulseField
+  gfield :: GeneratedField
+  timemod :: Gaussian
+end
+
+PulseField(gfield::GeneratedField,t0::Real,σt::Real) = PulseField(gfield,Gaussian(σt,t0,sqrt(π*σt^2)))
+
+(f::PulseField)(t) = f.timemod(t)*f.gfield()
+
+
+datatype(f::PulseField) = datatype(f.gfield)
+
 
 ## Allow all spatial fields to accept a vector argument
 
