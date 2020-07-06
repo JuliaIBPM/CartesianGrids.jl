@@ -119,7 +119,7 @@ and the offdiagonal at the other set (e.g. Dual).
 -  Adding the `dtype=` keyword allows the data type of the field data to be
   changed. The default is `Float64`, but can be changed to, e.g., `ComplexF64`
 """
-struct EdgeGradient{C <: CellType,D <: CellType, NX,NY, T<: Number, DT} <: GridData{NX,NY,T}
+struct EdgeGradient{C <: CellType,D <: CellType, NX,NY, T<: Number, DT} <: TensorGridData{NX,NY,T}
   data :: DT
   dudx :: Nodes{C,NX,NY,T}
   dudy :: Nodes{D,NX,NY,T}
@@ -178,7 +178,7 @@ form the faces of a virtual cell centered at one of the faces of the primal cell
 -  Adding the `dtype=` keyword allows the data type of the field data to be
   changed. The default is `Float64`, but can be changed to, e.g., `ComplexF64`
 """
-struct NodePair{C <: CellType,D <: CellType, NX,NY,T, DT} <: GridData{NX,NY,T}
+struct NodePair{C <: CellType,D <: CellType, NX,NY,T, DT} <: VectorGridData{NX,NY,T}
   data :: DT
   u :: Nodes{C,NX,NY,T}
   v :: Nodes{D,NX,NY,T}

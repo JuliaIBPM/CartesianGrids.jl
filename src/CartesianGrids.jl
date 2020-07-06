@@ -16,7 +16,8 @@ import LinearAlgebra: mul!, ldiv!, cross, ×, dot, ⋅
 import Base: parentindices
 const GAMMA = MathConstants.γ
 
-export Primal, Dual, ScalarGridData, VectorGridData, GridData,
+export Primal, Dual, ScalarGridData, VectorGridData, TensorGridData, GridData,
+       CollectedGridData,
        Points, ScalarData, VectorData, TensorData,
        celltype, griddatatype, indexshift,
        diff!,grid_interpolate!,
@@ -37,10 +38,10 @@ abstract type Primal <: CellType end
 abstract type Dual <: CellType end
 
 abstract type GridData{NX,NY,T} <: AbstractMatrix{T} end
-
 abstract type ScalarGridData{NX,NY,T} <: GridData{NX,NY,T} end
-
 abstract type VectorGridData{NX,NY,T} <: GridData{NX,NY,T} end
+abstract type TensorGridData{NX,NY,T} <: GridData{NX,NY,T} end
+CollectedGridData = Union{VectorGridData,TensorGridData}
 
 # List of scalar grid types. Each pair of numbers specifies
 # the number of grid points in each direction for this data type, relative

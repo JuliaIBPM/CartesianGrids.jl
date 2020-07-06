@@ -40,7 +40,7 @@ wfield = PulseField(gfield,0.5,0.1)
 
 @test maximum(wfield(0.5)) ≈ maximum(gfield()) ≈ 5.532960088678624
 @test maximum(wfield(2)) ≈ 0.0
-@test datatype(wfield) == datatype(gfield)
+@test datatype(wfield) == datatype(gfield) <: ScalarGridData
 
 
 q = Edges(Primal,size(gr))
@@ -55,7 +55,18 @@ ffield = PulseField(gaussfield,0.5,0.1)
 @test maximum(ffield(0.5).v) ≈ maximum(q.v) ≈ 0.0
 @test maximum(ffield(2).v) ≈ maximum(q.v) ≈ 0.0
 
-@test datatype(ffield) == datatype(gaussfield)
+@test datatype(ffield) == datatype(gaussfield) <: VectorGridData
+
+gq = EdgeGradient(Dual,size(gr))
+tfield = GeneratedField(gq,[g,gauss,EmptySpatialField(),EmptySpatialField()],gr)
+gq .= tfield()
+@test maximum(gq.dudx) ≈ 5.532960088678624
+@test maximum(gq.dudy) ≈ 1.2732395447351625
+@test maximum(gq.dvdx) == maximum(gq.dvdy) == 0.0
+
+ffield = PulseField(tfield,0.5,0.1)
+@test datatype(ffield) <: TensorGridData
+
 
 
 end

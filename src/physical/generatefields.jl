@@ -143,7 +143,7 @@ a separate `field` must be supplied for each component.
 """
 struct GeneratedField{T <: GridData}
     fielddata :: T
-    field :: Vector{AbstractSpatialField}
+    fieldfcns :: Vector{AbstractSpatialField}
     grid :: PhysicalGrid
 end
 
@@ -153,14 +153,24 @@ function GeneratedField(d::ScalarGridData,field::AbstractSpatialField,g::Physica
     GeneratedField{typeof(tmp)}(tmp,AbstractSpatialField[field],g)
 end
 
-function GeneratedField(d::VectorGridData,fieldu::AbstractSpatialField,fieldv::AbstractSpatialField,g::PhysicalGrid)
-  xu, yu, xv, yv = coordinates(d,g)
+function GeneratedField(d::CollectedGridData,fields::Vector{AbstractSpatialField},g::PhysicalGrid)
+  @assert length(fields) == _numberofcomponents(typeof(d))
   tmp = similar(d)
-  tmp.u .= _generatedfield(xu,yu,fieldu,d.u)
-  tmp.v .= _generatedfield(xv,yv,fieldv,d.v)
-  fieldvec = AbstractSpatialField[fieldu,fieldv]
-  GeneratedField{typeof(tmp)}(tmp,fieldvec,g)
+  cnt = 0
+  for (i,fname) in enumerate(propertynames(d))
+    if typeof(getfield(d,fname)) <: GridData
+        cnt += 1
+        x, y = coordinates(getfield(d,fname),g)
+        getfield(tmp,fname) .= _generatedfield(x,y,fields[cnt],getfield(d,fname))
+    end
+  end
+  GeneratedField{typeof(tmp)}(tmp,fields,g)
 end
+
+GeneratedField(d::VectorGridData,
+      fieldu::AbstractSpatialField,fieldv::AbstractSpatialField,
+      g::PhysicalGrid) = GeneratedField(d,AbstractSpatialField[fieldu,fieldv],g)
+
 
 _generatedfield(xg,yg,field::AbstractSpatialField,d::ScalarGridData) =
           typeof(d)(field.(xg*ones(1,length(yg)),ones(length(xg))*yg'))
