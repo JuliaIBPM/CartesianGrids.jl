@@ -7,6 +7,8 @@ using Test
 #@test isempty(detect_ambiguities(ViscousFlow))
 include("fields.jl")
 include("points.jl")
+include("generatedfields.jl")
+
 
 
 #@testset ExtendedTestSet "All tests" begin

@@ -11,65 +11,36 @@ struct Identity end
 ### On scalar grid data ####
 
 # Set it to negative of itself
-function (-)(p_in::Union{ScalarGridData,VectorGridData})
+function (-)(p_in::GridData)
   p = deepcopy(p_in)
   p.data .= -p.data
   return p
 end
 
-function (-)(p1::T,p2::T) where {T <: Union{ScalarGridData,VectorGridData}}
+function (-)(p1::T,p2::T) where {T <: GridData}
    return T(p1.data .- p2.data)
  end
 
-function (+)(p1::T,p2::T) where {T <: Union{ScalarGridData,VectorGridData}}
+function (+)(p1::T,p2::T) where {T <: GridData}
   return T(p1.data .+ p2.data)
 end
 
 # Multiply and divide by a constant
-function (*)(p::T,c::Number) where {T<:Union{ScalarGridData,VectorGridData}}
+function (*)(p::T,c::Number) where {T<:GridData}
   return T(c*p.data)
-end
-
-function (/)(p::T,c::Number) where {T<:Union{ScalarGridData,VectorGridData}}
-  return T(p.data ./ c)
-end
-
-@inline product!(out::Nodes{T, NX, NY},
-                  p::Nodes{T, NX, NY},
-                  q::Nodes{T, NX, NY}) where {T, NX, NY} = (out .= p.*q)
-
-#=
-function product!(out::Nodes{T, NX, NY},
-                  p::Nodes{T, NX, NY},
-                  q::Nodes{T, NX, NY}) where {T, NX, NY}
-
-    inds = node_inds(T, (NX, NY))
-    @inbounds for y in 1:inds[2], x in 1:inds[1]
-        out[x,y] = p[x,y] * q[x,y]
-    end
-    out
-end
-=#
-
-function product(p::Nodes{T, NX, NY}, q::Nodes{T, NX, NY}) where {T, NX, NY}
-    product!(Nodes(T, p), p, q)
-end
-
-function (∘)(p::Nodes{T, NX, NY}, q::Nodes) where {T, NX, NY}
-    product!(Nodes(T, p), p, q)
 end
 
 (*)(c::Number,p::T) where {T<:GridData} = *(p,c)
 
-
-### On vector grid data - NEED TO MERGE WITH ScalarGridData ####
-
+function (/)(p::T,c::Number) where {T<:GridData}
+  return T(p.data ./ c)
+end
 
 """
-    product!(out::Edges/Nodes,p::Edges/Nodes,q::Edges/Nodes)
+    product!(out::GridData,p::GridData,q::GridData)
 
-Compute the Hadamard (i.e. element by element) product of edge or nodal
-(primal or dual) data `p` and `q` and return the result in `out`.
+Compute the Hadamard (i.e. element by element) product of grid data
+`p` and `q` (of the same type) and return the result in `out`.
 
 # Example
 
@@ -101,26 +72,7 @@ v (in grid orientation)
  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0
 ```
 """
-@inline product!(out::Edges{T, NX, NY},
-           p::Edges{T, NX, NY},
-           q::Edges{T, NX, NY}) where {T, NX, NY} = (out .= p.*q)
-#=
-function product!(out::Edges{T, NX, NY},
-                  p::Edges{T, NX, NY},
-                  q::Edges{T, NX, NY}) where {T, NX, NY}
-
-    out .= p.u .* q.u
-    uinds, vinds = edge_inds(T, (NX, NY))
-    @inbounds for y in 1:uinds[2], x in 1:uinds[1]
-        out.u[x,y] = p.u[x,y] * q.u[x,y]
-    end
-
-    @inbounds for y in 1:vinds[2], x in 1:vinds[1]
-        out.v[x,y] = p.v[x,y] * q.v[x,y]
-    end
-    out
-end
-=#
+@inline product!(out::T, p::T, q::T) where {T <: GridData} = (out .= p.*q)
 
 """
     product(p::Edges/Nodes,q::Edges/Nodes) --> Edges/Nodes
@@ -158,42 +110,12 @@ v (in grid orientation)
  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0
 ```
 """
-function product(p::Edges{T, NX, NY}, q::Edges{T, NX, NY}) where {T, NX, NY}
-    product!(Edges(T, p), p, q)
+@inline product(p::T, q::T) where {T <: GridData} = product!(T(), p, q)
+
+@inline function (∘)(p::GridData{T,NX,NY}, q::GridData) where {T,NX,NY}
+  product!(typeof(p)(), p, q)
 end
 
-function (∘)(p::Edges{T, NX, NY}, q::Edges) where {T, NX, NY}
-    product!(Edges(T, p), p, q)
-end
-
-### ON TENSORS ####
-
-function (-)(p_in::EdgeGradient)
-  p = deepcopy(p_in)
-  p.dudx .= -p.dudx
-  p.dvdy .= -p.dvdy
-  p.dudy .= -p.dudy
-  p.dvdx .= -p.dvdx
-  return p
-end
-
-function (-)(p1::T,p2::T) where {T <: EdgeGradient}
-  return T(p1.dudx - p2.dudx, p1.dvdy - p2.dvdy, p1.dudy - p2.dudy, p1.dvdx - p2.dvdx)
-end
-
-function (+)(p1::T,p2::T) where {T <: EdgeGradient}
-  return T(p1.dudx + p2.dudx, p1.dvdy + p2.dvdy, p1.dudy + p2.dudy, p1.dvdx + p2.dvdx)
-end
-
-function (*)(p::T,c::Number) where {T <: EdgeGradient}
-  return T(c*p.dudx,c*p.dvdy,c*p.dudy,c*p.dvdx)
-end
-
-function (/)(p::T,c::Number) where {T <: EdgeGradient}
-  return T(p.dudx / c, p.dvdy / c, p.dudy / c, p.dvdx / c)
-end
-
-#### ON ALL TYPES ####
 
 zero(::Type{T}) where {T <: GridData} = T()
 

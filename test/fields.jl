@@ -89,6 +89,30 @@ import LinearAlgebra: norm, dot
 
   end
 
+  @testset "Arithmetic" begin
+
+    w = 2*cellunit
+    @test w[i,j] == 2
+    w2 = w + w
+    @test w2[i,j] == 4
+
+    q = Edges(Dual,w)
+    q.u .= 1.0
+    q2 = 2*q
+    @test all(q2.u .== 2.0)
+    q2 .= q + q2
+    @test all(q2.u .== 3.0)
+
+    t = EdgeGradient(Dual,w)
+    t .= 1.0
+    t2 = 2*t
+    @test all(t2 .== 2.0)
+    t2 = -t
+    @test all(t2 .== -1.0)
+
+
+  end
+
   @testset "Inner products and norms" begin
     w = zero(cellunit)
     i0, j0 = rand(2:nx-1), rand(2:ny-1)

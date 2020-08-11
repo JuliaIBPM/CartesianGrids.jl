@@ -5,8 +5,18 @@ export show_scalarlist, show_vectorlist, show_tensorlist
 _negate(a::NTuple{M,Int64}) where {M} = map(x -> -x,a)
 _cellshift(a::NTuple{M,Int64}) where {M} = map(x -> 0.5*(1-abs(x)),a)
 
-# for Julia < 1.1
+# for Julia < 1.1 (since later versions have this built in)
 _fieldtypes(T::Type) = ntuple(i -> fieldtype(T, i), fieldcount(T))
+
+function _numberofcomponents(T::Type)
+    n = 0
+    for t in _fieldtypes(T)
+        if t <: GridData
+            n+=1
+        end
+    end
+    return n
+end
 
 """
     @griddata(wrapper,nctypes)
