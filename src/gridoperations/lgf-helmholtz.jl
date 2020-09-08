@@ -16,7 +16,7 @@ const GLH_N = [100,200,500,1000,2000,2500,3500,10000]
 
 const LGFH_DIR  = joinpath(pwd(), "cache")
 
-using ProgressMeter
+#using ProgressMeter
 
 alpha_to_string(α::Float64) = string(100000+α*10000)[2:6]
 
@@ -51,7 +51,8 @@ function build_lgf_helmholtz(N,α)
 
 
     g = zeros(ComplexF64,N, N)
-    @showprogress for y in 0:N-1, x in 0:y
+    #@showprogress
+    for y in 0:N-1, x in 0:y
       ir = _index_radius(x,y)
       if ir < asymptotic_radius
         g[x+1,y+1] = lgf_helmholtz(x,y,α)
