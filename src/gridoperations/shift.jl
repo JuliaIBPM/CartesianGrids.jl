@@ -94,6 +94,19 @@ function grid_interpolate!(out::Tuple{Nodes{C, NX, NY},Nodes{C, NX, NY}}, q::Edg
 end
 
 """
+    grid_interpolate!(w::Nodes,q::Edges)
+
+Interpolate the edge data `q` (of either dual or primal
+type) to the dual or primal nodes, and return the result in `w`, which
+represents a sum of the interpolations of each component of `q`.
+"""
+function grid_interpolate!(out::Nodes{C, NX, NY}, q::Edges{D,NX, NY}) where {C<:CellType, D<:CellType, NX, NY}
+    u = zero(out)
+    grid_interpolate!((u,out),q)
+    out .+= u
+end
+
+"""
     grid_interpolate!(q::Edges{Primal},w::Nodes{Primal})
 
 Interpolate the primal nodal data `w` to the edges of the primal cells,

@@ -264,6 +264,12 @@ import LinearAlgebra: norm, dot
     @test iszero(cellx)
     @test iszero(celly)
 
+    celltmp = Nodes(Dual,cellzero)
+    grid_interpolate!(celltmp,facexunit)
+    @test celltmp[i,j] == 0.5 && celltmp[i,j+1] == 0.5
+    celltmp[i,j] = celltmp[i,j+1] = 0.0
+    @test iszero(celltmp)
+
     cellx = Nodes(Dual,cellzero)
     celly = Nodes(Dual,cellzero)
     grid_interpolate!((cellx,celly),faceyunit)
@@ -271,6 +277,13 @@ import LinearAlgebra: norm, dot
     celly[i,j] = celly[i+1,j] = 0.0
     @test iszero(cellx)
     @test iszero(celly)
+
+    celltmp = Nodes(Dual,cellzero)
+    grid_interpolate!(celltmp,faceyunit)
+    @test celltmp[i,j] == 0.5 && celltmp[i+1,j] == 0.5
+    celltmp[i,j] = celltmp[i+1,j] = 0.0
+    @test iszero(celltmp)
+
   end
 
   @testset "div curl" begin
