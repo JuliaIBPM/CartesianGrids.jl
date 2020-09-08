@@ -120,6 +120,18 @@ dM31(r) = -2*r
 dM32(r) = r-1.5
 @inline ddf_dm3(r::Real) = abs(r) > 1.5 ? 0.0 : abs(r) <= 0.5 ? dM31(r) : sign(r)*dM32(abs(r))
 
+#==== M4prime ====#
+
+@ddffunc M4prime
+
+M4prime1(r) = 1-2.5*r^2+1.5*r^3
+M4prime2(r) = 0.5*(2-r)^2*(1-r)
+@inline ddf_m4prime(r::Real) = r > 2.0 ? 0.0 : r <= 1.0 ? M4prime1(r) : M4prime2(r)
+
+dM4prime1(r) = -5*r+4.5*r^2
+dM4prime2(r) = -1.5*r^2+5*r-4
+@inline ddf_dm4prime(r::Real) = abs(r) > 2.0 ? 0.0 : abs(r) <= 1.0 ? sign(r)*dM4prime1(abs(r)) : sign(r)*dM4prime2(abs(r))
+
 #==== YANG3 ====#
 
 @ddffunc Yang3
