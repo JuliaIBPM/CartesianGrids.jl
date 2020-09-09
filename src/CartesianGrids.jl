@@ -18,7 +18,7 @@ const GAMMA = MathConstants.γ
 
 export Primal, Dual, ScalarGridData, VectorGridData, TensorGridData, GridData,
        CollectedGridData,
-       Points, ScalarData, VectorData, TensorData,
+       PointData, ScalarData, VectorData, TensorData,
        celltype, griddatatype, indexshift,
        diff!,grid_interpolate!,
        curl, curl!, Curl, divergence, divergence!, Divergence,
