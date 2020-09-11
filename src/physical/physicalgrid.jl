@@ -1,4 +1,4 @@
-export coordinates, PhysicalGrid, limits, origin, cellsize
+export coordinates, PhysicalGrid, limits, origin, cellsize, volume
 
 """
     coordinates(w::GridData;[dx=1.0],[I0=(1,1)])
@@ -145,6 +145,14 @@ Base.length(g::PhysicalGrid) = prod(size(g))
 Return the minimum and maximum physical dimensions in direction `d` for grid `g`.
 """
 limits(g::PhysicalGrid,d::Int) = g.xlim[d]
+
+"""
+    volume(g::PhysicalGrid) -> Float64
+
+Return the volume (or area) of the physical grid `g`.
+"""
+volume(g::PhysicalGrid{ND}) where {ND} = mapreduce(dims -> dims[2]-dims[1],*,[limits(g,d) for d in 1:ND])
+
 
 """
     coordinates(w::Nodes/Edges,g::PhysicalGrid) -> Range
