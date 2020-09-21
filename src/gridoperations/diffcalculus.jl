@@ -190,7 +190,7 @@ end
     divergence!(w::XEdges/YEdges,q::NodePair)
 
 Evaluate the discrete divergence of node pair data `q` and return it as data `w`.
-Note that `q` can be either primal/dual or dual/primal edge data, and `w`
+Note that `q` can be either primal/dual or dual/primal node data, and `w`
 must be, respectively, primal x-edges/dual y-edges or primal y-edges/dual x-edges type.
 """
 function divergence!(nodes::Union{XEdges{Primal, NX, NY},YEdges{Dual, NX, NY}},
@@ -216,6 +216,46 @@ function divergence!(nodes::Union{YEdges{Primal, NX, NY},XEdges{Dual, NX, NY}},
     #    nodes[x,y] = - u[x,y] + u[x+1,y] - v[x,y-1] + v[x,y]
     #end
     nodes
+end
+
+
+"""
+    divergence!(w::Edges,q::EdgeGradient)
+
+Evaluate the discrete divergence of edge gradient tensor data `q` and return it as data `w`.
+Note that `q` can be either primal/dual or dual/primal tensor data, and `w`
+must be, respectively, primal or edges type.
+"""
+function divergence!(edges::Edges{Primal, NX, NY},
+                     nodes::EdgeGradient{Primal, Dual,NX, NY}) where {NX, NY}
+
+    dudx, dudy, dvdx, dvdy = nodes.dudx, nodes.dudy, nodes.dvdx, nodes.dvdy
+    u, v = edges.u, edges.v
+
+    view(u,2:NX-1,1:NY-1) .= -view(dudx,1:NX-2,1:NY-1) .+ view(dudx,2:NX-1,1:NY-1) .-
+                                view(dudy,2:NX-1,1:NY-1) .+ view(dudy,2:NX-1,2:NY)
+    view(v,1:NX-1,2:NY-1) .= -view(dvdx,1:NX-1,2:NY-1) .+ view(dvdx,2:NX,2:NY-1) .-
+                                view(dvdy,1:NX-1,1:NY-2) .+ view(dvdy,1:NX-1,2:NY-1)
+    #@inbounds for y in 1:NY-1, x in 2:NX-1
+    #    nodes[x,y] = - u[x-1,y] + u[x,y] - v[x,y] + v[x,y+1]
+    #end
+    edges
+end
+function divergence!(edges::Edges{Dual, NX, NY},
+                     nodes::EdgeGradient{Dual, Primal,NX, NY}) where {NX, NY}
+
+    dudx, dudy, dvdx, dvdy = nodes.dudx, nodes.dudy, nodes.dvdx, nodes.dvdy
+    u, v = edges.u, edges.v
+
+    view(u,1:NX-1,2:NY-1) .= -view(dudx,1:NX-1,2:NY-1) .+ view(dudx,2:NX,2:NY-1) .-
+                                view(dudy,1:NX-1,1:NY-2) .+ view(dudy,1:NX-1,2:NY-1)
+    view(v,2:NX-1,1:NY-1) .= -view(dvdx,1:NX-2,1:NY-1) .+ view(dvdx,2:NX-1,1:NY-1) .-
+                                view(dvdy,2:NX-1,1:NY-1) .+ view(dvdy,2:NX-1,2:NY)
+
+    #@inbounds for y in 1:NY-1, x in 2:NX-1
+    #    nodes[x,y] = - u[x-1,y] + u[x,y] - v[x,y] + v[x,y+1]
+    #end
+    edges
 end
 
 struct Divergence end
