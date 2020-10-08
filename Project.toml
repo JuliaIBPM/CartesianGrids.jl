@@ -2,7 +2,7 @@ name = "CartesianGrids"
 uuid = "3e975e5d-2cf8-4263-9573-8460aaf534d9"
 authors = ["Jeff Eldredge <jdeldre@g.ucla.edu>"]
 repo = "https://github.com/JuliaIBPM/CartesianGrids.jl.git"
-version = "0.1.4"
+version = "0.1.5"
 
 [deps]
 ColorTypes = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
@@ -23,14 +23,14 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 ColorTypes = "<0.10.1, 0.10"
 FFTW = "^1"
-FastGaussQuadrature = "^0"
-Interpolations = "^0"
+FastGaussQuadrature = "0.4.2"
+Interpolations = "0.12.10"
 LaTeXStrings = "^1.0, 1.1"
-PlotUtils = "^0, 1.0"
-Plots = "^1.3, 1.4"
+PlotUtils = "1.0"
+Plots = "1.3, 1.4"
 ProgressMeter = "^1.1"
-RecipesBase = "^0, 1.0"
-SpecialFunctions = "^0"
+RecipesBase = "1.0"
+SpecialFunctions = "0.8.0, 0.10"
 julia = "1"
 
 [extras]
