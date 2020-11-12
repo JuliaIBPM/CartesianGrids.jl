@@ -147,6 +147,25 @@ import LinearAlgebra: norm, dot
     q .= 1
     @test norm(2*q) == sqrt(8)
 
+    v = Edges(Primal,(100,200))
+    v.u[3:end-3,3:end-3] .= rand(size(v.u[3:end-3,3:end-3])...)
+    v.v[3:end-3,3:end-3] .= rand(size(v.v[3:end-3,3:end-3])...)
+
+    dq = EdgeGradient(Primal,v)
+
+    grid_interpolate!(dq,v)
+
+    dq2 = similar(dq)
+    dq2.dudx[3:end-3,3:end-3] .= rand(size(dq2.dudx[3:end-3,3:end-3])...)
+    dq2.dudy[3:end-3,3:end-3] .= rand(size(dq2.dudy[3:end-3,3:end-3])...)
+    dq2.dvdx[3:end-3,3:end-3] .= rand(size(dq2.dvdx[3:end-3,3:end-3])...)
+    dq2.dvdy[3:end-3,3:end-3] .= rand(size(dq2.dvdy[3:end-3,3:end-3])...)
+
+    v2 = similar(v)
+    grid_interpolate!(v2,dq2)
+
+    @test isapprox(dot(dq2,dq),dot(v2,v),atol=100*eps(1.0))
+
   end
 
   @testset "Dual cell center data Laplacian" begin
@@ -408,6 +427,7 @@ end
 
   q .= 1.0im
   @test norm(2*q) == sqrt(8)
+
 
 end
 

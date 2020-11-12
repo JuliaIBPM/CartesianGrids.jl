@@ -43,7 +43,17 @@ end
 # This operation is not necessarily desirable, since its meaning is ambiguous
 grid_interpolate(nodes::Nodes{Dual,NX,NY}) where {NX,NY} = grid_interpolate!(Edges(Dual, nodes), nodes)
 
+"""
+    grid_interpolate!(q::Edges{Primal},w::Nodes{Primal})
 
+Interpolate the primal nodal data `w` to the edges of the primal cells,
+and return the result in `q`.
+"""
+function grid_interpolate!(q::Edges{Primal, NX, NY}, w::Nodes{Primal,NX, NY}) where {NX, NY}
+    grid_interpolate!(q.u,w)
+    grid_interpolate!(q.v,w)
+    q
+end
 
 
 """
@@ -106,16 +116,65 @@ function grid_interpolate!(out::Nodes{C, NX, NY}, q::Edges{D,NX, NY}) where {C<:
     out .+= u
 end
 
-"""
-    grid_interpolate!(q::Edges{Primal},w::Nodes{Primal})
 
-Interpolate the primal nodal data `w` to the edges of the primal cells,
-and return the result in `q`.
 """
-function grid_interpolate!(q::Edges{Primal, NX, NY}, w::Nodes{Primal,NX, NY}) where {NX, NY}
-    grid_interpolate!(q.u,w)
-    grid_interpolate!(q.v,w)
-    q
+    grid_interpolate!(dq::EdgeGradient{Primal/Dual},q::Edges{Primal/Dual})
+
+Interpolate the primal (dual) edge data `q` to primal (dual) tensor positions
+and hold it in `dq`.
+"""
+function grid_interpolate!(dq::EdgeGradient{Primal, Dual, NX, NY}, q::Edges{Primal,NX, NY}) where {NX, NY}
+    grid_interpolate!(dq.dudx,q.u)
+    grid_interpolate!(dq.dudy,q.u)
+    grid_interpolate!(dq.dvdx,q.v)
+    grid_interpolate!(dq.dvdy,q.v)
+    return dq
+end
+
+function grid_interpolate!(dq::EdgeGradient{Dual, Primal, NX, NY}, q::Edges{Dual,NX, NY}) where {NX, NY}
+    grid_interpolate!(dq.dudx,q.u)
+    grid_interpolate!(dq.dudy,q.u)
+    grid_interpolate!(dq.dvdx,q.v)
+    grid_interpolate!(dq.dvdy,q.v)
+    return dq
+end
+
+"""
+    grid_interpolate!(q::Edges{Primal/Dual},dq::EdgeGradient{Primal/Dual})
+
+Interpolate the primal (dual) tensor data `dq` to primal (dual) edge positions
+and hold it in `q`.
+"""
+function grid_interpolate!(edges::Edges{Primal, NX, NY},
+                     nodes::EdgeGradient{Primal, Dual,NX, NY}) where {NX, NY}
+
+    dudx, dudy, dvdx, dvdy = nodes.dudx, nodes.dudy, nodes.dvdx, nodes.dvdy
+    u, v = edges.u, edges.v
+
+    view(u,2:NX-1,1:NY-1) .= 0.5*view(dudx,1:NX-2,1:NY-1) .+ 0.5*view(dudx,2:NX-1,1:NY-1) .+
+                                0.5*view(dudy,2:NX-1,1:NY-1) .+ 0.5*view(dudy,2:NX-1,2:NY)
+    view(v,1:NX-1,2:NY-1) .= 0.5*view(dvdx,1:NX-1,2:NY-1) .+ 0.5*view(dvdx,2:NX,2:NY-1) .+
+                                0.5*view(dvdy,1:NX-1,1:NY-2) .+ 0.5*view(dvdy,1:NX-1,2:NY-1)
+    #@inbounds for y in 1:NY-1, x in 2:NX-1
+    #    nodes[x,y] = - u[x-1,y] + u[x,y] - v[x,y] + v[x,y+1]
+    #end
+    edges
+end
+function grid_interpolate!(edges::Edges{Dual, NX, NY},
+                     nodes::EdgeGradient{Dual, Primal,NX, NY}) where {NX, NY}
+
+    dudx, dudy, dvdx, dvdy = nodes.dudx, nodes.dudy, nodes.dvdx, nodes.dvdy
+    u, v = edges.u, edges.v
+
+    view(u,1:NX-1,2:NY-1) .= 0.5*view(dudx,1:NX-1,2:NY-1) .+ 0.5*view(dudx,2:NX,2:NY-1) .+
+                                0.5*view(dudy,1:NX-1,1:NY-2) .+ 0.5*view(dudy,1:NX-1,2:NY-1)
+    view(v,2:NX-1,1:NY-1) .= 0.5*view(dvdx,1:NX-2,1:NY-1) .+ 0.5*view(dvdx,2:NX-1,1:NY-1) .+
+                                0.5*view(dvdy,2:NX-1,1:NY-1) .+ 0.5*view(dvdy,2:NX-1,2:NY)
+
+    #@inbounds for y in 1:NY-1, x in 2:NX-1
+    #    nodes[x,y] = - u[x-1,y] + u[x,y] - v[x,y] + v[x,y+1]
+    #end
+    edges
 end
 
 # (Dual/Primal) edges to (Primal/Dual) edges. These require some rethinking,

@@ -128,11 +128,18 @@ end
 """
     dot(p1::Edges{Dual/Primal},p2::Edges{Dual/Primal}) -> Real
 
-Computes the inner product between two sets of dual edge data on the same grid.
+Computes the inner product between two sets of edge data on the same grid.
 """
 dot(p1::Edges{C,NX,NY},p2::Edges{C,NX,NY}) where {C<:CellType,NX,NY} =
       dot(p1.u,p2.u) + dot(p1.v,p2.v)
 
+"""
+    dot(p1::EdgeGradient{Dual/Primal},p2::EdgeGradient{Dual/Primal}) -> Real
+
+Computes the inner product between two sets of edge gradient data on the same grid.
+"""
+dot(p1::EdgeGradient{C,D,NX,NY},p2::EdgeGradient{C,D,NX,NY}) where {C<:CartesianGrids.CellType,D<:CartesianGrids.CellType,NX,NY} =
+      dot(p1.dudx,p2.dudx) + dot(p1.dudy,p2.dudy) + dot(p1.dvdx,p2.dvdx) + dot(p1.dvdy,p2.dvdy)
 
 ######## NORMS ###########
 
