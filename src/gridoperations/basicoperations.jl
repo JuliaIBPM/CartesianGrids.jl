@@ -1,4 +1,4 @@
-import Base: -, +, *, /, \, ∘, zero, conj, real, imag, abs, abs2
+import Base: -, +, *, /, \, ∘, transpose, zero, conj, real, imag, abs, abs2
 
 
 # Identity operator
@@ -74,6 +74,13 @@ v (in grid orientation)
 """
 @inline product!(out::T, p::T, q::T) where {T <: GridData} = (out .= p.*q)
 
+for f in (:Nodes, :XEdges, :YEdges, :Edges)
+  @eval @inline product!(out::$f{C,NX,NY},p::$f{C,NX,NY},q::$f{C,NX,NY}) where {C<:CellType,NX,NY} = (out .= p.*q)
+end
+
+@inline product!(out::EdgeGradient{C,D,NX,NY},p::EdgeGradient{C,D,NX,NY},q::EdgeGradient{C,D,NX,NY}) where {C<:CellType,D<:CellType,NX,NY} = (out .= p.*q)
+
+
 """
     product(p::Edges/Nodes,q::Edges/Nodes) --> Edges/Nodes
 
@@ -114,6 +121,27 @@ v (in grid orientation)
 
 @inline function (∘)(p::GridData{T,NX,NY}, q::GridData) where {T,NX,NY}
   product!(typeof(p)(), p, q)
+end
+
+function tensorproduct!(q::EdgeGradient{C,D,NX,NY},u::Edges{C,NX,NY},v::Edges{C,NX,NY}) where {C<:CellType,D<:CellType,NX,NY}
+    utmp = zero(q)
+    vtmp = zero(q)
+    grid_interpolate!(utmp,u)
+    grid_interpolate!(vtmp,v)
+    q.dudx .= utmp.dudx ∘ vtmp.dudx
+    q.dudy .= utmp.dvdx ∘ vtmp.dudy
+    q.dvdx .= utmp.dudy ∘ vtmp.dvdx
+    q.dvdy .= utmp.dvdy ∘ vtmp.dvdy
+    return q
+end
+
+(*)(u::Edges{C,NX,NY},v::Edges{C,NX,NY}) where {C<:CellType,NX,NY} = tensorproduct!(EdgeGradient(C,u),u,v)
+
+function transpose(q::EdgeGradient{C,D,NX,NY}) where {C<:CellType,D<:CellType,NX,NY}
+    qt = deepcopy(q)
+    qt.dudy .= q.dvdx
+    qt.dvdx .= q.dudy
+    return qt
 end
 
 

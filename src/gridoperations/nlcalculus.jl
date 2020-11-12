@@ -53,7 +53,7 @@ function directional_derivative_conserve!(out::Edges{C},f::Edges{C},q::Edges{C})
     f_dual = Nodes(othertype(C),f)
 
     qf = q ∘ f
-    qfnode = NodePair(C,othertype(C),f)
+    qfnode = NodePair(C,f)
 
     # interpolate both fx and qx to primal nodes, multiply element by element, assign to NodePair.u
     grid_interpolate!(qfnode.u,qf.u)
@@ -64,7 +64,7 @@ function directional_derivative_conserve!(out::Edges{C},f::Edges{C},q::Edges{C})
     # take divergence and assign to out.u
     divergence!(out.u,qfnode)
 
-    qfnode = NodePair(othertype(C),C,f)
+    qfnode = NodePair(othertype(C),f)
 
     # interpolate both fy and qx to dual nodes, multiply element by element, assign to NodePair.u
     qfnode.u .= grid_interpolate!(q_dual,q.u) .* grid_interpolate!(f_dual,f.v)
