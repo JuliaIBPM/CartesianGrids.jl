@@ -101,6 +101,16 @@ function Base.show(io::IO, m::MIME"text/plain", edges::Edges)
 end
 
 ### Edge gradient ###
+#=
+A note on this data type: if we were to write the components as a matrix,
+then it would be:
+
+du/dx  dv/dx
+du/dy  dv/dy
+
+or, (grad v)_ij = partial v_j/partial i. This ensures that divergence of
+the gradient correctly leads to the Laplacian. 
+=#
 
 """
     EdgeGradient

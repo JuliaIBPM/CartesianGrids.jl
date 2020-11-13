@@ -79,14 +79,14 @@ end
 
     @series begin
       subplot := 2
-      title --> L"du/dy"
-      xdudy, ydudy, q.dudy
+      title --> L"dv/dx"
+      xdvdx, ydvdx, q.dvdx
     end
 
     @series begin
       subplot := 3
-      title --> L"dv/dx"
-      xdvdx, ydvdx, q.dvdx
+      title --> L"du/dy"
+      xdudy, ydudy, q.dudy
     end
 
     @series begin

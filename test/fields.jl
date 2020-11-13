@@ -310,6 +310,91 @@ import LinearAlgebra: norm, dot
     @test iszero(curl(grad(nodeunit)))
   end
 
+  v = Edges(Primal,(100,200))
+  v.u[3:end-3,3:end-3] .= rand(size(v.u[3:end-3,3:end-3])...)
+  v.v[3:end-3,3:end-3] .= rand(size(v.v[3:end-3,3:end-3])...)
+
+
+  u = Edges(Primal,(100,200))
+  u.u[3:end-3,3:end-3] .= rand(size(v.u[3:end-3,3:end-3])...)
+  u.v[3:end-3,3:end-3] .= rand(size(v.v[3:end-3,3:end-3])...)
+
+  f1 = Nodes(Primal,u)
+  f2 = Nodes(Primal,u)
+  qtmp = Edges(Primal,u)
+  ftmp = Nodes(Primal,u)
+
+  f1[3:end-3,3:end-3] .= randn(size(f1[3:end-3,3:end-3]))
+  f2[3:end-3,3:end-3] .= randn(size(f2[3:end-3,3:end-3]))
+
+  dq = EdgeGradient(Primal,v)
+  dv = zero(dq)
+  utmp = zero(dq)
+  ugradvtmp = zero(dq)
+  divuv = zero(u)
+  ugradv = zero(u)
+
+  @testset "Commutativity and product rules" begin
+
+    # Laplacian as divergence of the gradient
+    grad!(dv,v)
+    lapv = zero(v)
+    divergence!(lapv,dv)
+
+    lapv2 = laplacian(v)
+
+    @test isapprox(norm(lapv2-lapv),0.0,atol=100.0*eps())
+
+    # Laplacian of curl = curl of Laplacian
+    curllapv = curl(lapv2)
+
+    lapcurlv = laplacian(curl(v))
+
+    @test isapprox(norm(curllapv-lapcurlv),0.0,atol=100.0*eps())
+
+    # check that grad(f1*f2) = f1*grad(f2) + grad(f1)*f2
+    lhs = grad(f1∘f2)
+    rhs = grad(f1)∘ grid_interpolate!(qtmp,f2) + grid_interpolate!(qtmp,f1) ∘ grad(f2)
+    @test isapprox(norm(lhs-rhs),0.0,atol=100.0*eps())
+
+    # check that div(f1*u) = grad(f1).u + f1*(div u)
+    qtmp .= 0
+
+    lhs = Nodes(Primal,f1)
+    rhs = Nodes(Primal,f1)
+    lhs .= divergence(grid_interpolate!(qtmp,f1)∘u)
+    grid_interpolate!(ftmp,grad(f1)∘u)
+    rhs .= ftmp + f1 ∘ divergence(u)
+
+    @test isapprox(norm(lhs-rhs),0.0,atol=100.0*eps())
+
+
+    # check that div(uv) = u.grad v + (div u)v
+    uv = EdgeGradient(Primal,u)
+    divergence!(divuv,u*v)
+
+    dv .= 0.0
+    utmp .= 0.0
+
+    grid_interpolate!(utmp,u)
+    grad!(dv,v)
+    product!(ugradvtmp,transpose(utmp),dv)
+    grid_interpolate!(ugradv,ugradvtmp)
+
+    ugradv2 = zero(u)
+    directional_derivative!(ugradv2,v,u)
+    @test isapprox(norm(ugradv2 - ugradv),0.0,atol=100.0*eps())
+
+    w = zero(u)
+    grid_interpolate!(w,divergence(u))
+    vdivu = zero(u)
+    product!(vdivu,w,v)
+
+    @test isapprox(norm(divuv - ugradv - vdivu),0.0,atol=100.0*eps())
+
+
+  end
+
   L = plan_laplacian(nx,ny;with_inverse=true)
 
   @testset "Laplacian of the LGF" begin
@@ -596,6 +681,30 @@ end
 
         edges_d  = Edges{Dual, 30, 40, Float64}()
         @test_throws MethodError (edges_p ∘ edges_d)
+    end
+
+    @testset "Cartesian product of vectors" begin
+
+      edges_p  = Edges(Primal,(30,40))
+      edges_p.u .= rand(Float64,size(edges_p.u))
+
+      edges_q  = Edges(Primal,(30,40))
+      edges_q.u .= rand(Float64,size(edges_q.u))
+
+      tensors_pq = edges_p * edges_q
+
+      pt = EdgeGradient(Primal,Dual,(30,40))
+      qt = EdgeGradient(Primal,Dual,(30,40))
+
+      grid_interpolate!(pt,edges_p)
+      grid_interpolate!(qt,edges_q)
+
+      @test tensors_pq.dudx[12,25] == pt.dudx[12,25]*qt.dudx[12,25]
+      @test tensors_pq.dvdx[12,25] == pt.dudy[12,25]*qt.dvdx[12,25]
+      @test tensors_pq.dudy[12,25] == pt.dvdx[12,25]*qt.dudy[12,25]
+      @test tensors_pq.dvdy[12,25] == pt.dvdy[12,25]*qt.dvdy[12,25]
+
+
     end
 
     @testset "Discrete Laplacian" begin
