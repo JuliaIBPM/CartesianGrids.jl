@@ -44,14 +44,8 @@ end
 #  return q
 #end
 
-function (*)(p1::VectorData{N},p2::VectorData{N}) where {N}
-  q = TensorData(p1,dtype=promote_type(eltype(p1),eltype(p2)))
-  @. q.dudx = p1.u * p2.u
-  @. q.dudy = p1.u * p2.v
-  @. q.dvdx = p1.v * p2.u
-  @. q.dvdy = p1.v * p2.v
-  return q
-end
+
+
 
 
 """
@@ -227,6 +221,15 @@ for f in (:VectorData, :TensorData)
 
     @eval (∘)(q::ScalarData{N}, p::$f{N}) where {N} = product(p,q)
 
+end
+
+function (*)(p1::VectorData{N},p2::VectorData{N}) where {N}
+  q = TensorData(p1,dtype=promote_type(eltype(p1),eltype(p2)))
+  @. q.dudx = p1.u * p2.u
+  @. q.dudy = p1.v * p2.u
+  @. q.dvdx = p1.u * p2.v
+  @. q.dvdy = p1.v * p2.v
+  return q
 end
 
 ### Operations between tuples and vectors

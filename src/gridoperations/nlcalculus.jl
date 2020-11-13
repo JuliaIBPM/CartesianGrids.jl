@@ -6,6 +6,15 @@ and put the result into `out`. Note that the result is not scaled by any grid sp
 """
 function directional_derivative!(out::Edges{C},f::Edges{C},q::Edges{C}) where {C <: CellType}
 
+    qdf = EdgeGradient(C,f)
+    df = EdgeGradient(C,f)
+    qt = EdgeGradient(C,f)
+
+    out .= 0.0
+    product!(qdf,transpose(grid_interpolate!(qt,q)),grad!(df,f))
+    grid_interpolate!(out,qdf)
+
+    #=
     # some temp storage
     q_dual = Nodes(othertype(C),f)
     q_primal = Nodes(C,f)
@@ -33,6 +42,7 @@ function directional_derivative!(out::Edges{C},f::Edges{C},q::Edges{C}) where {C
     # and then interpolating product to primal y-edges
     grid_interpolate!(outy,grid_interpolate!(q_primal,q.v) ∘ df.dvdy)
     out.v .+= outy
+    =#
 
     return out
 

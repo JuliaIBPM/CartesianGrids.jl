@@ -102,6 +102,24 @@ using LinearAlgebra
 
   end
 
+  @testset "Cartesian product" begin
+
+    N = 100
+    u = VectorData(N,dtype=Float64)
+    u.u .= randn(length(u.u))
+
+    v = VectorData(N,dtype=Float64)
+    v.u .= randn(length(v.u))
+
+    uv = u*v
+    @test uv.dudx == u.u ∘ v.u
+    @test uv.dudy == u.v ∘ v.u
+    @test uv.dvdx == u.u ∘ v.v
+    @test uv.dvdy == u.v ∘ v.v
+
+
+  end
+
   n = 10
   x = 0.5 .+ 0.2*rand(n)
   y = 0.5 .+ 0.2*rand(n)

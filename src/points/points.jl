@@ -134,6 +134,17 @@ end
 VectorData(x::Tuple{AbstractVector{T},AbstractVector{T}}) where {T <: Number} = VectorData(x...)
 VectorData(n::Int;dtype=Float64) = VectorData(zeros(dtype,NDIM*n))
 
+#=
+A note on the TensorData data type: if we were to write the components as a matrix,
+then it would be:
+
+du/dx  dv/dx
+du/dy  dv/dy
+
+or, (grad v)_ij = partial v_j/partial i. This ensures that divergence of
+the gradient correctly leads to the Laplacian.
+=#
+
 """
     TensorData <: PointData
 

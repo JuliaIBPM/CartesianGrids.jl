@@ -310,85 +310,146 @@ import LinearAlgebra: norm, dot
     @test iszero(curl(grad(nodeunit)))
   end
 
-  v = Edges(Primal,(100,200))
-  v.u[3:end-3,3:end-3] .= rand(size(v.u[3:end-3,3:end-3])...)
-  v.v[3:end-3,3:end-3] .= rand(size(v.v[3:end-3,3:end-3])...)
+  function randomize!(f::ScalarGridData;offset=0)
+      f[offset:end-offset,offset:end-offset] .= randn(size(f[offset:end-offset,offset:end-offset]))
+      return f
+  end
 
+  v = Edges(Primal,(100,200))
+  offset = 4
+  randomize!(v.u,offset=offset)
+  randomize!(v.v,offset=offset)
 
   u = Edges(Primal,(100,200))
-  u.u[3:end-3,3:end-3] .= rand(size(v.u[3:end-3,3:end-3])...)
-  u.v[3:end-3,3:end-3] .= rand(size(v.v[3:end-3,3:end-3])...)
+  randomize!(u.u,offset=offset)
+  randomize!(u.v,offset=offset)
+
+  vd = Edges(Dual,(100,200))
+  randomize!(v.u,offset=offset)
+  randomize!(v.v,offset=offset)
+
+  ud = Edges(Dual,(100,200))
+  randomize!(u.u,offset=offset)
+  randomize!(u.v,offset=offset)
 
   f1 = Nodes(Primal,u)
   f2 = Nodes(Primal,u)
-  qtmp = Edges(Primal,u)
-  ftmp = Nodes(Primal,u)
-
-  f1[3:end-3,3:end-3] .= randn(size(f1[3:end-3,3:end-3]))
-  f2[3:end-3,3:end-3] .= randn(size(f2[3:end-3,3:end-3]))
+  randomize!(f1,offset=offset)
+  randomize!(f2,offset=offset)
 
   dq = EdgeGradient(Primal,v)
-  dv = zero(dq)
-  utmp = zero(dq)
-  ugradvtmp = zero(dq)
-  divuv = zero(u)
-  ugradv = zero(u)
+  dv = EdgeGradient(Primal,v)
+  dqd = EdgeGradient(Dual,v)
+  dvd = EdgeGradient(Dual,v)
 
-  @testset "Commutativity and product rules" begin
+  lhsn = Nodes(Primal,f1)
+  rhsn = Nodes(Primal,f1)
 
-    # Laplacian as divergence of the gradient
-    grad!(dv,v)
-    lapv = zero(v)
-    divergence!(lapv,dv)
+  lhse = Edges(Primal,f1)
+  rhse = Edges(Primal,f1)
+  lhsed = Edges(Dual,f1)
 
-    lapv2 = laplacian(v)
 
-    @test isapprox(norm(lapv2-lapv),0.0,atol=100.0*eps())
+  qtmp = Edges(Primal,u)
+  qtmpd = Edges(Dual,u)
+  ftmp = Nodes(Primal,u)
+  utmp = EdgeGradient(Primal,u)
+  utmpd = EdgeGradient(Dual,u)
+
+
+  @testset "Commutativity of operators" begin
+
+    # Laplacian as divergence of the gradient (edge data)
+    divergence!(lhse,grad!(dv,v))
+    rhse = laplacian(v)
+    @test isapprox(norm(lhse-rhse),0.0,atol=100.0*eps())
+
+
+    # Node laplacian of the edge-to-node interpolation =
+    # edge-to-node interpolation of the edge laplacian
+    lhsn .= laplacian(grid_interpolate!(ftmp,v))
+    rhsn .= 0.0
+    grid_interpolate!(rhsn,laplacian(v))
+    @test isapprox(norm(lhsn-rhsn),0.0,atol=100.0*eps())
+
+    # Edge laplacian of the node-to-edge interpolation =
+    # node-to-edge interpolation of the node laplacian
+    lhse .= 0
+    rhse .= 0
+    qtmp .= 0
+    grid_interpolate!(lhse,laplacian(f1))
+    rhse .= laplacian(grid_interpolate!(qtmp,f1))
+    @test isapprox(norm(lhse-rhse),0.0,atol=100.0*eps())
+
+
+  end
+
+  @testset "Discrete product rules" begin
 
     # Laplacian of curl = curl of Laplacian
-    curllapv = curl(lapv2)
-
+    curllapv = curl(laplacian(v))
     lapcurlv = laplacian(curl(v))
 
     @test isapprox(norm(curllapv-lapcurlv),0.0,atol=100.0*eps())
 
-    # check that grad(f1*f2) = f1*grad(f2) + grad(f1)*f2
-    lhs = grad(f1∘f2)
-    rhs = grad(f1)∘ grid_interpolate!(qtmp,f2) + grid_interpolate!(qtmp,f1) ∘ grad(f2)
-    @test isapprox(norm(lhs-rhs),0.0,atol=100.0*eps())
-
-    # check that div(f1*u) = grad(f1).u + f1*(div u)
+    # grad(f1*f2) = f1*grad(f2) + grad(f1)*f2
+    lhse .= 0
+    rhse .= 0
     qtmp .= 0
+    lhse .= grad(f1∘f2)
+    rhse .= grad(f1)∘ grid_interpolate!(qtmp,f2) + grid_interpolate!(qtmp,f1) ∘ grad(f2)
+    @test isapprox(norm(lhse-rhse),0.0,atol=100.0*eps())
 
-    lhs = Nodes(Primal,f1)
-    rhs = Nodes(Primal,f1)
-    lhs .= divergence(grid_interpolate!(qtmp,f1)∘u)
+    # div(f1*u) = grad(f1).u + f1*(div u)
+    lhsn .= 0
+    rhsn .= 0
+    qtmp .= 0
+    lhsn .= divergence(grid_interpolate!(qtmp,f1)∘u)
     grid_interpolate!(ftmp,grad(f1)∘u)
-    rhs .= ftmp + f1 ∘ divergence(u)
+    rhsn .= ftmp + f1∘divergence(u)
+    @test isapprox(norm(lhsn-rhsn),0.0,atol=100.0*eps())
 
-    @test isapprox(norm(lhs-rhs),0.0,atol=100.0*eps())
-
-
-    # check that div(uv) = u.grad v + (div u)v
+    # div(uv) = u.grad v + (div u)v
+    divuv = zero(u)
     uv = EdgeGradient(Primal,u)
     divergence!(divuv,u*v)
 
     dv .= 0.0
     utmp .= 0.0
+    dq .= 0
+    ugradv = zero(u)
+    product!(dq,transpose(grid_interpolate!(utmp,u)),grad!(dv,v))
+    grid_interpolate!(ugradv,dq)
 
-    grid_interpolate!(utmp,u)
-    grad!(dv,v)
-    product!(ugradvtmp,transpose(utmp),dv)
-    grid_interpolate!(ugradv,ugradvtmp)
+    lhse .= 0
+    directional_derivative!(lhse,v,u)
+    @test isapprox(norm(lhse - ugradv),0.0,atol=100.0*eps())
 
-    ugradv2 = zero(u)
-    directional_derivative!(ugradv2,v,u)
-    @test isapprox(norm(ugradv2 - ugradv),0.0,atol=100.0*eps())
-
-    w = zero(u)
-    grid_interpolate!(w,divergence(u))
+    qtmp .= 0.0
     vdivu = zero(u)
-    product!(vdivu,w,v)
+    product!(vdivu,grid_interpolate!(qtmp,divergence(u)),v)
+
+    @test isapprox(norm(divuv - ugradv - vdivu),0.0,atol=100.0*eps())
+
+    # Now on duals
+    divuv = zero(ud)
+    uv = EdgeGradient(Primal,ud)
+    divergence!(divuv,ud*vd)
+
+    dvd .= 0.0
+    utmpd .= 0.0
+    dqd .= 0.0
+    ugradv = zero(ud)
+    product!(dqd,transpose(grid_interpolate!(utmpd,ud)),grad!(dvd,vd))
+    grid_interpolate!(ugradv,dqd)
+
+    lhsed .= 0
+    directional_derivative!(lhsed,vd,ud)
+    @test isapprox(norm(lhsed - ugradv),0.0,atol=100.0*eps())
+
+    qtmpd .= 0.0
+    vdivu = zero(ud)
+    product!(vdivu,grid_interpolate!(qtmpd,divergence(ud)),vd)
 
     @test isapprox(norm(divuv - ugradv - vdivu),0.0,atol=100.0*eps())
 
