@@ -258,6 +258,15 @@ function divergence!(edges::Edges{Dual, NX, NY},
     edges
 end
 
+"""
+    divergence(dq::EdgeGradient) --> Edges
+
+Evaluate the discrete divergence of edge gradient data `dq`.
+"""
+function divergence(dedges::EdgeGradient{T, S, NX, NY}) where {T <: CellType, S <: CellType, NX, NY}
+    divergence!(Edges(T, dedges), dedges)
+end
+
 struct Divergence end
 
 (*)(::Divergence,w::Edges{T,NX,NY}) where {T<:CellType,NX,NY} = divergence(w)
