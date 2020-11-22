@@ -344,6 +344,8 @@ import LinearAlgebra: norm, dot
 
   lhsn = Nodes(Primal,f1)
   rhsn = Nodes(Primal,f1)
+  lhsnd = Nodes(Dual,f1)
+  rhsnd = Nodes(Dual,f1)
 
   lhse = Edges(Primal,f1)
   rhse = Edges(Primal,f1)
@@ -380,6 +382,11 @@ import LinearAlgebra: norm, dot
     grid_interpolate!(lhse,laplacian(f1))
     rhse .= laplacian(grid_interpolate!(qtmp,f1))
     @test isapprox(norm(lhse-rhse),0.0,atol=100.0*eps())
+
+    # Curl of the edge laplacian = node laplacian of the curl
+    lhsnd .= curl(laplacian(v))
+    rhsnd .= laplacian(curl(v))
+    @test isapprox(norm(lhsnd-rhsnd),0.0,atol=100.0*eps())
 
 
   end

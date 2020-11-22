@@ -120,6 +120,35 @@ using LinearAlgebra
 
   end
 
+  @testset "Cross and dot products" begin
+
+    N = 100
+    u = VectorData(N,dtype=Float64)
+    u .= randn(length(u))
+
+    v = VectorData(N,dtype=Float64)
+    v .= randn(length(v))
+
+    uv = pointwise_dot(u,v)
+    @test uv == u.u ∘ v.u + u.v ∘ v.v
+
+    uv = cross(u,v)
+    @test uv == u.u ∘ v.v - u.v ∘ v.u
+
+    A = TensorData(N,dtype=Float64)
+    A .= randn(length(A))
+
+    Au = pointwise_dot(A,u)
+    @test Au.u == A.dudx∘u.u + A.dvdx∘u.v
+    @test Au.v == A.dudy∘u.u + A.dvdy∘u.v
+
+    Au = pointwise_dot(u,A)
+    @test Au.u == A.dudx∘u.u + A.dudy∘u.v
+    @test Au.v == A.dvdx∘u.u + A.dvdy∘u.v
+
+
+  end
+
   n = 10
   x = 0.5 .+ 0.2*rand(n)
   y = 0.5 .+ 0.2*rand(n)

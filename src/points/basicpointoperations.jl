@@ -1,5 +1,7 @@
 import Base: +, -, ∘, real, imag, abs
 
+export pointwise_dot
+
 # Set it to negative of itself
 function (-)(p_in::PointData)
   p = similar(p_in)
@@ -48,43 +50,7 @@ end
 
 
 
-"""
-    (+)(X::VectorData,a::Tuple{T,T}) where {T<:Number} -> VectorData
-    (-)(X::VectorData,a::Tuple{T,T}) where {T<:Number} -> VectorData
 
-Adds or subtracts the tuple `a` component by component to each element of `X`. All data in `a` are
-converted to Float64. Can also switch the arguments.
-
-# Example
-
-```jldoctest
-julia> f = VectorData(5);
-
-julia> f + (2,3)
-5 points of vector-valued Float64 data
-5×2 Array{Float64,2}:
- 2.0  3.0
- 2.0  3.0
- 2.0  3.0
- 2.0  3.0
- 2.0  3.0
-```
-"""
-function (+)(A::VectorData,a::Tuple{T,T}) where {T <: Number}
-    B = similar(A,element_type=promote_type(T,eltype(A)))
-    u, v = a
-    B.u .+= u
-    B.v .+= v
-    return B
-end
-
-function (-)(A::VectorData,a::Tuple{T,T}) where {T <: Number}
-  B = similar(A,element_type=promote_type(T,eltype(A)))
-    u, v = a
-    B.u .-= u
-    B.v .-= v
-    return B
-end
 
 ### Hadamard products
 
@@ -223,6 +189,12 @@ for f in (:VectorData, :TensorData)
 
 end
 
+"""
+    (*)(p1::VectorData,p2::VectorData) -> TensorData
+
+Calculate the element by element tensor product between vectors `p1`
+and `p2`, returning `TensorData` type.
+"""
 function (*)(p1::VectorData{N},p2::VectorData{N}) where {N}
   q = TensorData(p1,dtype=promote_type(eltype(p1),eltype(p2)))
   @. q.dudx = p1.u * p2.u
@@ -231,11 +203,6 @@ function (*)(p1::VectorData{N},p2::VectorData{N}) where {N}
   @. q.dvdy = p1.v * p2.v
   return q
 end
-
-### Operations between tuples and vectors
-
-a::(Tuple{T,T} where {T}) + A::VectorData = A + a
-a::(Tuple{T,T} where {T}) - A::VectorData = (B = A - a; @. B.data = -B.data; return B)
 
 """
     cross(a::Number/ScalarData,A::VectorData) -> VectorData
@@ -251,8 +218,6 @@ function cross(a::Union{Number,ScalarData},A::VectorData)
     return B
 end
 
-### Vector operations
-
 """
     cross(A::VectorData,B::VectorData) -> ScalarData
     ×(A::VectorData,A::VectorData) -> ScalarData
@@ -266,6 +231,83 @@ function cross(A::VectorData{N},B::VectorData{N}) where N
     @. C = A.u*B.v - A.v*B.u
     return C
 end
+
+"""
+    pointwise_dot(A::VectorData,B::VectorData) -> ScalarData
+
+Compute the element by element dot product between `A` and `B`
+and return the result as `ScalarData`.
+"""
+function pointwise_dot(A::VectorData{N},B::VectorData{N}) where {N}
+    C = ScalarData(N,dtype=promote_type(eltype(A),eltype(B)))
+    @. C = A.u*B.u .+ A.v*B.v
+    return C
+end
+
+"""
+    pointwise_dot(A::TensorData/VectorData,B::VectorData/TensorData) -> VectorData
+
+Compute the element by element dot product between `A` and `B`,
+where one is `TensorData` and the other is `VectorData` and return the
+result as `VectorData`.
+"""
+function pointwise_dot(u::VectorData{N},dv::TensorData{N}) where {N}
+    w = VectorData(u)
+    w.u .= u.u∘dv.dudx .+ u.v∘dv.dudy
+    w.v .= u.u∘dv.dvdx .+ u.v∘dv.dvdy
+    return w
+end
+
+function pointwise_dot(dv::TensorData{N},u::VectorData{N}) where {N}
+    w = VectorData(u)
+    w.u .= u.u∘dv.dudx .+ u.v∘dv.dvdx
+    w.v .= u.u∘dv.dudy .+ u.v∘dv.dvdy
+    return w
+end
+
+
+### Operations between tuples and vectors
+
+"""
+    (+)(X::VectorData,a::Tuple{T,T}) where {T<:Number} -> VectorData
+    (-)(X::VectorData,a::Tuple{T,T}) where {T<:Number} -> VectorData
+
+Adds or subtracts the tuple `a` component by component to each element of `X`. All data in `a` are
+converted to Float64. Can also switch the arguments.
+
+# Example
+
+```jldoctest
+julia> f = VectorData(5);
+
+julia> f + (2,3)
+5 points of vector-valued Float64 data
+5×2 Array{Float64,2}:
+ 2.0  3.0
+ 2.0  3.0
+ 2.0  3.0
+ 2.0  3.0
+ 2.0  3.0
+```
+"""
+function (+)(A::VectorData,a::Tuple{T,T}) where {T <: Number}
+    B = similar(A,element_type=promote_type(T,eltype(A)))
+    u, v = a
+    B.u .+= u
+    B.v .+= v
+    return B
+end
+
+function (-)(A::VectorData,a::Tuple{T,T}) where {T <: Number}
+  B = similar(A,element_type=promote_type(T,eltype(A)))
+    u, v = a
+    B.u .-= u
+    B.v .-= v
+    return B
+end
+
+a::(Tuple{T,T} where {T}) + A::VectorData = A + a
+a::(Tuple{T,T} where {T}) - A::VectorData = (B = A - a; @. B.data = -B.data; return B)
 
 """
     dot(A::Tuple{T,T},B::VectorData) where {T<:Number} -> ScalarData
@@ -295,6 +337,9 @@ function dot(A::Tuple{T,T},B::TensorData) where {T<:Number}
     @. C.v = x*B.dvdx + y*B.dvdy
     return C
 end
+
+
+
 
 ### Operations on complex point data
 
