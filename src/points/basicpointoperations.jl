@@ -104,9 +104,10 @@ function product!(out::PointData{N},
                   p::PointData{N},
                   q::PointData{N}) where {N}
 
-    @inbounds for x in 1:N
-        out.data[x] = p.data[x] * q.data[x]
-    end
+    out.data .= p.data .* q.data
+    #@inbounds for x in 1:N
+    #    out.data[x] = p.data[x] * q.data[x]
+    #end
     out
 end
 
@@ -138,10 +139,13 @@ function product!(out::VectorData{N},
                   p::ScalarData{N},
                   q::VectorData{N}) where {N}
 
-    @inbounds for x in 1:N
-        out.u[x] = p[x] * q.u[x]
-        out.v[x] = p[x] * q.v[x]
-    end
+    product!(out.u,p,q.u)
+    product!(out.v,p,q.v)
+
+    #@inbounds for x in 1:N
+    #    out.u[x] = p[x] * q.u[x]
+    #    out.v[x] = p[x] * q.v[x]
+    #end
     out
 end
 
@@ -149,12 +153,16 @@ function product!(out::TensorData{N},
                   p::ScalarData{N},
                   q::TensorData{N}) where {N}
 
-    @inbounds for x in 1:N
-        out.dudx[x] = p[x] * q.dudx[x]
-        out.dudy[x] = p[x] * q.dudy[x]
-        out.dvdx[x] = p[x] * q.dvdx[x]
-        out.dvdy[x] = p[x] * q.dvdy[x]
-    end
+    product!(out.dudx,p,q.dudx)
+    product!(out.dudy,p,q.dudy)
+    product!(out.dvdx,p,q.dvdx)
+    product!(out.dvdy,p,q.dvdy)
+    #@inbounds for x in 1:N
+    #    out.dudx[x] = p[x] * q.dudx[x]
+    #    out.dudy[x] = p[x] * q.dudy[x]
+    #    out.dvdx[x] = p[x] * q.dvdx[x]
+    #    out.dvdy[x] = p[x] * q.dvdy[x]
+    #end
     out
 end
 
@@ -271,7 +279,7 @@ and return the result as `ScalarData`.
 """
 function pointwise_dot(A::VectorData{N},B::VectorData{N}) where {N}
     C = ScalarData(N,dtype=promote_type(eltype(A),eltype(B)))
-    @. C = A.u*B.u .+ A.v*B.v
+    @. C = A.u*B.u + A.v*B.v
     return C
 end
 
