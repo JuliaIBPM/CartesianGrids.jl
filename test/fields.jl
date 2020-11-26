@@ -471,7 +471,14 @@ import LinearAlgebra: norm, dot
     @test lapψ[i,j]≈1.0
     @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
             isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+
+    ψ = L\nodeunit
+    lapψ = L*ψ
+    @test lapψ[i,j]≈1.0
+    @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
+            isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
   end
+
 
   @testset "LGF for Helmholtz equation" begin
     alpha = 0.02
