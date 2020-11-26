@@ -77,9 +77,11 @@ end
 
 function mul!(out, C::CircularConvolution{M, N, T}, B) where {M, N, T}
     FFTW.set_num_threads(2)
-    @assert size(out) == size(B) == (M, N)
+    MB, NB = size(B)
+    #@assert size(out) == size(B) == (M, N)
+    @assert size(out) == (MB, NB)
 
-    inds = CartesianIndices((M,N))
+    inds = CartesianIndices((MB,NB))
     fill!(C.paddedSpace, 0)
     copyto!(C.paddedSpace, inds, B, inds)
     mul!(C.Â, C.F, C.paddedSpace)
@@ -89,7 +91,7 @@ function mul!(out, C::CircularConvolution{M, N, T}, B) where {M, N, T}
     mul!(C.paddedSpace, C.F⁻¹, C.Â)
 
     #copyto!(out, inds, C.paddedSpace, CartesianIndices((M:2M-1,N:2N-1)))
-    copyto!(out, inds, C.paddedSpace, CartesianIndices((M+1:2M,N+1:2N)))
+    copyto!(out, inds, C.paddedSpace, CartesianIndices((M+1:M+MB,N+1:N+NB)))
 
 end
 

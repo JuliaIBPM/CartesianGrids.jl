@@ -1,7 +1,7 @@
 import Base: +, -, ∘, real, imag, abs
 import LinearAlgebra: transpose!, transpose
 
-export pointwise_dot, tensorproduct!
+export pointwise_dot, tensorproduct!, pointwise_dot!, cross!
 
 # Set it to negative of itself
 function (-)(p_in::PointData)
@@ -258,6 +258,18 @@ function cross(a::Union{Number,ScalarData},A::VectorData)
 end
 
 """
+    cross!(C::ScalarData,A::VectorData,B::VectorData) -> ScalarData
+
+Compute the cross product between the vector point data `A` and `B`
+and return the result as scalar data `C` (treated as an out-of-plane
+component of a vector).
+"""
+function cross!(C::ScalarData{N},A::VectorData{N},B::VectorData{N}) where {N}
+    @. C = A.u*B.v - A.v*B.u
+    return C
+end
+
+"""
     cross(A::VectorData,B::VectorData) -> ScalarData
     ×(A::VectorData,A::VectorData) -> ScalarData
 
@@ -265,9 +277,17 @@ Compute the cross product between the vector point data `A` and `B`
 and return the result as scalar data (treated as an out-of-plane
 component of a vector).
 """
-function cross(A::VectorData{N},B::VectorData{N}) where N
-    C = ScalarData(N,dtype=promote_type(eltype(A),eltype(B)))
-    @. C = A.u*B.v - A.v*B.u
+cross(A::VectorData{N},B::VectorData{N}) where {N} =
+      cross!(ScalarData(N,dtype=promote_type(eltype(A),eltype(B))),A,B)
+
+"""
+    pointwise_dot!(C::ScalarData,A::VectorData,B::VectorData) -> ScalarData
+
+Compute the element by element dot product between `A` and `B`
+and return the result in `C`.
+"""
+function pointwise_dot!(C::ScalarData{N},A::VectorData{N},B::VectorData{N}) where {N}
+    @. C = A.u*B.u + A.v*B.v
     return C
 end
 
@@ -277,10 +297,21 @@ end
 Compute the element by element dot product between `A` and `B`
 and return the result as `ScalarData`.
 """
-function pointwise_dot(A::VectorData{N},B::VectorData{N}) where {N}
-    C = ScalarData(N,dtype=promote_type(eltype(A),eltype(B)))
-    @. C = A.u*B.u + A.v*B.v
-    return C
+pointwise_dot(A::VectorData{N},B::VectorData{N}) where {N} =
+    pointwise_dot!(ScalarData(N,dtype=promote_type(eltype(A),eltype(B))),A,B)
+
+
+"""
+    pointwise_dot!(C::VectorData,A::TensorData/VectorData,B::VectorData/TensorData) -> VectorData
+
+Compute the element by element dot product between `A` and `B`,
+where one is `TensorData` and the other is `VectorData` and return the
+result as `VectorData` in `C`.
+"""
+function pointwise_dot!(w::VectorData{N},u::VectorData{N},dv::TensorData{N}) where {N}
+    w.u .= u.u∘dv.dudx .+ u.v∘dv.dudy
+    w.v .= u.u∘dv.dvdx .+ u.v∘dv.dvdy
+    return w
 end
 
 """
@@ -290,19 +321,16 @@ Compute the element by element dot product between `A` and `B`,
 where one is `TensorData` and the other is `VectorData` and return the
 result as `VectorData`.
 """
-function pointwise_dot(u::VectorData{N},dv::TensorData{N}) where {N}
-    w = VectorData(u)
-    w.u .= u.u∘dv.dudx .+ u.v∘dv.dudy
-    w.v .= u.u∘dv.dvdx .+ u.v∘dv.dvdy
-    return w
-end
+pointwise_dot(u::VectorData{N},dv::TensorData{N}) where {N} = pointwise_dot!(VectorData(u),u,dv)
 
-function pointwise_dot(dv::TensorData{N},u::VectorData{N}) where {N}
-    w = VectorData(u)
+
+function pointwise_dot!(w::VectorData{N},dv::TensorData{N},u::VectorData{N}) where {N}
     w.u .= u.u∘dv.dudx .+ u.v∘dv.dvdx
     w.v .= u.u∘dv.dudy .+ u.v∘dv.dvdy
     return w
 end
+
+pointwise_dot(dv::TensorData{N},u::VectorData{N}) where {N} = pointwise_dot!(VectorData(u),dv,u)
 
 
 ### Operations between tuples and vectors
