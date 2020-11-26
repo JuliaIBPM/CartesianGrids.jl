@@ -110,10 +110,57 @@ Interpolate the edge data `q` (of either dual or primal
 type) to the dual or primal nodes, and return the result in `w`, which
 represents a sum of the interpolations of each component of `q`.
 """
-function grid_interpolate!(out::Nodes{C, NX, NY}, q::Edges{D,NX, NY}) where {C<:CellType, D<:CellType, NX, NY}
-    u = zero(out)
-    grid_interpolate!((u,out),q)
-    out .+= u
+#function grid_interpolate!(out::Nodes{C, NX, NY}, q::Edges{D,NX, NY}) where {C<:CellType, D<:CellType, NX, NY}
+#    u = zero(out)
+#    grid_interpolate!((u,out),q)
+#    out .+= u
+#end
+function grid_interpolate!(nodes::Nodes{Primal, NX, NY},edges::Edges{Primal, NX, NY}) where {NX, NY}
+
+    u, v = edges.u, edges.v
+    view(nodes,1:NX-1,1:NY-1) .=  view(u,2:NX,1:NY-1) .+ view(u,1:NX-1,1:NY-1) .+
+                                  view(v,1:NX-1,2:NY) .+ view(v,1:NX-1,1:NY-1)
+    #@inbounds for y in 1:NY-1, x in 1:NX-1
+    #    nodes[x,y] = - u[x,y] + u[x+1,y] - v[x,y] + v[x,y+1]
+    #end
+    nodes .*= 0.5
+    nodes
+end
+function grid_interpolate!(nodes::Nodes{Primal, NX, NY},edges::Edges{Dual, NX, NY}) where {NX, NY}
+
+    u, v = edges.u, edges.v
+    view(nodes,1:NX-1,1:NY-1) .=  view(u,1:NX-1,2:NY) .+ view(u,1:NX-1,1:NY-1) .+
+                                  view(v,2:NX,1:NY-1) .+ view(v,1:NX-1,1:NY-1)
+    #@inbounds for y in 1:NY-1, x in 1:NX-1
+    #    nodes[x,y] = - u[x,y] + u[x+1,y] - v[x,y] + v[x,y+1]
+    #end
+    nodes .*= 0.5
+    nodes
+end
+
+function grid_interpolate!(nodes::Nodes{Dual, NX, NY},edges::Edges{Dual, NX, NY}) where {NX, NY}
+
+    u, v = edges.u, edges.v
+    view(nodes,2:NX-1,2:NY-1) .= view(u,2:NX-1,2:NY-1) .+ view(u,1:NX-2,2:NY-1) .+
+                                 view(v,2:NX-1,2:NY-1) .+ view(v,2:NX-1,1:NY-2)
+    #@inbounds for y in 2:NY-1, x in 2:NX-1
+    #    nodes[x,y] = - u[x-1,y] + u[x,y] - v[x,y-1] + v[x,y]
+    #end
+    nodes .*= 0.5
+    nodes
+end
+
+function grid_interpolate!(nodes::Nodes{Dual, NX, NY},edges::Edges{Primal, NX, NY}) where {NX, NY}
+
+    u, v = edges.u, edges.v
+    view(nodes,2:NX-1,2:NY-1) .= view(u,2:NX-1,1:NY-2) .+ view(u,2:NX-1,2:NY-1) .+
+                               view(v,2:NX-1,2:NY-1) .+ view(v,1:NX-2,2:NY-1)
+
+    #@inbounds for y in 2:NY-1, x in 2:NX-1
+    #    nodes[x,y] = - u[x-1,y] + u[x,y] - v[x,y-1] + v[x,y]
+    #end
+    nodes .*= 0.5
+    nodes
 end
 
 
@@ -151,13 +198,14 @@ function grid_interpolate!(edges::Edges{Primal, NX, NY},
     dudx, dudy, dvdx, dvdy = nodes.dudx, nodes.dudy, nodes.dvdx, nodes.dvdy
     u, v = edges.u, edges.v
 
-    view(u,2:NX-1,1:NY-1) .= 0.5*view(dudx,1:NX-2,1:NY-1) .+ 0.5*view(dudx,2:NX-1,1:NY-1) .+
-                                0.5*view(dudy,2:NX-1,1:NY-1) .+ 0.5*view(dudy,2:NX-1,2:NY)
-    view(v,1:NX-1,2:NY-1) .= 0.5*view(dvdx,1:NX-1,2:NY-1) .+ 0.5*view(dvdx,2:NX,2:NY-1) .+
-                                0.5*view(dvdy,1:NX-1,1:NY-2) .+ 0.5*view(dvdy,1:NX-1,2:NY-1)
+    view(u,2:NX-1,1:NY-1) .= view(dudx,1:NX-2,1:NY-1) .+ view(dudx,2:NX-1,1:NY-1) .+
+                                view(dudy,2:NX-1,1:NY-1) .+ view(dudy,2:NX-1,2:NY)
+    view(v,1:NX-1,2:NY-1) .= view(dvdx,1:NX-1,2:NY-1) .+ view(dvdx,2:NX,2:NY-1) .+
+                                view(dvdy,1:NX-1,1:NY-2) .+ view(dvdy,1:NX-1,2:NY-1)
     #@inbounds for y in 1:NY-1, x in 2:NX-1
     #    nodes[x,y] = - u[x-1,y] + u[x,y] - v[x,y] + v[x,y+1]
     #end
+    edges .*= 0.5
     edges
 end
 function grid_interpolate!(edges::Edges{Dual, NX, NY},
@@ -166,14 +214,15 @@ function grid_interpolate!(edges::Edges{Dual, NX, NY},
     dudx, dudy, dvdx, dvdy = nodes.dudx, nodes.dudy, nodes.dvdx, nodes.dvdy
     u, v = edges.u, edges.v
 
-    view(u,1:NX-1,2:NY-1) .= 0.5*view(dudx,1:NX-1,2:NY-1) .+ 0.5*view(dudx,2:NX,2:NY-1) .+
-                                0.5*view(dudy,1:NX-1,1:NY-2) .+ 0.5*view(dudy,1:NX-1,2:NY-1)
-    view(v,2:NX-1,1:NY-1) .= 0.5*view(dvdx,1:NX-2,1:NY-1) .+ 0.5*view(dvdx,2:NX-1,1:NY-1) .+
-                                0.5*view(dvdy,2:NX-1,1:NY-1) .+ 0.5*view(dvdy,2:NX-1,2:NY)
+    view(u,1:NX-1,2:NY-1) .= view(dudx,1:NX-1,2:NY-1) .+ view(dudx,2:NX,2:NY-1) .+
+                                view(dudy,1:NX-1,1:NY-2) .+ view(dudy,1:NX-1,2:NY-1)
+    view(v,2:NX-1,1:NY-1) .= view(dvdx,1:NX-2,1:NY-1) .+ view(dvdx,2:NX-1,1:NY-1) .+
+                                view(dvdy,2:NX-1,1:NY-1) .+ view(dvdy,2:NX-1,2:NY)
 
     #@inbounds for y in 1:NY-1, x in 2:NX-1
     #    nodes[x,y] = - u[x-1,y] + u[x,y] - v[x,y] + v[x,y+1]
     #end
+    edges .*= 0.5
     edges
 end
 

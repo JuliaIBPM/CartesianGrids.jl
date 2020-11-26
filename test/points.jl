@@ -78,6 +78,15 @@ using LinearAlgebra
     @test typeof(Z) <: VectorData
     @test Z.u[3] == 3.0
 
+    Xt = TensorData(Y)
+    transpose!(Xt,X)
+    @test Xt.dudx == X.dudx
+    @test Xt.dudy == X.dvdx
+    @test Xt.dvdx == X.dudy
+    @test Xt.dvdy == X.dvdy
+    @test Xt == transpose(X)
+
+
   end
 
   @testset "Hadamard products" begin
