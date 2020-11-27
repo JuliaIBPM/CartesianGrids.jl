@@ -1,5 +1,7 @@
-import Base: -, +, *, /, \, ∘, transpose, zero, conj, real, imag, abs, abs2
+import Base: -, +, *, /, \, ∘, zero, conj, real, imag, abs, abs2
+import LinearAlgebra: transpose!, transpose
 
+export tensorproduct!
 
 # Identity operator
 
@@ -123,26 +125,49 @@ v (in grid orientation)
   product!(typeof(p)(), p, q)
 end
 
-function tensorproduct!(q::EdgeGradient{C,D,NX,NY},u::Edges{C,NX,NY},v::Edges{C,NX,NY}) where {C<:CellType,D<:CellType,NX,NY}
-    utmp = zero(q)
-    vtmp = zero(q)
-    grid_interpolate!(utmp,u)
-    grid_interpolate!(vtmp,v)
-    q.dudx .= utmp.dudx ∘ vtmp.dudx
-    q.dudy .= utmp.dvdx ∘ vtmp.dudy
-    q.dvdx .= utmp.dudy ∘ vtmp.dvdx
-    q.dvdy .= utmp.dvdy ∘ vtmp.dvdy
+"""
+    tensorproduct!(q::EdgeGradient,u::Edges,v::Edges,ut::EdgeGradient,vt::EdgeGradient)
+
+In-place tensor product of `u` and `v`, with the result returned in `q`. The
+`ut` and `vt` are supplied as temporary storage.
+"""
+function tensorproduct!(q::EdgeGradient{C,D,NX,NY},u::Edges{C,NX,NY},v::Edges{C,NX,NY},
+                        ut::EdgeGradient{C,D,NX,NY},vt::EdgeGradient{C,D,NX,NY}) where {C<:CellType,D<:CellType,NX,NY}
+    grid_interpolate!(ut,u)
+    grid_interpolate!(vt,v)
+    q.dudx .= ut.dudx ∘ vt.dudx
+    q.dudy .= ut.dvdx ∘ vt.dudy
+    q.dvdx .= ut.dudy ∘ vt.dvdx
+    q.dvdy .= ut.dvdy ∘ vt.dvdy
     return q
 end
 
+tensorproduct!(q::EdgeGradient{C,D,NX,NY},u::Edges{C,NX,NY},v::Edges{C,NX,NY}) where {C<:CellType,D<:CellType,NX,NY} =
+        tensorproduct!(q,u,v,zero(q),zero(q))
+
 (*)(u::Edges{C,NX,NY},v::Edges{C,NX,NY}) where {C<:CellType,NX,NY} = tensorproduct!(EdgeGradient(C,u),u,v)
 
-function transpose(q::EdgeGradient{C,D,NX,NY}) where {C<:CellType,D<:CellType,NX,NY}
-    qt = deepcopy(q)
+
+"""
+    transpose!(pt::EdgeGradient,p::EdgeGradient)
+
+In-place element-by-element transpose of `EdgeGradient` `p`.
+"""
+function transpose!(qt::EdgeGradient{C,D,NX,NY},q::EdgeGradient{C,D,NX,NY}) where {C<:CellType,D<:CellType,NX,NY}
+    qt.dudx .= q.dudx
     qt.dudy .= q.dvdx
     qt.dvdx .= q.dudy
+    qt.dvdy .= q.dvdy
     return qt
 end
+
+"""
+    transpose(p::EdgeGradient) -> EdgeGradient
+
+Element-by-element transpose of `EdgeGradient` `p`
+"""
+transpose(q::EdgeGradient{C,D,NX,NY}) where {C<:CellType,D<:CellType,NX,NY} =
+    transpose!(zero(q),q)
 
 
 zero(::Type{T}) where {T <: GridData} = T()
