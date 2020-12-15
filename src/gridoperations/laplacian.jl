@@ -4,7 +4,7 @@
     laplacian!(v,w)
 
 Evaluate the discrete Laplacian of `w` and return it as `v`. The data `w` can be
-of type dual/primary nodes or edges; `v` must be of the same type.
+of type dual/primary nodes or edge components or edges; `v` must be of the same type.
 
 # Example
 
@@ -47,6 +47,52 @@ function laplacian!(out::Nodes{Primal,NX, NY}, w::Nodes{Primal,NX, NY}) where {N
     out
 end
 
+function laplacian!(out::XEdges{Dual,NX, NY}, w::XEdges{Dual,NX, NY}) where {NX, NY}
+    view(out,2:NX-2,2:NY-1) .= view(w,2:NX-2,1:NY-2) .+ view(w,1:NX-3,2:NY-1) .+
+                               view(w,3:NX-1,2:NY-1) .+ view(w,2:NX-2,3:NY) .-
+                               4.0.*view(w,2:NX-2,2:NY-1)
+    out
+end
+
+function laplacian!(out::YEdges{Dual,NX, NY}, w::YEdges{Dual,NX, NY}) where {NX, NY}
+    view(out,2:NX-1,2:NY-2) .= view(w,2:NX-1,1:NY-3) .+ view(w,1:NX-2,2:NY-2) .+
+                               view(w,3:NX,2:NY-2)   .+ view(w,2:NX-1,3:NY-1) .-
+                               4.0.*view(w,2:NX-1,2:NY-2)
+    out
+end
+
+
+function laplacian!(out::XEdges{Primal,NX, NY}, w::XEdges{Primal,NX, NY}) where {NX, NY}
+   view(out,2:NX-1,2:NY-2) .= view(w,2:NX-1,1:NY-3) .+ view(w,1:NX-2,2:NY-2) .+
+                              view(w,3:NX,2:NY-2) .+ view(w,2:NX-1,3:NY-1) .-
+                              4.0.*view(w,2:NX-1,2:NY-2)
+    out
+end
+
+function laplacian!(out::YEdges{Primal,NX, NY}, w::YEdges{Primal,NX, NY}) where {NX, NY}
+   view(out,2:NX-2,2:NY-1) .= view(w,2:NX-2,1:NY-2) .+ view(w,1:NX-3,2:NY-1) .+
+                                view(w,3:NX-1,2:NY-1) .+ view(w,2:NX-2,3:NY) .-
+                               4.0.*view(w,2:NX-2,2:NY-1)
+    out
+end
+
+function laplacian!(out::Edges{C,NX, NY}, w::Edges{C,NX, NY}) where {C,NX, NY}
+  laplacian!(out.u,w.u)
+  laplacian!(out.v,w.v)
+  out
+end
+
+function laplacian!(out::EdgeGradient{C,D,NX, NY}, w::EdgeGradient{C,D,NX, NY}) where {C,D,NX, NY}
+  laplacian!(out.dudx,w.dudx)
+  laplacian!(out.dvdx,w.dvdx)
+  laplacian!(out.dudy,w.dudy)
+  laplacian!(out.dvdy,w.dvdy)
+  out
+end
+
+
+
+#=
 function laplacian!(out::Edges{Dual,NX, NY}, w::Edges{Dual,NX, NY}) where {NX, NY}
   view(out.u,2:NX-2,2:NY-1) .= view(w.u,2:NX-2,1:NY-2) .+ view(w.u,1:NX-3,2:NY-1) .+
                           view(w.u,3:NX-1,2:NY-1) .+ view(w.u,2:NX-2,3:NY) .-
@@ -62,7 +108,9 @@ function laplacian!(out::Edges{Dual,NX, NY}, w::Edges{Dual,NX, NY}) where {NX, N
   #end
   out
 end
+=#
 
+#=
 function laplacian!(out::Edges{Primal,NX, NY}, w::Edges{Primal,NX, NY}) where {NX, NY}
   view(out.u,2:NX-1,2:NY-2) .= view(w.u,2:NX-1,1:NY-3) .+ view(w.u,1:NX-2,2:NY-2) .+
                                view(w.u,3:NX,2:NY-2) .+ view(w.u,2:NX-1,3:NY-1) .-
@@ -78,6 +126,7 @@ function laplacian!(out::Edges{Primal,NX, NY}, w::Edges{Primal,NX, NY}) where {N
   #end
   out
 end
+=#
 
 """
     laplacian(w)
@@ -115,8 +164,20 @@ function laplacian(w::Nodes{C,NX,NY}) where {C<:CellType,NX,NY}
   laplacian!(Nodes(C,w), w)
 end
 
+function laplacian(w::XEdges{C,NX,NY}) where {C<:CellType,NX,NY}
+  laplacian!(XEdges(C,w), w)
+end
+
+function laplacian(w::YEdges{C,NX,NY}) where {C<:CellType,NX,NY}
+  laplacian!(YEdges(C,w), w)
+end
+
 function laplacian(w::Edges{C,NX,NY}) where {C<:CellType,NX,NY}
   laplacian!(Edges(C,w), w)
+end
+
+function laplacian(w::EdgeGradient{C,D,NX,NY}) where {C<:CellType,D<:CellType,NX,NY}
+  laplacian!(EdgeGradient(C,w), w)
 end
 
 """
@@ -148,13 +209,15 @@ end
 
 """
     plan_laplacian(dims::Tuple,[with_inverse=false],[fftw_flags=FFTW.ESTIMATE],
-                          [dx=1.0],[dtype=Float64])
+                          [factor=1.0],[dx=1.0],[dtype=Float64])
 
 Constructor to set up an operator for evaluating the discrete Laplacian on
 dual or primal nodal data of dimension `dims`. If the optional keyword
 `with_inverse` is set to `true`, then it also sets up the inverse Laplacian
 (the lattice Green's function, LGF). These can then be applied, respectively, with
-`*` and `\\` operations on data of the appropriate size. The optional parameter
+`*` and `\\` operations on data of the appropriate size. The optional
+parameter `factor` is a scalar used to multiply the result of the operator and
+divide the inverse. The optional parameter
 `dx` is used in adjusting the uniform value of the LGF to match the behavior
 of the continuous analog at large distances; this is set to 1.0 by default. The
 type of data on which to act is floating point by default, but can also be ComplexF64.
@@ -191,13 +254,15 @@ function plan_laplacian end
 
 """
     plan_laplacian!(dims::Tuple,[with_inverse=false],[fftw_flags=FFTW.ESTIMATE],
-                          [dx=1.0])
+                          [factor=1.0])
 
 Same as [`plan_laplacian`](@ref), but operates in-place on data.
 """
 function plan_laplacian! end
 
-struct Laplacian{NX, NY, T, R, DX, inplace}
+struct Laplacian{NX, NY, T, R,inplace}
+    factor::T
+    dx::Float64
     conv::Union{CircularConvolution{NX, NY, T},Nothing}
 end
 
@@ -206,57 +271,112 @@ end
 for (lf,inplace) in ((:plan_laplacian,false),
                      (:plan_laplacian!,true))
     @eval function $lf(dims::Tuple{Int,Int};
-                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, dtype = Float64)
+                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Real = 1.0, dx = 1.0, dtype = Float64)
         NX, NY = dims
         if !with_inverse
-            return Laplacian{NX, NY, dtype, false, dx, $inplace}(nothing)
+            return Laplacian{NX, NY, dtype, false, $inplace}(convert(dtype,factor),convert(Float64,dx),nothing)
         end
 
         G = view(LGF_TABLE, 1:NX, 1:NY)
-        Laplacian{NX, NY, dtype, true, dx, $inplace}(CircularConvolution(G, fftw_flags,dtype=dtype))
+        Laplacian{NX, NY, dtype, true, $inplace}(convert(dtype,factor),convert(Float64,dx),CircularConvolution(G, fftw_flags,dtype=dtype))
     end
 
     @eval function $lf(nx::Int, ny::Int;
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, dtype = Float64)
-        $lf((nx, ny), with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx, dtype = dtype)
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64)
+        $lf((nx, ny), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype)
     end
 
     @eval function $lf(nodes::Nodes{T,NX,NY};
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, dtype = Float64) where {T<:CellType,NX,NY}
-        $lf(node_inds(T,(NX,NY)), with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx, dtype = dtype)
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64) where {T<:CellType,NX,NY}
+        $lf(node_inds(T,(NX,NY)), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype)
     end
 end
 
 
 
-function Base.show(io::IO, L::Laplacian{NX, NY, T, R, DX, inplace}) where {NX, NY, T, R, DX, inplace}
+function Base.show(io::IO, L::Laplacian{NX, NY, T, R, inplace}) where {NX, NY, T, R, inplace}
     nodedims = "(nx = $NX, ny = $NY)"
     inverse = R ? " (and inverse)" : ""
     isinplace = inplace ? " in-place" : ""
-    print(io, "Discrete$isinplace Laplacian$inverse on a $nodedims grid acting on $T data with spacing $DX")
+    print(io, "Discrete$isinplace Laplacian$inverse on a $nodedims grid acting on $T data with
+               factor $(L.factor) and spacing $(L.dx)")
 end
 
-mul!(out::Nodes{C,NX,NY}, L::Laplacian, s::Nodes{C,NX,NY}) where {C<:CellType,NX,NY} = laplacian!(out, s)
-*(L::Laplacian{MX,MY,T,R,DX,false}, s::Nodes{C,NX,NY}) where {MX,MY,T,R,DX,C <: CellType,NX,NY} =
-      laplacian(s)
-function (*)(L::Laplacian{MX,MY,T,R,DX,true}, s::Nodes{C,NX,NY}) where {MX,MY,T,R,DX,C <: CellType,NX,NY}
-    laplacian!(s,deepcopy(s))
+#mul!(out::Nodes{C,NX,NY}, L::Laplacian, s::Nodes{C,NX,NY}) where {C<:CellType,NX,NY} = (laplacian!(out, s); out .*= L.factor)
+mul!(out::T, L::Laplacian, s::T) where T<:GridData = (laplacian!(out, s); out .*= L.factor)
+
+#*(L::Laplacian{MX,MY,T,R,false}, s::Nodes{C,NX,NY}) where {MX,MY,T,R,C <: CellType,NX,NY} =
+#      L.factor*laplacian(s)
+*(L::Laplacian{MX,MY,T,R,false}, s::GridData) where {MX,MY,T,R} =
+      L.factor*laplacian(s)
+
+#function (*)(L::Laplacian{MX,MY,T,R,true}, s::Nodes{C,NX,NY}) where {MX,MY,T,R,C <: CellType,NX,NY}
+#  mul!(s,L,deepcopy(s))
+#end
+function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
+    mul!(s,L,deepcopy(s))
 end
 
-
+#=
 function ldiv!(out::Nodes{C,NX, NY,T},
-                   L::Laplacian{MX, MY, T, true, DX, inplace},
-                   s::Nodes{C, NX, NY,T}) where {C <: CellType, NX, NY, MX, MY, T, DX, inplace}
+                   L::Laplacian{MX, MY, T, true, inplace},
+                   s::Nodes{C, NX, NY,T}) where {C <: CellType, NX, NY, MX, MY, T, inplace}
 
     mul!(out.data, L.conv, s.data)
+    inv_factor = 1.0/L.factor
 
     # Adjust the behavior at large distance to match continuous kernel
-    out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(DX))
+    out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(L.dx))
+    out.data .*= inv_factor
     out
 end
+=#
+for (datatype) in (:Nodes, :XEdges, :YEdges)
+  @eval function ldiv!(out::$datatype{C,NX, NY,T},
+                   L::Laplacian{MX, MY, T, true, inplace},
+                   s::$datatype{C, NX, NY,T}) where {C <: CellType, NX, NY, MX, MY, T, inplace}
 
-\(L::Laplacian{MX,MY,T,R,DX,false},s::Nodes{C,NX,NY}) where {MX,MY,T,R,DX,C <: CellType,NX,NY} =
+    mul!(out.data, L.conv, s.data)
+    inv_factor = 1.0/L.factor
+
+    # Adjust the behavior at large distance to match continuous kernel
+    out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(L.dx))
+    out.data .*= inv_factor
+    out
+  end
+
+  #@eval \(L::Laplacian{MX,MY,T,R,false},s::$datatype{C,NX,NY}) where {MX,MY,T,R,C <: CellType,NX,NY} =
+  #  ldiv!($datatype(C,s), L, s)
+
+
+end
+
+function ldiv!(out::Edges{C,NX,NY},L,s::Edges{C,NX,NY}) where {C,NX,NY}
+  ldiv!(out.u,L,s.u)
+  ldiv!(out.v,L,s.v)
+  out
+end
+
+function ldiv!(out::EdgeGradient{C,D,NX,NY},L,s::EdgeGradient{C,D,NX,NY}) where {C,D,NX,NY}
+  ldiv!(out.dudx,L,s.dudx)
+  ldiv!(out.dvdx,L,s.dvdx)
+  ldiv!(out.dudy,L,s.dudy)
+  ldiv!(out.dvdy,L,s.dvdy)
+  out
+end
+
+\(L::Laplacian{MX,MY,T,R,false},s::G) where {MX,MY,T,R,G<:GridData} =
+  ldiv!(G(), L, s)
+
+\(L::Laplacian{MX,MY,T,R,true},s::GridData{NX,NY}) where {MX,MY,T,R,NX,NY} =
+    ldiv!(s, L, deepcopy(s))
+
+
+
+#=
+\(L::Laplacian{MX,MY,T,R,false},s::Nodes{C,NX,NY}) where {MX,MY,T,R,C <: CellType,NX,NY} =
   ldiv!(Nodes(C,s), L, s)
 
-\(L::Laplacian{MX,MY,T,R,DX,true},s::Nodes{C,NX,NY}) where {MX,MY,T,R,DX,C <: CellType,NX,NY} =
+\(L::Laplacian{MX,MY,T,R,true},s::Nodes{C,NX,NY}) where {MX,MY,T,R,C <: CellType,NX,NY} =
   ldiv!(s, L, deepcopy(s))
+=#

@@ -1,3 +1,6 @@
+import Base: exp
+export exp!
+
 # Integrating factor
 
 intfact(x, a) = exp(-2a)besseli(x,2a)
@@ -80,6 +83,23 @@ for (lf,inplace) in ((:plan_intfact,false),
 
 end
 
+"""
+    exp(L::Laplacian,a[,prototype=Nodes(Dual)])
+
+Create the integrating factor exp(L*a). The default size of the operator is
+the one appropriate for dual nodes. Note that, if `L` contains a factor,
+it scales the exponent with this factor.
+"""
+exp(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY))) where {NX,NY} = plan_intfact(L.factor*a,prototype)
+
+"""
+    exp!(L::Laplacian,a[,prototype=Nodes(Dual)])
+
+Create the in-place integrating factor exp(L*a). The default size of the operator is
+the one appropriate for dual nodes. Note that, if `L` contains a factor,
+it scales the exponent with this factor.
+"""
+exp!(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY))) where {NX,NY} = plan_intfact!(L.factor*a,prototype)
 
 function Base.show(io::IO, E::IntFact{NX, NY, a, inplace}) where {NX, NY, a, inplace}
     nodedims = "(nx = $NX, ny = $NY)"
