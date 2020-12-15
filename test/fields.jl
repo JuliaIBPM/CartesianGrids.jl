@@ -502,6 +502,12 @@ import LinearAlgebra: norm, dot, mul!
     @test lapψ[i,j]≈1.0
     @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
             isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+
+    L2 = plan_laplacian(nodeunit,with_inverse=true)
+    ψ = L2\nodeunit
+    lapψ = L2*ψ
+    @test lapψ[i,j]≈1.0
+
   end
 
   Lscale = plan_laplacian(nx,ny;with_inverse=true,factor=2.0)
@@ -877,6 +883,14 @@ end
         L = plan_laplacian(s,factor=2)
         EL = exp(L,1)
         @test EL*s ≈ E2*s
+
+        p = XEdges(Primal,s)
+        p[15,15] = 1.0
+        @test E1*(E1*p) ≈ E2*p
+
+        q = Edges(Primal,s)
+        q.u[15,15] = 1.0
+        @test E1*(E1*q) ≈ E2*q
 
     end
 

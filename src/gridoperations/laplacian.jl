@@ -286,9 +286,9 @@ for (lf,inplace) in ((:plan_laplacian,false),
         $lf((nx, ny), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype)
     end
 
-    @eval function $lf(nodes::Nodes{T,NX,NY};
+    @eval function $lf(w::ScalarGridData;
         with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64) where {T<:CellType,NX,NY}
-        $lf(node_inds(T,(NX,NY)), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype)
+        $lf(size(w), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype)
     end
 end
 
@@ -302,17 +302,11 @@ function Base.show(io::IO, L::Laplacian{NX, NY, T, R, inplace}) where {NX, NY, T
                factor $(L.factor) and spacing $(L.dx)")
 end
 
-#mul!(out::Nodes{C,NX,NY}, L::Laplacian, s::Nodes{C,NX,NY}) where {C<:CellType,NX,NY} = (laplacian!(out, s); out .*= L.factor)
 mul!(out::T, L::Laplacian, s::T) where T<:GridData = (laplacian!(out, s); out .*= L.factor)
 
-#*(L::Laplacian{MX,MY,T,R,false}, s::Nodes{C,NX,NY}) where {MX,MY,T,R,C <: CellType,NX,NY} =
-#      L.factor*laplacian(s)
 *(L::Laplacian{MX,MY,T,R,false}, s::GridData) where {MX,MY,T,R} =
       L.factor*laplacian(s)
 
-#function (*)(L::Laplacian{MX,MY,T,R,true}, s::Nodes{C,NX,NY}) where {MX,MY,T,R,C <: CellType,NX,NY}
-#  mul!(s,L,deepcopy(s))
-#end
 function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
     mul!(s,L,deepcopy(s))
 end
@@ -351,13 +345,13 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
 
 end
 
-function ldiv!(out::Edges{C,NX,NY},L,s::Edges{C,NX,NY}) where {C,NX,NY}
+function ldiv!(out::Edges{C,NX,NY},L::Laplacian,s::Edges{C,NX,NY}) where {C,NX,NY}
   ldiv!(out.u,L,s.u)
   ldiv!(out.v,L,s.v)
   out
 end
 
-function ldiv!(out::EdgeGradient{C,D,NX,NY},L,s::EdgeGradient{C,D,NX,NY}) where {C,D,NX,NY}
+function ldiv!(out::EdgeGradient{C,D,NX,NY},L::Laplacian,s::EdgeGradient{C,D,NX,NY}) where {C,D,NX,NY}
   ldiv!(out.dudx,L,s.dudx)
   ldiv!(out.dvdx,L,s.dvdx)
   ldiv!(out.dudy,L,s.dudy)
