@@ -77,29 +77,11 @@ for (lf,inplace) in ((:plan_intfact,false),
         IntFact{NX, NY, a, $inplace}(CircularConvolution(qtab, fftw_flags))
       end
 
-      @eval $lf(a::Real,nodes::Nodes{T,NX,NY}; fftw_flags = FFTW.ESTIMATE) where {T<:CellType,NX,NY} =
-          $lf(a,node_inds(T,(NX,NY)), fftw_flags = fftw_flags)
+      @eval $lf(a::Real,w::ScalarGridData; fftw_flags = FFTW.ESTIMATE) where {T<:CellType,NX,NY} =
+          $lf(a,size(w), fftw_flags = fftw_flags)
 
 
 end
-
-"""
-    exp(L::Laplacian,a[,prototype=Nodes(Dual)])
-
-Create the integrating factor exp(L*a). The default size of the operator is
-the one appropriate for dual nodes. Note that, if `L` contains a factor,
-it scales the exponent with this factor.
-"""
-exp(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY))) where {NX,NY} = plan_intfact(L.factor*a,prototype)
-
-"""
-    exp!(L::Laplacian,a[,prototype=Nodes(Dual)])
-
-Create the in-place integrating factor exp(L*a). The default size of the operator is
-the one appropriate for dual nodes. Note that, if `L` contains a factor,
-it scales the exponent with this factor.
-"""
-exp!(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY))) where {NX,NY} = plan_intfact!(L.factor*a,prototype)
 
 function Base.show(io::IO, E::IntFact{NX, NY, a, inplace}) where {NX, NY, a, inplace}
     nodedims = "(nx = $NX, ny = $NY)"
@@ -107,6 +89,57 @@ function Base.show(io::IO, E::IntFact{NX, NY, a, inplace}) where {NX, NY, a, inp
     print(io, "$isinplace with parameter $a on a $nodedims grid")
 end
 
+"""
+    exp(L::Laplacian,a[,Nodes(Dual)])
+
+Create the integrating factor exp(L*a). The default size of the operator is
+the one appropriate for dual nodes; another size can be specified by supplying
+grid data in the optional third argument. Note that, if `L` contains a factor,
+it scales the exponent with this factor.
+"""
+exp(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY))) where {NX,NY} = plan_intfact(L.factor*a,prototype)
+
+"""
+    exp!(L::Laplacian,a[,Nodes(Dual)])
+
+Create the in-place version of the integrating factor exp(L*a).
+"""
+exp!(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY))) where {NX,NY} = plan_intfact!(L.factor*a,prototype)
+
+
+
+for (datatype) in (:Nodes, :XEdges, :YEdges)
+  @eval function mul!(out::$datatype{T,NX, NY},
+                     E::IntFact{MX, MY, a, inplace},
+                     s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, a, inplace}
+
+      mul!(out.data, E.conv, s.data)
+      out
+  end
+
+  @eval function mul!(out::$datatype{T,NX, NY},
+                     E::IntFact{MX, MY, 0.0, inplace},
+                     s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
+      out .= deepcopy(s)
+  end
+
+end
+
+function mul!(out::Edges{C,NX,NY},E::IntFact,s::Edges{C,NX,NY}) where {C,NX,NY}
+  mul!(out.u,E,s.u)
+  mul!(out.v,E,s.v)
+  out
+end
+
+function mul!(out::EdgeGradient{C,D,NX,NY},E::IntFact,s::EdgeGradient{C,D,NX,NY}) where {C,D,NX,NY}
+  mul!(out.dudx,E,s.dudx)
+  mul!(out.dvdx,E,s.dvdx)
+  mul!(out.dudy,E,s.dudy)
+  mul!(out.dvdy,E,s.dvdy)
+  out
+end
+
+#=
 function mul!(out::Nodes{T,NX, NY},
                    E::IntFact{MX, MY, a, inplace},
                    s::Nodes{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, a, inplace}
@@ -120,9 +153,10 @@ function mul!(out::Nodes{T,NX, NY},
                    s::Nodes{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
     out .= deepcopy(s)
 end
+=#
 
-*(E::IntFact{MX,MY,a,false},s::Nodes{T,NX,NY}) where {MX,MY,a,T <: CellType, NX,NY} =
-  mul!(Nodes(T,s), E, s)
+*(E::IntFact{MX,MY,a,false},s::G) where {MX,MY,a,G<:GridData} =
+  mul!(G(), E, s)
 
-*(E::IntFact{MX,MY,a,true},s::Nodes{T,NX,NY}) where {MX,MY,a,T <: CellType, NX,NY} =
+*(E::IntFact{MX,MY,a,true},s::GridData) where {MX,MY,a} =
     mul!(s, E, deepcopy(s))
