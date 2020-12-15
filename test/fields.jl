@@ -4,7 +4,7 @@ struct Not{T}
   idx::T
 end
 import Base: to_indices, uncolon, tail, _maybetail
-import LinearAlgebra: norm, dot
+import LinearAlgebra: norm, dot, mul!
 
 @inline to_indices(A, inds, I::Tuple{Not, Vararg{Any}}) =
    (setdiff(uncolon(inds, (:, tail(I)...)), I[1].idx), to_indices(A, _maybetail(inds), tail(I))...)
@@ -479,6 +479,22 @@ import LinearAlgebra: norm, dot
             isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
   end
 
+  Lscale = plan_laplacian(nx,ny;with_inverse=true,factor=2.0)
+
+  @testset "Laplacian of the LGF with factor" begin
+     ψ = Lscale\cellunit
+     lapψ = Lscale*ψ
+     @test lapψ[i,j]≈1.0
+
+     ψ = Lscale*cellunit
+     @test ψ[i,j]≈-8.0 && ψ[i+1,j]≈2.0
+
+     mul!(ψ,Lscale,cellunit)
+     @test ψ[i,j]≈-8.0 && ψ[i-1,j]≈2.0
+
+
+  end
+
 
   @testset "LGF for Helmholtz equation" begin
     alpha = 0.02
@@ -729,6 +745,23 @@ L = plan_laplacian(nx,ny;with_inverse=true,dtype=ComplexF64)
   @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=100.0*eps()) &&
           isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=100.0*eps())
 end
+
+Lscale = plan_laplacian(nx,ny;with_inverse=true,factor=2.0,dtype=ComplexF64)
+
+@testset "Laplacian of the LGF with factor" begin
+   ψ = Lscale\cellunit
+   lapψ = Lscale*ψ
+   @test lapψ[i,j]≈1.0*a
+
+   ψ = Lscale*cellunit
+   @test ψ[i,j]≈-8.0*a && ψ[i+1,j]≈2.0*a
+
+   mul!(ψ,Lscale,cellunit)
+   @test ψ[i,j]≈-8.0*a && ψ[i-1,j]≈2.0*a
+
+
+end
+
 
 α = 0.07
 LH = plan_helmholtz(nx,ny,α;with_inverse=true)
