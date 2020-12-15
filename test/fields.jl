@@ -477,6 +477,31 @@ import LinearAlgebra: norm, dot, mul!
     @test lapψ[i,j]≈1.0
     @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
             isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+
+    ψ = L\facexunit.u
+    lapψ = L*ψ
+    @test lapψ[i,j]≈1.0
+    @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
+            isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+
+    ψ = L\faceyunit.v
+    lapψ = L*ψ
+    @test lapψ[i,j]≈1.0
+    @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
+            isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+
+
+    ψ = L\dualfacexunit.u
+    lapψ = L*ψ
+    @test lapψ[i,j]≈1.0
+    @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
+            isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+
+    ψ = L\dualfaceyunit.v
+    lapψ = L*ψ
+    @test lapψ[i,j]≈1.0
+    @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
+            isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
   end
 
   Lscale = plan_laplacian(nx,ny;with_inverse=true,factor=2.0)
@@ -848,6 +873,10 @@ end
         E! * s
 
         @test s ≈ E2*s2
+
+        L = plan_laplacian(s,factor=2)
+        EL = exp(L,1)
+        @test EL*s ≈ E2*s
 
     end
 
