@@ -14,11 +14,17 @@ intfact(x, y, z, a) = exp(-6a)besseli(x,2a)besseli(y,2a)besseli(z,2a)
     plan_intfact(a::Real,dims::Tuple,[fftw_flags=FFTW.ESTIMATE])
 
 Constructor to set up an operator for evaluating the integrating factor with
-real-valued parameter `a`. This can then be applied with the `*` operation on
+real-valued parameter `a`. This can then be applied with the `*` or `\` operation on
 data of the appropriate size.
 
-The `dims` argument can be replaced with `w::Nodes` to specify the size of the
-domain.
+Note that `a` can be positive, negative, or zero. However, if `a` is negative,
+then only the `\` operation is actually correct; the `*` operation merely
+returns the identity to avoid excessive (and noisy) calculation. Similarly, if
+`a` is positive, the `\` operation returns the identity. Thus, these operations are
+not inverses of one another. If `a` is zero, both operations return the identity.
+
+The `dims` argument can be replaced with data of type `ScalarGridData` to
+specify the size of the domain.
 
 # Example
 
@@ -52,8 +58,16 @@ operation on data.
 """
 function plan_intfact! end
 
+abstract type IFExpSign end
+abstract type PosExp <: IFExpSign end
+abstract type NegExp <: IFExpSign end
+abstract type ZeroExp <: IFExpSign end
+NonNegExp = Union{PosExp,ZeroExp}
+NonPosExp = Union{NegExp,ZeroExp}
 
-struct IntFact{NX, NY, a, inplace}
+
+struct IntFact{NX, NY, PA<:IFExpSign, inplace}
+    a::Float64
     conv::Union{CircularConvolution{NX, NY},Nothing}
 end
 
@@ -64,17 +78,23 @@ for (lf,inplace) in ((:plan_intfact,false),
         NX, NY = dims
 
         if a == 0
-          return IntFact{NX, NY, 0.0, $inplace}(nothing)
+          return IntFact{NX, NY, ZeroExp, $inplace}(0.0,nothing)
+        elseif a < 0
+          a_internal = abs(convert(Float64,a))
+          signType = NegExp
+        else
+          a_internal = convert(Float64,a)
+          signType = PosExp
         end
 
         #qtab = [intfact(x, y, a) for x in 0:NX-1, y in 0:NY-1]
         Nmax = 0
-        while abs(intfact(Nmax,0,a)) > eps(Float64)
+        while abs(intfact(Nmax,0,a_internal)) > eps(Float64)
           Nmax += 1
         end
-        qtab = [max(x,y) <= Nmax ? intfact(x, y, a) : 0.0 for x in 0:NX-1, y in 0:NY-1]
+        qtab = [max(x,y) <= Nmax ? intfact(x, y, a_internal) : 0.0 for x in 0:NX-1, y in 0:NY-1]
         #IntFact{NX, NY, a, $inplace}(Nullable(CircularConvolution(qtab, fftw_flags)))
-        IntFact{NX, NY, a, $inplace}(CircularConvolution(qtab, fftw_flags))
+        IntFact{NX, NY, signType, $inplace}(a_internal,CircularConvolution(qtab, fftw_flags))
       end
 
       @eval $lf(a::Real,w::ScalarGridData; fftw_flags = FFTW.ESTIMATE) where {T<:CellType,NX,NY} =
@@ -83,10 +103,11 @@ for (lf,inplace) in ((:plan_intfact,false),
 
 end
 
-function Base.show(io::IO, E::IntFact{NX, NY, a, inplace}) where {NX, NY, a, inplace}
+function Base.show(io::IO, E::IntFact{NX, NY, signType, inplace}) where {NX, NY, signType, inplace}
     nodedims = "(nx = $NX, ny = $NY)"
+    atxt = signType == NegExp ? "$(-E.a)" : "$(E.a)"
     isinplace = inplace ? "In-place integrating factor" : "Integrating factor"
-    print(io, "$isinplace with parameter $a on a $nodedims grid")
+    print(io, "$isinplace with parameter $atxt on a $nodedims grid")
 end
 
 """
@@ -110,34 +131,69 @@ exp!(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY))) where {NX,NY} = plan_i
 
 for (datatype) in (:Nodes, :XEdges, :YEdges)
   @eval function mul!(out::$datatype{T,NX, NY},
-                     E::IntFact{MX, MY, a, inplace},
-                     s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, a, inplace}
+                     E::IntFact{MX, MY, PosExp, inplace},
+                     s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
 
       mul!(out.data, E.conv, s.data)
       out
   end
 
   @eval function mul!(out::$datatype{T,NX, NY},
-                     E::IntFact{MX, MY, 0.0, inplace},
+                     E::IntFact{MX, MY, NegExp, inplace},
+                     s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
+
+      out .= deepcopy(s)
+  end
+
+  @eval function ldiv!(out::$datatype{T,NX, NY},
+                     E::IntFact{MX, MY, PosExp, inplace},
+                     s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
+
+      out .= deepcopy(s)
+  end
+
+  @eval function ldiv!(out::$datatype{T,NX, NY},
+                     E::IntFact{MX, MY, NegExp, inplace},
+                     s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
+
+      mul!(out.data, E.conv, s.data)
+      out
+  end
+
+
+  @eval function mul!(out::$datatype{T,NX, NY},
+                     E::IntFact{MX, MY, ZeroExp, inplace},
+                     s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
+      out .= deepcopy(s)
+  end
+
+  @eval function ldiv!(out::$datatype{T,NX, NY},
+                     E::IntFact{MX, MY, ZeroExp, inplace},
                      s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
       out .= deepcopy(s)
   end
 
 end
 
-function mul!(out::Edges{C,NX,NY},E::IntFact,s::Edges{C,NX,NY}) where {C,NX,NY}
-  mul!(out.u,E,s.u)
-  mul!(out.v,E,s.v)
-  out
+for (op) in (:mul!,:ldiv!)
+  @eval function $op(out::Edges{C,NX,NY},E::IntFact,s::Edges{C,NX,NY}) where {C,NX,NY}
+    $op(out.u,E,s.u)
+    $op(out.v,E,s.v)
+    out
+  end
+
+  @eval function $op(out::EdgeGradient{C,D,NX,NY},E::IntFact,s::EdgeGradient{C,D,NX,NY}) where {C,D,NX,NY}
+    $op(out.dudx,E,s.dudx)
+    $op(out.dvdx,E,s.dvdx)
+    $op(out.dudy,E,s.dudy)
+    $op(out.dvdy,E,s.dvdy)
+    out
+  end
+
 end
 
-function mul!(out::EdgeGradient{C,D,NX,NY},E::IntFact,s::EdgeGradient{C,D,NX,NY}) where {C,D,NX,NY}
-  mul!(out.dudx,E,s.dudx)
-  mul!(out.dvdx,E,s.dvdx)
-  mul!(out.dudy,E,s.dudy)
-  mul!(out.dvdy,E,s.dvdy)
-  out
-end
+
+
 
 #=
 function mul!(out::Nodes{T,NX, NY},
@@ -155,8 +211,15 @@ function mul!(out::Nodes{T,NX, NY},
 end
 =#
 
-*(E::IntFact{MX,MY,a,false},s::G) where {MX,MY,a,G<:GridData} =
+*(E::IntFact{MX,MY,signType,false},s::G) where {MX,MY,signType,G<:GridData} =
   mul!(G(), E, s)
 
-*(E::IntFact{MX,MY,a,true},s::GridData) where {MX,MY,a} =
+*(E::IntFact{MX,MY,signType,true},s::GridData) where {MX,MY,signType} =
     mul!(s, E, deepcopy(s))
+
+
+\(E::IntFact{MX,MY,signType,false},s::G) where {MX,MY,signType,G<:GridData} =
+  ldiv!(G(), E, s)
+
+\(E::IntFact{MX,MY,signType,true},s::GridData) where {MX,MY,signType} =
+    ldiv!(s, E, deepcopy(s))

@@ -892,6 +892,9 @@ end
         q.u[15,15] = 1.0
         @test E1*(E1*q) ≈ E2*q
 
+        EmL = exp(L,-1)
+        @test EmL\s == EL*s
+
     end
 
     @testset "Discrete Divergence" begin
