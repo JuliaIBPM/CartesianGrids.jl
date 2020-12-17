@@ -266,6 +266,7 @@ struct Laplacian{NX, NY, T, R,inplace}
     conv::Union{CircularConvolution{NX, NY, T},Nothing}
 end
 
+Base.eltype(::Laplacian{NX,NY,T}) where {NX,NY,T} = T
 
 
 for (lf,inplace) in ((:plan_laplacian,false),
