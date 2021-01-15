@@ -2,12 +2,6 @@
 
 import Base: *, -, +, show
 
-export AbstractSpatialField, Gaussian, radius, center, strength,
-       EmptySpatialField,
-       SpatialGaussian,
-       GeneratedField, datatype, grid,
-       PulseField
-
 abstract type AbstractSpatialField end
 abstract type AbstractGeneratedField end
 
@@ -68,20 +62,55 @@ strength(g::Gaussian) = g.A
 
 (g::Gaussian)(x) = g.fact*gaussian((x-center(g))/radius(g))
 
+struct DGaussian
+  σ :: Float64
+  x0 :: Float64
+  A :: Float64
+  fact :: Float64
+end
+DGaussian(σ,x0,A) = DGaussian(σ,x0,A, A/sqrt(π)/σ^2)
+
+
+radius(g::DGaussian) = g.σ
+center(g::DGaussian) = g.x0
+strength(g::DGaussian) = g.A
+
+@inline dgaussian(r;tol=6.0) = abs(r) < tol ? -2*r*exp(-r^2) : 0.0
+
+(g::DGaussian)(x) = g.fact*dgaussian((x-center(g))/radius(g))
+
+
+
 ## Spatial Gaussian field ##
 
-struct SpatialGaussian <: AbstractSpatialField
-  gx :: Gaussian
-  gy :: Gaussian
-  A :: Real
+"""
+    SpatialGaussian(σx,σy,x0,y0,A[,derivdir=0])
+
+Set up a spatial field in the form of a Gaussian centered at `x0,y0` with
+radii `σx` and `σy` in the respective directions and amplitude `A`. If the
+optional parameter `deriv` is set to 1 or 2, then it returns the first
+derivative of a Gaussian in that direction (`x` or `y`, respectively).
+"""
+struct SpatialGaussian{GX,GY} <: AbstractSpatialField
+  gx :: GX
+  gy :: GY
+  A :: Float64
+  SpatialGaussian(gx,gy,A) = new{typeof(gx),typeof(gy)}(gx,gy,A)
 end
 
-SpatialGaussian(σx::Real,σy::Real,x0::Real,y0::Real,A::Real) =
-          SpatialGaussian(Gaussian(σx,x0,A),Gaussian(σy,y0,1),A)
+SpatialGaussian(σx,σy,x0,y0,A;deriv::Int=0) = _spatialdgaussian(σx,σy,x0,y0,A,Val(deriv))
 
-SpatialGaussian(σ::Real,x0::Real,y0::Real,A::Real) = SpatialGaussian(σ,σ,x0,y0,A)
+_spatialdgaussian(σx,σy,x0,y0,A,::Val{0}) = SpatialGaussian(Gaussian(σx,x0,A),Gaussian(σy,y0,1),A)
+_spatialdgaussian(σx,σy,x0,y0,A,::Val{1}) = SpatialGaussian(DGaussian(σx,x0,A),Gaussian(σy,y0,1),A)
+_spatialdgaussian(σx,σy,x0,y0,A,::Val{2}) = SpatialGaussian(Gaussian(σx,x0,A),DGaussian(σy,y0,1),A)
+
+
+SpatialGaussian(σ,x0,y0,A;deriv::Int=0) = SpatialGaussian(σ,σ,x0,y0,A,deriv=deriv)
+
 
 (g::SpatialGaussian)(x,y) = g.gx(x)*g.gy(y)
+
+
 
 ## Scaling spatial fields
 

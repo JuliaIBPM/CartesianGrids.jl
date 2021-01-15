@@ -305,6 +305,35 @@ import LinearAlgebra: norm, dot, mul!
 
   end
 
+  @testset "Nonlinear operations" begin
+    usq = Nodes(Primal,facexunit)
+    magsq!(usq,facexunit)
+    @test usq[i,j] == 0.5
+    @test magsq(facexunit) == usq
+
+    magsq!(usq,faceyunit)
+    @test usq[i,j] == 0.5
+
+    usq = Nodes(Dual,facexunit)
+    magsq!(usq,dualfacexunit)
+    @test usq[i,j] == 0.5
+
+    magsq!(usq,dualfaceyunit)
+    @test usq[i,j] == 0.5
+
+    magu = Nodes(Primal,facexunit)
+    mag!(magu,facexunit)
+    @test magu[i,j] == sqrt(0.5)
+    @test mag(facexunit) == magu
+
+    magu = Nodes(Dual,facexunit)
+    mag!(magu,dualfacexunit)
+    @test magu[i,j] == sqrt(0.5)
+    @test mag(dualfacexunit) == magu
+
+
+  end
+
   @testset "div curl" begin
     @test iszero(divergence(curl(cellunit)))
     @test iszero(curl(grad(nodeunit)))

@@ -1,4 +1,51 @@
 """
+   magsq!(magusq::Nodes{Primal/Dual},u::Edges{Primal/Dual})
+
+Calculate the in-placed squared magnitude of vector grid data `u`, placing the result on
+the cell centers in `magusq`.
+"""
+function magsq!(umagsq::Nodes{C},u::Edges{C}) where {C <: CellType}
+
+  usq = u∘u
+  usq_nodes = Nodes(C,u)
+
+  grid_interpolate!(usq_nodes,usq.u)
+  umagsq .= usq_nodes
+
+  grid_interpolate!(usq_nodes,usq.v)
+  umagsq .+= usq_nodes
+
+  return umagsq
+end
+
+"""
+   magsq(u::Edges{Primal/Dual}) -> Nodes{Primal/Dual}
+
+Calculate the squared magnitude of vector grid data `u`, placing the result on
+the cell centers.
+"""
+magsq(u::Edges{C}) where {C<:CellType} = magsq!(Nodes(C,u),u)
+
+"""
+    mag!(magu::Nodes{Primal/Dual},u::Edges{Primal/Dual})
+
+Calculate the in-placed magnitude of vector grid data `u`, placing the result on
+the cell centers in `magu`.
+"""
+function mag!(magu::Nodes{C},u::Edges{C}) where {C <: CellType}
+    magsq!(magu,u)
+    @. magu = sqrt(magu)
+end
+
+"""
+   mag(u::Edges{Primal/Dual}) -> Nodes{Primal/Dual}
+
+Calculate the magnitude of vector grid data `u`, placing the result on
+the cell centers.
+"""
+mag(u::Edges{C}) where {C<:CellType} = mag!(Nodes(C,u),u)
+
+"""
     directional_derivative!(out,f,q)
 
 Compute the directional derivative of `f` in the direction of `q`, ``q\\cdot\\nabla f``,

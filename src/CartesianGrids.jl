@@ -27,11 +27,15 @@ export Primal, Dual, ScalarGridData, VectorGridData, TensorGridData, GridData,
        helmholtz, helmholtz!, plan_helmholtz, plan_helmholtz!,
        plan_intfact,plan_intfact!,Identity,
        product, product!, ∘,
+       magsq!,magsq,mag!,mag,
        directional_derivative!, directional_derivative_conserve!, curl_cross!,
        convective_derivative!, convective_derivative_rot!,
        DDF, GradDDF,
        Regularize, RegularizationMatrix, InterpolationMatrix,
-       CircularConvolution
+       CircularConvolution,
+       AbstractSpatialField, Gaussian, DGaussian, radius, center, strength,
+       EmptySpatialField,
+       SpatialGaussian,GeneratedField, datatype, grid, PulseField
 
 abstract type CellType end
 abstract type Primal <: CellType end
