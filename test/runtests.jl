@@ -1,20 +1,20 @@
-
 using CartesianGrids
 using Test
-##using TestSetExtensions
 
+const GROUP = get(ENV, "GROUP", "All")
 
-#@test isempty(detect_ambiguities(ViscousFlow))
-include("fields.jl")
-include("points.jl")
-include("generatedfields.jl")
+if GROUP == "All" || GROUP == "Fields"
+  include("fields.jl")
+end
 
+if GROUP == "All" || GROUP == "DDF"
+  include("ddf.jl")
+end
 
+if GROUP == "All" || GROUP == "Points"
+  include("points.jl")
+end
 
-#@testset ExtendedTestSet "All tests" begin
-#    @includetests ARGS
-#end
-
-#if isempty(ARGS)
-#    include("../docs/make.jl")
-#end
+if GROUP == "All" || GROUP == "GeneneratedFields"
+  include("generatedfields.jl")
+end
