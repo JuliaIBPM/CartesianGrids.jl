@@ -17,3 +17,12 @@ f = ScalarData(X);
 τ = VectorData(X);
 
 reg = Regularize(X,cellsize(gr),I0=origin(gr))
+
+Δxg = 0.001
+xg = -2.0:Δxg:2.0;
+
+function evaluate_ddf(ddf)
+  #for xi in xg, yi in xg
+      ddf(xg,xg)
+  #end
+end
