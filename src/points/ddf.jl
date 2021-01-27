@@ -61,13 +61,20 @@ macro ddffunc(ddftype)
             @inline (::DDF{$ddftype,OVERDX})(x::T,y::T,z::T) where {OVERDX,T <: Real} =
                           $fname(abs(x)*OVERDX)*OVERDX*$fname(abs(y)*OVERDX)*OVERDX*$fname(abs(z)*OVERDX)*OVERDX
 
-            @inline (::GradDDF{$ddftype,OVERDX,1})(x::T) where {OVERDX,T <: Real} =
-                   $dfname(x*OVERDX)*OVERDX*OVERDX
+            @inline (d::DDF{$ddftype,OVERDX})(x::AbstractVector{T},y::AbstractVector{T}) where {OVERDX,T <: Real} =
+                          d.(x)*d.(y')
 
+            @inline (::GradDDF{$ddftype,OVERDX,N})(x::T) where {OVERDX,N,T <: Real} =
+                   $dfname(x*OVERDX)*OVERDX*OVERDX
             @inline (::GradDDF{$ddftype,OVERDX,1})(x::T,y::T) where {OVERDX,T <: Real} =
                    $dfname(x*OVERDX)*OVERDX*OVERDX*$fname(abs(y)*OVERDX)*OVERDX
             @inline (::GradDDF{$ddftype,OVERDX,2})(x::T,y::T) where {OVERDX,T <: Real} =
                    $fname(abs(x)*OVERDX)*OVERDX*$dfname(y*OVERDX)*OVERDX*OVERDX
+
+            @inline (dd::GradDDF{$ddftype,OVERDX,1})(x::AbstractVector{T},y::AbstractVector{T}) where {OVERDX,T <: Real} =
+                          dd.(x)*$fname.(abs.(y')*OVERDX)*OVERDX
+            @inline (dd::GradDDF{$ddftype,OVERDX,2})(x::AbstractVector{T},y::AbstractVector{T}) where {OVERDX,T <: Real} =
+                          $fname.(abs.(x)*OVERDX)*OVERDX*dd.(y')
 
             @inline (::GradDDF{$ddftype,OVERDX,1})(x::T,y::T,z::T) where {OVERDX,T <: Real} =
                    $dfname(x*OVERDX)*OVERDX*OVERDX*$fname(abs(y)*OVERDX)*OVERDX*$fname(abs(z)*OVERDX)*OVERDX

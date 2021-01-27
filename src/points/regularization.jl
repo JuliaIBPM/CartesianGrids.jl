@@ -189,6 +189,10 @@ function _get_regularization_radius(ddf::DDF)
   return r
 end
 
+_delta_block(radius,shift) = -radius+shift, radius+shift
+_index_range(x,xmin,xmax,n,dn) = max(1,ceil(Int,x+xmin)), min(n-dn,floor(Int,x+xmax))
+_distance_list(x,imin,imax,shift) = float(imin)-shift-x:float(imax)-shift-x
+
 
 """
     RegularizationMatrix(H::Regularize,f::PointData,u::CellData) -> Hmat
@@ -231,14 +235,16 @@ for (gridtype,ctype,dnx,dny,shiftx,shifty) in @generate_scalarlist(SCALARLIST)
   @eval function (H::Regularize{N,F})(target::$gridtype{$ctype,NX,NY,T,DDT},source::$pointtype{N,S,DT}) where {N,F,NX,NY,S,T,DT,DDT}
         radius = H.ddf_radius
         fill!(target,0.0)
-        xmin, xmax = -radius+$shiftx, radius+$shiftx
-        ymin, ymax = -radius+$shifty, radius+$shifty
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dnx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$dny,floor(Int,H.y[pt]+ymax))
-            for y in prangey, x in prangex
-                target[x,y] += source[pt]*H.wgt[pt]*H.ddf(x-$shiftx-H.x[pt],y-$shifty-H.y[pt])
-            end
+        xmin, xmax = _delta_block(radius,$shiftx)
+        ymin, ymax = _delta_block(radius,$shifty)
+        nzinds = findall(!iszero,source)
+        @inbounds for pt in nzinds
+            fact = source[pt]*H.wgt[pt]
+            minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dnx)
+            miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$dny)
+            prangex = _distance_list(H.x[pt],minx,maxx,$shiftx)
+            prangey = _distance_list(H.y[pt],miny,maxy,$shifty)
+            target[minx:maxx,miny:maxy] .+= fact.*H.ddf(prangex,prangey)
         end
         target
   end
@@ -248,14 +254,14 @@ for (gridtype,ctype,dnx,dny,shiftx,shifty) in @generate_scalarlist(SCALARLIST)
   @eval function (H::Regularize{N,false})(target::$pointtype{N,S,DT},source::$gridtype{$ctype,NX,NY,T,DDT}) where {N,NX,NY,S,T,DT,DDT}
         radius = H.ddf_radius
         fill!(target,0.0)
-        xmin, xmax = -radius+$shiftx, radius+$shiftx
-        ymin, ymax = -radius+$shifty, radius+$shifty
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dnx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$dny,floor(Int,H.y[pt]+ymax))
-            for y in prangey, x in prangex
-                target[pt] += source[x,y]*H.ddf(x-$shiftx-H.x[pt],y-$shifty-H.y[pt])
-            end
+        xmin, xmax = _delta_block(radius,$shiftx)
+        ymin, ymax = _delta_block(radius,$shifty)
+        @inbounds for pt in eachindex(target)
+            minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dnx)
+            miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$dny)
+            prangex = _distance_list(H.x[pt],minx,maxx,$shiftx)
+            prangey = _distance_list(H.y[pt],miny,maxy,$shifty)
+            target[pt] += sum(source[minx:maxx,miny:maxy].*H.ddf(prangex,prangey))
         end
         target
   end
@@ -265,23 +271,27 @@ for (gridtype,ctype,dnx,dny,shiftx,shifty) in @generate_scalarlist(SCALARLIST)
         tmp = typeof(source)()
         radius = H.ddf_radius
         fill!(target,0.0)
-        xmin, xmax = -radius+$shiftx, radius+$shiftx
-        ymin, ymax = -radius+$shifty, radius+$shifty
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dnx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$dny,floor(Int,H.y[pt]+ymax))
-            for y in prangey, x in prangex
-                tmp[x,y] += H.wgt[pt]*H.ddf(x-$shiftx-H.x[pt],y-$shifty-H.y[pt])
-            end
+        xmin, xmax = _delta_block(radius,$shiftx)
+        ymin, ymax = _delta_block(radius,$shifty)
+        @inbounds for pt in eachindex(target)
+            minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dnx)
+            miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$dny)
+            prangex = _distance_list(H.x[pt],minx,maxx,$shiftx)
+            prangey = _distance_list(H.y[pt],miny,maxy,$shifty)
+            tmp[minx:maxx,miny:maxy] .+= H.wgt[pt].*H.ddf(prangex,prangey)
         end
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dnx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$dny,floor(Int,H.y[pt]+ymax))
-            @inbounds for y in prangey, x in prangex
-                w = tmp[x,y]
-                w = w > eps() ? source[x,y]/w : 0.0
-                target[pt]  += w*H.ddf(x-$shiftx-H.x[pt],y-$shifty-H.y[pt])
-            end
+        nzinds = findall(x -> abs(x) > eps(),tmp)
+        tmp[nzinds] .= inv.(tmp[nzinds])
+
+        @inbounds for pt in eachindex(target)
+            minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dnx)
+            miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$dny)
+            prangex = _distance_list(H.x[pt],minx,maxx,$shiftx)
+            prangey = _distance_list(H.y[pt],miny,maxy,$shifty)
+            target[pt] += sum(tmp[minx:maxx,miny:maxy].*
+                              source[minx:maxx,miny:maxy].*
+                              H.ddf(prangex,prangey))
+            #end
         end
         target
   end
@@ -291,15 +301,27 @@ for (gridtype,ctype,dnx,dny,shiftx,shifty) in @generate_scalarlist(SCALARLIST)
     f::$pointtype{N,S,DT},
     u::$gridtype{$ctype,NX,NY,T,DDT}) where {N,F,NX,NY,S,T,DT,DDT}
 
-    Hmat = spzeros(length(u),length(f))
-    g = deepcopy(f)
-    v = deepcopy(u)
-    fill!(g,0.0)
-    for i = 1:N
-      g[i] = 1.0
-      Hmat[:,i] = sparsevec(H(v,g))
-      g[i] = 0.0
+    linI = LinearIndices(u)
+    rad = H.ddf_radius
+    xmin, xmax = _delta_block(rad,$shiftx)
+    ymin, ymax = _delta_block(rad,$shifty)
+
+    rows = Int64[]
+    cols = Int64[]
+    vals = eltype(u)[]
+
+    for pt = 1:N
+      minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dnx)
+      miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$dny)
+      prangex = _distance_list(H.x[pt],minx,maxx,$shiftx)
+      prangey = _distance_list(H.y[pt],miny,maxy,$shifty)
+
+      I1 = vec(linI[minx:maxx,miny:maxy])
+      append!(rows,I1)
+      append!(cols,fill(pt,length(I1)))
+      append!(vals,H.wgt[pt].*vec(H.ddf(prangex,prangey)))
     end
+    Hmat = sparse(rows,cols,vals,length(u),length(f))
     if H._issymmetric
       # In symmetric case, these matrices are identical. (Interpolation is stored
       # as its transpose.)
@@ -314,15 +336,27 @@ for (gridtype,ctype,dnx,dny,shiftx,shifty) in @generate_scalarlist(SCALARLIST)
     u::$gridtype{$ctype,NX,NY,T,DDT},
     f::$pointtype{N,S,DT}) where {N,NX,NY,S,T,DT,DDT}
 
-    Emat = spzeros(length(u),length(f))
-    g = deepcopy(f)
-    v = deepcopy(u)
-    fill!(g,0.0)
-    for i = 1:N
-      g[i] = 1.0/H.wgt[i]  # unscale for interpolation
-      Emat[:,i] = sparsevec(H(v,g))
-      g[i] = 0.0
+    linI = LinearIndices(u)
+    rad = H.ddf_radius
+    xmin, xmax = _delta_block(rad,$shiftx)
+    ymin, ymax = _delta_block(rad,$shifty)
+
+    rows = Int64[]
+    cols = Int64[]
+    vals = eltype(u)[]
+
+    for pt = 1:N
+      minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dnx)
+      miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$dny)
+      prangex = _distance_list(H.x[pt],minx,maxx,$shiftx)
+      prangey = _distance_list(H.y[pt],miny,maxy,$shifty)
+
+      I1 = vec(linI[minx:maxx,miny:maxy])
+      append!(rows,I1)
+      append!(cols,fill(pt,length(I1)))
+      append!(vals,vec(H.ddf(prangex,prangey)))
     end
+    Emat = sparse(rows,cols,vals,length(u),length(f))
     InterpolationMatrix{typeof(u),typeof(f)}(Emat)
   end
 
@@ -334,18 +368,33 @@ for (gridtype,ctype,dnx,dny,shiftx,shifty) in @generate_scalarlist(SCALARLIST)
     u::$gridtype{$ctype,NX,NY,T,DDT},
     f::$pointtype{N,S,DT}) where {N,NX,NY,S,T,DT,DDT}
 
-    Emat = spzeros(length(u),length(f))
-    g = deepcopy(f)
-    v = deepcopy(u)
+    linI = LinearIndices(u)
+    rad = H.ddf_radius
+    xmin, xmax = _delta_block(rad,$shiftx)
+    ymin, ymax = _delta_block(rad,$shifty)
+
+    g = similar(f)
+    v = similar(u)
     fill!(g,1.0)
     wt = sparsevec(H(v,g))
-    wt.nzval .= 1 ./ wt.nzval
-    fill!(g,0.0)
-    for i = 1:N
-      g[i] = 1.0/H.wgt[i]  # unscale for interpolation
-      Emat[:,i] = wt.*sparsevec(H(v,g))
-      g[i] = 0.0
+    wt.nzval .= inv.(wt.nzval)
+
+    rows = Int64[]
+    cols = Int64[]
+    vals = eltype(u)[]
+    for pt = 1:N
+      minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dnx)
+      miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$dny)
+      prangex = _distance_list(H.x[pt],minx,maxx,$shiftx)
+      prangey = _distance_list(H.y[pt],miny,maxy,$shifty)
+
+      I1 = vec(linI[minx:maxx,miny:maxy])
+      append!(rows,I1)
+      append!(cols,fill(pt,length(I1)))
+      append!(vals,wt[I1].*vec(H.ddf(prangex,prangey)))
     end
+    Emat = sparse(rows,cols,vals,length(u),length(f))
+
     InterpolationMatrix{typeof(u),typeof(f)}(Emat)
   end
 
@@ -415,34 +464,34 @@ for (gridtype,ctype,dunx,duny,dvnx,dvny,shiftux,shiftuy,shiftvx,shiftvy) in @gen
 
 # Regularization
   @eval function (H::Regularize{N,F})(target::$gridtype{$(ctype...),NX,NY,T,DDT},source::$pointtype{N,S,DT}) where {N,F,NX,NY,S,T,DT,DDT}
-        radius = H.ddf_radius
-        fill!(target.dudx,0.0)
-        fill!(target.dvdy,0.0)
-        xmin, xmax = -radius+$shiftux, radius+$shiftux
-        ymin, ymax = -radius+$shiftuy, radius+$shiftuy
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dunx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$duny,floor(Int,H.y[pt]+ymax))
-            for y in prangey, x in prangex
-                d = H.wgt[pt]*H.ddf(x-$shiftux-H.x[pt],y-$shiftuy-H.y[pt])
-                target.dudx[x,y] += source.dudx[pt]*d
-                target.dvdy[x,y] += source.dvdy[pt]*d
-            end
-        end
-        fill!(target.dudy,0.0)
-        fill!(target.dvdx,0.0)
-        xmin, xmax = -radius+$shiftvx, radius+$shiftvx
-        ymin, ymax = -radius+$shiftvy, radius+$shiftvy
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dvnx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$dvny,floor(Int,H.y[pt]+ymax))
-            for y in prangey, x in prangex
-                d = H.wgt[pt]*H.ddf(x-$shiftvx-H.x[pt],y-$shiftvy-H.y[pt])
-                target.dudy[x,y] += source.dudy[pt]*d
-                target.dvdx[x,y] += source.dvdx[pt]*d
-            end
-        end
-        target
+    radius = H.ddf_radius
+    fill!(target.dudx,0.0)
+    fill!(target.dvdy,0.0)
+    xmin, xmax = _delta_block(radius,$shiftux)
+    ymin, ymax = _delta_block(radius,$shiftuy)
+    @inbounds for pt in 1:N
+      minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dunx)
+      miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$duny)
+      prangex = _distance_list(H.x[pt],minx,maxx,$shiftux)
+      prangey = _distance_list(H.y[pt],miny,maxy,$shiftuy)
+      tmp = H.wgt[pt].*H.ddf(prangex,prangey)
+      target.dudx[minx:maxx,miny:maxy] .+= source.dudx[pt].*tmp
+      target.dvdy[minx:maxx,miny:maxy] .+= source.dvdy[pt].*tmp
+    end
+    fill!(target.dudy,0.0)
+    fill!(target.dvdx,0.0)
+    xmin, xmax = _delta_block(radius,$shiftvx)
+    ymin, ymax = _delta_block(radius,$shiftvy)
+    @inbounds for pt in 1:N
+      minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dvnx)
+      miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$dvny)
+      prangex = _distance_list(H.x[pt],minx,maxx,$shiftvx)
+      prangey = _distance_list(H.y[pt],miny,maxy,$shiftvy)
+      tmp = H.wgt[pt].*H.ddf(prangex,prangey)
+      target.dudy[minx:maxx,miny:maxy] .+= source.dudy[pt].*tmp
+      target.dvdx[minx:maxx,miny:maxy] .+= source.dvdx[pt].*tmp
+    end
+    target
   end
 
   # @eval function (H::Regularize{N,F})(target::$ctype,source::$ftype) where {N,F,NX,NY,S,T}
@@ -455,34 +504,34 @@ for (gridtype,ctype,dunx,duny,dvnx,dvny,shiftux,shiftuy,shiftvx,shiftvy) in @gen
 
 # Interpolation
   @eval function (H::Regularize{N,false})(target::$pointtype{N,S,DT},source::$gridtype{$(ctype...),NX,NY,T,DDT}) where {N,NX,NY,S,T,DT,DDT}
-        radius = H.ddf_radius
-        fill!(target.dudx,0.0)
-        fill!(target.dvdy,0.0)
-        xmin, xmax = -radius+$shiftux, radius+$shiftux
-        ymin, ymax = -radius+$shiftuy, radius+$shiftuy
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dunx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$duny,floor(Int,H.y[pt]+ymax))
-            for y in prangey, x in prangex
-                d = H.ddf(x-$shiftux-H.x[pt],y-$shiftuy-H.y[pt])
-                target.dudx[pt] += source.dudx[x,y]*d
-                target.dvdy[pt] += source.dvdy[x,y]*d
-            end
-        end
-        fill!(target.dudy,0.0)
-        fill!(target.dvdx,0.0)
-        xmin, xmax = -radius+$shiftvx, radius+$shiftvx
-        ymin, ymax = -radius+$shiftvy, radius+$shiftvy
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dvnx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$dvny,floor(Int,H.y[pt]+ymax))
-            for y in prangey, x in prangex
-                d = H.ddf(x-$shiftvx-H.x[pt],y-$shiftvy-H.y[pt])
-                target.dudy[pt] += source.dudy[x,y]*d
-                target.dvdx[pt] += source.dvdx[x,y]*d
-            end
-        end
-        target
+    radius = H.ddf_radius
+    fill!(target.dudx,0.0)
+    fill!(target.dvdy,0.0)
+    xmin, xmax = _delta_block(radius,$shiftux)
+    ymin, ymax = _delta_block(radius,$shiftuy)
+    @inbounds for pt in 1:N
+      minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dunx)
+      miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$duny)
+      prangex = _distance_list(H.x[pt],minx,maxx,$shiftux)
+      prangey = _distance_list(H.y[pt],miny,maxy,$shiftuy)
+      tmp = H.ddf(prangex,prangey)
+      target.dudx[pt] += sum(source.dudx[minx:maxx,miny:maxy].*tmp)
+      target.dvdy[pt] += sum(source.dvdy[minx:maxx,miny:maxy].*tmp)
+    end
+    fill!(target.dudy,0.0)
+    fill!(target.dvdx,0.0)
+    xmin, xmax = _delta_block(radius,$shiftvx)
+    ymin, ymax = _delta_block(radius,$shiftvy)
+    @inbounds for pt in 1:N
+      minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dvnx)
+      miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$dvny)
+      prangex = _distance_list(H.x[pt],minx,maxx,$shiftvx)
+      prangey = _distance_list(H.y[pt],miny,maxy,$shiftvy)
+      tmp = H.ddf(prangex,prangey)
+      target.dudy[pt] += sum(source.dudy[minx:maxx,miny:maxy].*tmp)
+      target.dvdx[pt] += sum(source.dvdx[minx:maxx,miny:maxy].*tmp)
+    end
+    target
   end
 
   # @eval function (H::Regularize{N,F})(target::$ftype,source::$ctype) where {N,F,NX,NY,S,T}
@@ -495,57 +544,62 @@ for (gridtype,ctype,dunx,duny,dvnx,dvny,shiftux,shiftuy,shiftvx,shiftvy) in @gen
 
 # Interpolation with filtering -- need to speed up
   @eval function (H::Regularize{N,true})(target::$pointtype{N,S,DT},source::$gridtype{$(ctype...),NX,NY,T,DDT}) where {N,NX,NY,S,T,DT,DDT}
-        tmp = typeof(source)()
-        radius = H.ddf_radius
-        fill!(target.dudx,0.0)
-        fill!(target.dvdy,0.0)
-        xmin, xmax = -radius+$shiftux, radius+$shiftux
-        ymin, ymax = -radius+$shiftuy, radius+$shiftuy
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dunx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$duny,floor(Int,H.y[pt]+ymax))
-            for y in prangey, x in prangex
-                tmp.dudx[x,y] += H.wgt[pt]*H.ddf(x-$shiftux-H.x[pt],y-$shiftuy-H.y[pt])
-            end
-        end
-        tmp.dvdy .= tmp.dudx
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dunx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$duny,floor(Int,H.y[pt]+ymax))
-            @inbounds for y in prangey, x in prangex
-                w = tmp.dudx[x,y]
-                w = w > eps() ? source.dudx[x,y]/w : 0.0
-                target.dudx[pt]  += w*H.ddf(x-$shiftux-H.x[pt],y-$shiftuy-H.y[pt])
-                w = tmp.dvdy[x,y]
-                w = w > eps() ? source.dvdy[x,y]/w : 0.0
-                target.dvdy[pt]  += w*H.ddf(x-$shiftux-H.x[pt],y-$shiftuy-H.y[pt])
-            end
-        end
-        fill!(target.dudy,0.0)
-        fill!(target.dvdx,0.0)
-        xmin, xmax = -radius+$shiftvx, radius+$shiftvx
-        ymin, ymax = -radius+$shiftvy, radius+$shiftvy
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dvnx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$dvny,floor(Int,H.y[pt]+ymax))
-            for y in prangey, x in prangex
-                tmp.dudy[x,y] += H.wgt[pt]*H.ddf(x-$shiftvx-H.x[pt],y-$shiftvy-H.y[pt])
-            end
-        end
-        tmp.dvdx .= tmp.dudy
-        @inbounds for pt in 1:N
-            prangex = max(1,ceil(Int,H.x[pt]+xmin)):min(NX-$dvnx,floor(Int,H.x[pt]+xmax))
-            prangey = max(1,ceil(Int,H.y[pt]+ymin)):min(NY-$dvny,floor(Int,H.y[pt]+ymax))
-            @inbounds for y in prangey, x in prangex
-                w = tmp.dudy[x,y]
-                w = w > eps() ? source.dudy[x,y]/w : 0.0
-                target.dudy[pt] += w*H.ddf(x-$shiftvx-H.x[pt],y-$shiftvy-H.y[pt])
-                w = tmp.dvdx[x,y]
-                w = w > eps() ? source.dvdx[x,y]/w : 0.0
-                target.dvdx[pt] += w*H.ddf(x-$shiftvx-H.x[pt],y-$shiftvy-H.y[pt])
-            end
-        end
-        target
+    tmp = typeof(source)()
+    radius = H.ddf_radius
+    fill!(target.dudx,0.0)
+    fill!(target.dvdy,0.0)
+    xmin, xmax = _delta_block(radius,$shiftux)
+    ymin, ymax = _delta_block(radius,$shiftuy)
+    @inbounds for pt in 1:N
+        minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dunx)
+        miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$duny)
+        prangex = _distance_list(H.x[pt],minx,maxx,$shiftux)
+        prangey = _distance_list(H.y[pt],miny,maxy,$shiftuy)
+        tmp.dudx[minx:maxx,miny:maxy] .+= H.wgt[pt].*H.ddf(prangex,prangey)
+    end
+    nzinds = findall(x -> abs(x) > eps(),tmp.dudx)
+    tmp.dudx[nzinds] .= inv.(tmp.dudx[nzinds])
+    tmp.dvdy .= tmp.dudx
+
+    @inbounds for pt in 1:N
+        minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dunx)
+        miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$duny)
+        prangex = _distance_list(H.x[pt],minx,maxx,$shiftux)
+        prangey = _distance_list(H.y[pt],miny,maxy,$shiftuy)
+        d = H.ddf(prangex,prangey)
+        target.dudx[pt] += sum(tmp.dudx[minx:maxx,miny:maxy].*
+                               source.dudx[minx:maxx,miny:maxy].*d)
+        target.dvdy[pt] += sum(tmp.dvdy[minx:maxx,miny:maxy].*
+                               source.dvdy[minx:maxx,miny:maxy].*d)
+    end
+
+    fill!(target.dudy,0.0)
+    fill!(target.dvdx,0.0)
+    xmin, xmax = _delta_block(radius,$shiftvx)
+    ymin, ymax = _delta_block(radius,$shiftvy)
+    @inbounds for pt in 1:N
+        minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dvnx)
+        miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$dvny)
+        prangex = _distance_list(H.x[pt],minx,maxx,$shiftvx)
+        prangey = _distance_list(H.y[pt],miny,maxy,$shiftvy)
+        tmp.dudy[minx:maxx,miny:maxy] .+= H.wgt[pt].*H.ddf(prangex,prangey)
+    end
+    nzinds = findall(x -> abs(x) > eps(),tmp.dudy)
+    tmp.dudy[nzinds] .= inv.(tmp.dudy[nzinds])
+    tmp.dvdx .= tmp.dudy
+
+    @inbounds for pt in 1:N
+        minx, maxx = _index_range(H.x[pt],xmin,xmax,NX,$dvnx)
+        miny, maxy = _index_range(H.y[pt],ymin,ymax,NY,$dvny)
+        prangex = _distance_list(H.x[pt],minx,maxx,$shiftvx)
+        prangey = _distance_list(H.y[pt],miny,maxy,$shiftvy)
+        d = H.ddf(prangex,prangey)
+        target.dudy[pt] += sum(tmp.dudy[minx:maxx,miny:maxy].*
+                               source.dudy[minx:maxx,miny:maxy].*d)
+        target.dvdx[pt] += sum(tmp.dvdx[minx:maxx,miny:maxy].*
+                               source.dvdx[minx:maxx,miny:maxy].*d)
+    end
+    target
   end
 
   # Construct regularization matrix
@@ -554,86 +608,46 @@ for (gridtype,ctype,dunx,duny,dvnx,dvny,shiftux,shiftuy,shiftvx,shiftvy) in @gen
     # note that we only need to compute two distinct matrices, since there are
     # only two types of cell data in this tensor
 
-    #Hmat = (spzeros(length(target.u),length(src.u)),spzeros(length(target.v),length(src.v)))
     lenu = length(target.dudx)
     lenv = length(target.dudy)
     Hmat = spzeros(2lenu+2lenv,4N)
-    g = deepcopy(src)
-    v = deepcopy(target)
-    g.dudx .= g.dudy .= g.dvdx .= g.dvdy .= zeros(Float64,N)
-    for i = 1:N
-      g.dudx[i] = 1.0  # these two are sufficient
-      g.dudy[i] = 1.0
-      H(v,g)
-      Hmat[1:lenu,i]           = sparsevec(v.dudx)
-      Hmat[lenu+1:lenu+lenv,i+N] = sparsevec(v.dudy)
-      Hmat[lenu+lenv+1:lenu+2lenv,i+2N] = sparsevec(v.dudy)
-      Hmat[lenu+2lenv+1:2lenu+2lenv,i+3N] = sparsevec(v.dudx)
-      g.dudx[i] = 0.0
-      g.dudy[i] = 0.0
-    end
+
     if H._issymmetric
       # In symmetric case, these matrices are identical. (Interpolation is stored
       # as its transpose.)
+      Hdudx, _ = RegularizationMatrix(H,src.dudx,target.dudx)
+      Hdudy, _ = RegularizationMatrix(H,src.dudy,target.dudy)
+      Hmat[1:lenu,          1:N]    = Hdudx.M
+      Hmat[lenu+1:lenu+lenv,N+1:2N] = Hdudy.M
+      Hmat[lenu+lenv+1:lenu+2lenv,2N+1:3N] = Hdudy.M
+      Hmat[lenu+2lenv+1:2lenu+2lenv,3N+1+4N] = Hdudx.M
       return RegularizationMatrix{typeof(target),typeof(src)}(Hmat),InterpolationMatrix{typeof(target),typeof(src)}(Hmat)
     else
+      Hdudx = RegularizationMatrix(H,src.dudx,target.dudx)
+      Hdudy = RegularizationMatrix(H,src.dudy,target.dudy)
+      Hmat[1:lenu,          1:N]    = Hdudx.M
+      Hmat[lenu+1:lenu+lenv,N+1:2N] = Hdudy.M
+      Hmat[lenu+lenv+1:lenu+2lenv,2N+1:3N] = Hdudy.M
+      Hmat[lenu+2lenv+1:2lenu+2lenv,3N+1:4N] = Hdudx.M
       return RegularizationMatrix{typeof(target),typeof(src)}(Hmat)
     end
   end
 
   # Construct interpolation matrix
-  @eval function InterpolationMatrix(H::Regularize{N,false},src::$gridtype{$(ctype...),NX,NY,T,DDT},target::$pointtype{N,S,DT}) where {N,NX,NY,S,T,DT,DDT}
+  @eval function InterpolationMatrix(H::Regularize{N,F},src::$gridtype{$(ctype...),NX,NY,T,DDT},target::$pointtype{N,S,DT}) where {N,F,NX,NY,S,T,DT,DDT}
 
     # note that we store interpolation matrices in the same shape as regularization matrices
-    #Emat = (spzeros(length(src.u),length(target.u)),spzeros(length(src.v),length(target.v)))
     lenu = length(src.dudx)
     lenv = length(src.dudy)
     Emat = spzeros(2lenu+2lenv,4N)
-    g = deepcopy(target)
-    v = deepcopy(src)
-    g.dudx .= g.dudy .= g.dvdx .= g.dvdy .= zeros(Float64,N)
-    for i = 1:N
-      g.dudx[i] = 1.0/H.wgt[i]  # unscale for interpolation
-      g.dudy[i] = 1.0/H.wgt[i]  # unscale for interpolation
-      H(v,g)
-      Emat[1:lenu,i]           = sparsevec(v.dudx)
-      Emat[lenu+1:lenu+lenv,i+N] = sparsevec(v.dudy)
-      Emat[lenu+lenv+1:lenu+2lenv,i+2N] = sparsevec(v.dudy)
-      Emat[lenu+2lenv+1:2lenu+2lenv,i+3N] = sparsevec(v.dudx)
-      g.dudx[i] = 0.0
-      g.dudy[i] = 0.0
-    end
-    InterpolationMatrix{typeof(src),typeof(target)}(Emat)
-  end
+    Edudx = InterpolationMatrix(H,src.dudx,target.dudx)
+    Edudy = InterpolationMatrix(H,src.dudy,target.dudy)
 
-  # Construct interpolation matrix with filtering
-  @eval function InterpolationMatrix(H::Regularize{N,true},src::$gridtype{$(ctype...),NX,NY,T,DDT},target::$pointtype{N,S,DT}) where {N,NX,NY,S,T,DT,DDT}
+    Emat[1:lenu,          1:N]    = Edudx.M
+    Emat[lenu+1:lenu+lenv,N+1:2N] = Edudy.M
+    Emat[lenu+lenv+1:lenu+2lenv,2N+1:3N] = Edudy.M
+    Emat[lenu+2lenv+1:2lenu+2lenv,3N+1:4N] = Edudx.M
 
-    # note that we store interpolation matrices in the same shape as regularization matrices
-    #Emat = (spzeros(length(src.u),length(target.u)),spzeros(length(src.v),length(target.v)))
-    lenu = length(src.dudx)
-    lenv = length(src.dudy)
-    Emat = spzeros(2lenu+2lenv,4N)
-    g = deepcopy(target)
-    v = deepcopy(src)
-    fill!(g,1.0)
-    H(v,g)
-    wtu = sparsevec(v.dudx)
-    wtu.nzval .= 1 ./ wtu.nzval
-    wtv = sparsevec(v.dudy)
-    wtv.nzval .= 1 ./ wtv.nzval
-    fill!(g,0.0)
-    for i = 1:N
-      g.dudx[i] = 1.0/H.wgt[i]  # unscale for interpolation
-      g.dudy[i] = 1.0/H.wgt[i]  # unscale for interpolation
-      H(v,g)
-      Emat[1:lenu,i]             = wtu.*sparsevec(v.dudx)
-      Emat[lenu+1:lenu+lenv,i+N] = wtv.*sparsevec(v.dudy)
-      Emat[lenu+lenv+1:lenu+2lenv,i+2N] = wtv.*sparsevec(v.dudy)
-      Emat[lenu+2lenv+1:2lenu+2lenv,i+3N] = wtu.*sparsevec(v.dudx)
-      g.dudx[i] = 0.0
-      g.dudy[i] = 0.0
-    end
     InterpolationMatrix{typeof(src),typeof(target)}(Emat)
   end
 
