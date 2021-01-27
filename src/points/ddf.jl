@@ -64,7 +64,7 @@ macro ddffunc(ddftype)
             @inline (d::DDF{$ddftype,OVERDX})(x::AbstractVector{T},y::AbstractVector{T}) where {OVERDX,T <: Real} =
                           d.(x)*d.(y')
 
-            @inline (::GradDDF{$ddftype,OVERDX,1})(x::T) where {OVERDX,T <: Real} =
+            @inline (::GradDDF{$ddftype,OVERDX,N})(x::T) where {OVERDX,N,T <: Real} =
                    $dfname(x*OVERDX)*OVERDX*OVERDX
             @inline (::GradDDF{$ddftype,OVERDX,1})(x::T,y::T) where {OVERDX,T <: Real} =
                    $dfname(x*OVERDX)*OVERDX*OVERDX*$fname(abs(y)*OVERDX)*OVERDX
