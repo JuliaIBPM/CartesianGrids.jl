@@ -92,6 +92,10 @@ Set up a spatial field in the form of a Gaussian centered at `x0,y0` with
 radii `σx` and `σy` in the respective directions and amplitude `A`. If the
 optional parameter `deriv` is set to 1 or 2, then it returns the first
 derivative of a Gaussian in that direction (`x` or `y`, respectively).
+
+`SpatialGaussian(σx,σy,x0,y0,A,u,v[,derivdir=0])` generates a Gaussian
+that convects at velocity `(u,v)`. It can be evaluated with an additional
+argument for time.
 """
 struct SpatialGaussian{CT,GX,GY} <: AbstractSpatialField
   gx :: GX
@@ -197,6 +201,9 @@ Create an instance of a spatial field function `field` on scalar grid data `d`,
 based on a grid `grid`. After creating the instance `g = GeneratedField(d,field,grid)`,
 then the resulting grid data can be accessed by typing `g()`. For vector grid data,
 a separate `field` must be supplied for each component.
+
+If the fields are time dependent, then you can also evaluate `g(t)` at the
+desired time. The time argument is ignored if the fields are static.
 """
 struct GeneratedField{T <: GridData}
     fielddata :: T
