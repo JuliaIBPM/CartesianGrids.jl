@@ -15,6 +15,6 @@ if GROUP == "All" || GROUP == "Points"
   include("points.jl")
 end
 
-if GROUP == "All" || GROUP == "GeneneratedFields"
+if GROUP == "All" || GROUP == "GeneratedFields"
   include("generatedfields.jl")
 end

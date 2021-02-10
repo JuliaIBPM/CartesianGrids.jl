@@ -35,7 +35,7 @@ export Primal, Dual, ScalarGridData, VectorGridData, TensorGridData, GridData,
        CircularConvolution,
        AbstractSpatialField, Gaussian, DGaussian, radius, center, strength,
        EmptySpatialField,
-       SpatialGaussian,GeneratedField, datatype, grid, PulseField
+       SpatialGaussian,GeneratedField, datatype, grid, PulseField, ModulatedField
 
 abstract type CellType end
 abstract type Primal <: CellType end

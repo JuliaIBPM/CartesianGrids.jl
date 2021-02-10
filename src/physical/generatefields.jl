@@ -2,9 +2,10 @@
 
 import Base: *, -, +, show
 
-abstract type Abstract1DFunction end
 abstract type AbstractSpatialField end
 abstract type AbstractGeneratedField end
+
+include("motionprofiles.jl")
 
 
 ## Empty spatial field
@@ -28,61 +29,6 @@ struct EmptySpatialField <: AbstractSpatialField end
 (g::EmptySpatialField)(a...) = Float64(0)
 
 
-## Gaussian
-
-"""
-    Gaussian(σ,x0,A)
-
-Construct a 1-d Gaussian function centered at `x0` with standard deviation `σ`
-and amplitude `A`. The resulting function can be evaluated at any real-valued
-number.
-
-# Example
-
-```jldoctest
-julia> g = Gaussian(0.2,0,1)
-Gaussian(0.2, 0, 1, 2.8209479177387813)
-
-julia> g(0.2)
-1.0377687435514866
-```
-"""
-struct Gaussian <: Abstract1DFunction
-  σ :: Real
-  x0 :: Real
-  A :: Real
-  fact :: Float64
-end
-
-Gaussian(σ,x0,A) = Gaussian(σ,x0,A,A/sqrt(π*σ^2))
-
-radius(g::Gaussian) = g.σ
-center(g::Gaussian) = g.x0
-strength(g::Gaussian) = g.A
-
-@inline gaussian(r;tol=6.0) = abs(r) < tol ? exp(-r^2) : 0.0
-
-(g::Gaussian)(x) = g.fact*gaussian((x-center(g))/radius(g))
-
-struct DGaussian <: Abstract1DFunction
-  σ :: Float64
-  x0 :: Float64
-  A :: Float64
-  fact :: Float64
-end
-DGaussian(σ,x0,A) = DGaussian(σ,x0,A, A/sqrt(π)/σ^2)
-
-
-radius(g::DGaussian) = g.σ
-center(g::DGaussian) = g.x0
-strength(g::DGaussian) = g.A
-
-@inline dgaussian(r;tol=6.0) = abs(r) < tol ? -2*r*exp(-r^2) : 0.0
-
-(g::DGaussian)(x) = g.fact*dgaussian((x-center(g))/radius(g))
-
-
-
 ## Spatial Gaussian field ##
 
 """
@@ -103,8 +49,8 @@ struct SpatialGaussian{CT,GX,GY} <: AbstractSpatialField
   A :: Float64
   u :: Float64
   v :: Float64
-  SpatialGaussian(gx::Abstract1DFunction,gy::Abstract1DFunction,A,u,v) = new{true,typeof(gx),typeof(gy)}(gx,gy,A,u,v)
-  SpatialGaussian(gx::Abstract1DFunction,gy::Abstract1DFunction,A) = new{false,typeof(gx),typeof(gy)}(gx,gy,A,0.0,0.0)
+  SpatialGaussian(gx::Profile,gy::Profile,A,u,v) = new{true,typeof(gx),typeof(gy)}(gx,gy,A,u,v)
+  SpatialGaussian(gx::Profile,gy::Profile,A) = new{false,typeof(gx),typeof(gy)}(gx,gy,A,0.0,0.0)
 end
 
 SpatialGaussian(σx::Real,σy::Real,x0::Real,y0::Real,A::Real;deriv::Int=0) =
@@ -113,13 +59,19 @@ SpatialGaussian(σx::Real,σy::Real,x0::Real,y0::Real,A::Real,u::Real,v::Real;de
                 _spatialdgaussian(σx,σy,x0,y0,A,u,v,Val(deriv))
 
 
-_spatialdgaussian(σx,σy,x0,y0,A,::Val{0}) = SpatialGaussian(Gaussian(σx,x0,A),Gaussian(σy,y0,1),A)
-_spatialdgaussian(σx,σy,x0,y0,A,::Val{1}) = SpatialGaussian(DGaussian(σx,x0,A),Gaussian(σy,y0,1),A)
-_spatialdgaussian(σx,σy,x0,y0,A,::Val{2}) = SpatialGaussian(Gaussian(σx,x0,A),DGaussian(σy,y0,1),A)
+_spatialdgaussian(σx,σy,x0,y0,A,::Val{0}) = SpatialGaussian(Gaussian(σx,A) >> x0,
+                                                            Gaussian(σy,1) >> y0,A)
+_spatialdgaussian(σx,σy,x0,y0,A,::Val{1}) = SpatialGaussian(DGaussian(σx,A) >> x0,
+                                                            Gaussian(σy,1) >> y0,A)
+_spatialdgaussian(σx,σy,x0,y0,A,::Val{2}) = SpatialGaussian(Gaussian(σx,A) >> x0,
+                                                            DGaussian(σy,1) >> y0,A)
 
-_spatialdgaussian(σx,σy,x0,y0,A,u,v,::Val{0}) = SpatialGaussian(Gaussian(σx,x0,A),Gaussian(σy,y0,1),A,u,v)
-_spatialdgaussian(σx,σy,x0,y0,A,u,v,::Val{1}) = SpatialGaussian(DGaussian(σx,x0,A),Gaussian(σy,y0,1),A,u,v)
-_spatialdgaussian(σx,σy,x0,y0,A,u,v,::Val{2}) = SpatialGaussian(Gaussian(σx,x0,A),DGaussian(σy,y0,1),A,u,v)
+_spatialdgaussian(σx,σy,x0,y0,A,u,v,::Val{0}) = SpatialGaussian(Gaussian(σx,A) >> x0,
+                                                                Gaussian(σy,1) >> y0,A,u,v)
+_spatialdgaussian(σx,σy,x0,y0,A,u,v,::Val{1}) = SpatialGaussian(DGaussian(σx,A) >> x0,
+                                                                Gaussian(σy,1) >> y0,A,u,v)
+_spatialdgaussian(σx,σy,x0,y0,A,u,v,::Val{2}) = SpatialGaussian(Gaussian(σx,A) >> x0,
+                                                                DGaussian(σy,1) >> y0,A,u,v)
 
 
 SpatialGaussian(σ,x0,y0,A;deriv::Int=0) = SpatialGaussian(σ,σ,x0,y0,A,deriv=deriv)
@@ -270,6 +222,24 @@ end
 
 
 ## For generating a transient form of a spatial field
+"""
+    ModulatedField(g::GeneratedField,modfcn::Profile)
+
+Create a time-modulated form of a generated spatial field, useful for
+introducing a forcing field onto the grid. The supplied field `g`
+is modulated by a function `modfcn` with a specified profle shape. The
+resulting object can be evaluated with a single argument (time) and returns a
+`GridData` type object of the same type contained in `g`.
+"""
+struct ModulatedField
+  gfield :: GeneratedField
+  modfcn :: Profile
+end
+
+(f::ModulatedField)(t) = f.modfcn(t)*f.gfield()
+
+datatype(f::ModulatedField) = datatype(f.gfield)
+
 
 """
     PulseField(g::GeneratedField,t0,σ)
@@ -281,19 +251,20 @@ maximum is unity, so that the amplitude of the overall field is set by `g`. The
 resulting object can be evaluated with a single argument (time) and returns a
 `ScalarGridData` type object of the same type contained in `g`.
 """
+#=
 struct PulseField
   gfield :: GeneratedField
-  timemod :: Gaussian
+  modfcn :: Profile
 end
+=#
 
 PulseField(gfield::GeneratedField{T},t0::Real,σt::Real) where {T <: GridData} =
-            PulseField(gfield,Gaussian(σt,t0,sqrt(π*σt^2)))
+            ModulatedField(gfield,Gaussian(σt,sqrt(π*σt^2)) >> t0)
 
 
-(f::PulseField)(t) = f.timemod(t)*f.gfield()
+#(f::PulseField)(t) = f.modfcn(t)*f.gfield()
 
-
-datatype(f::PulseField) = datatype(f.gfield)
+#datatype(f::PulseField) = datatype(f.gfield)
 
 
 ## Allow all spatial fields to accept a vector argument
