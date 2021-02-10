@@ -1,20 +1,40 @@
 using Random
 
-@testset "SpatialFields" begin
+@testset "Profiles" begin
 
 σ = rand()
-g = Gaussian(σ,0,1)
+g = Gaussian(σ,1)
 @test g(σ) ≈ exp(-1)/sqrt(π*σ^2)
 
 @test radius(g) == σ
-@test center(g) == 0
 @test strength(g) == 1
+
+σ = 0.2
+A = 1
+dg = DGaussian(σ,A)
+x = 0.1
+@test dg(x) == -2*A*x/sqrt(π)/σ^3*exp(-x^2/σ^2)
+
+end
+
+
+@testset "SpatialFields" begin
+
+σ = 0.2
+A = 1
 
 g = EmptySpatialField()
 @test g(rand(2)...) == 0.0
 
 g = SpatialGaussian(σ,σ,0.0,0.5,1)
 @test g(0,0.5+σ) ≈ g(σ,0.5) ≈ g(-σ,0.5) ≈ g(0,0.5-σ) ≈ exp(-1)/(π*σ^2)
+
+u = 1
+v = 0
+gc = SpatialGaussian(σ,σ,0.0,0.5,1,u,v)
+t = 1
+@test gc(u*t,0.5+σ+v*t,t) ≈ gc(σ+u*t,0.5+v*t,t) ≈ gc(-σ+u*t,0.5+v*t,t) ≈ gc(0+u*t,0.5-σ+v*t,t) ≈ exp(-1)/(π*σ^2)
+
 
 
 g = EmptySpatialField()
@@ -73,12 +93,6 @@ end
 
 @testset "Derivatives of gaussians" begin
 
-  σ = 0.2
-  x0 = 0
-  A = 1
-  dg = DGaussian(σ,x0,A)
-  x = 0.1
-  @test dg(x) == -2*A*x/sqrt(π)/σ^3*exp(-x^2/σ^2)
 
   σx = 0.5
   σy = 0.5
