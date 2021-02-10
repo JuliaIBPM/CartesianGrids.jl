@@ -277,8 +277,8 @@ number.
 # Example
 
 ```jldoctest
-julia> g = Gaussian(0.2,0,1)
-Gaussian(0.2, 0, 1, 2.8209479177387813)
+julia> g = Gaussian(0.2,1)
+Gaussian(0.2, 1, 2.8209479177387813)
 
 julia> g(0.2)
 1.0377687435514866
@@ -288,44 +288,20 @@ struct Gaussian <: Profile
   σ :: Real
   A :: Real
   fact :: Float64
+  Gaussian(σ,A) = new(σ,A,A/sqrt(π*σ^2))
 end
 show(io::IO, s::Gaussian) = print(io,
       "Gaussian (σ = $(round(s.σ, digits=2)), A = $(round(s.A, digits=2)))")
 
-#Gaussian(σ,x0,A) = Gaussian(σ,A) >> x0
-Gaussian(σ,A) = Gaussian(σ,A,A/sqrt(π*σ^2))
+@inline _gaussian(r;tol=6.0) = abs(r) < tol ? exp(-r^2) : 0.0
 
 radius(g::Gaussian) = g.σ
-#center(g::Gaussian) = g.x0
 strength(g::Gaussian) = g.A
-
-@inline _gaussian(r;tol=6.0) = abs(r) < tol ? exp(-r^2) : 0.0
 
 (g::Gaussian)(x) = g.fact*_gaussian(x/radius(g))
 
-
-#=
-struct DGaussian <: Profile
-  σ :: Float64
-  x0 :: Float64
-  A :: Float64
-  fact :: Float64
-end
-show(io::IO, s::DGaussian) = print(io,
-      "dGaussian (σ = $(round(s.σ, digits=2)), cent = $(round(s.x0, digits=2)), A = $(round(s.A, digits=2)))")
-=#
-
-#DGaussian(σ,x0,A) = DGaussian(σ,x0,A, A/sqrt(π)/σ^2)
 DGaussian(σ,A) = d_dt(Gaussian(σ,A))
-#DGaussian(σ,x0,A) = DGaussian(σ,A) >> x0
 
-#radius(g::DGaussian) = g.σ
-#center(g::DGaussian) = g.x0
-#strength(g::DGaussian) = g.A
-
-#@inline _dgaussian(r;tol=6.0) = abs(r) < tol ? -2*r*exp(-r^2) : 0.0
-
-#(g::DGaussian)(x) = g.fact*_dgaussian(x)/radius(g))
 
 
 struct Sinusoid <: Profile
