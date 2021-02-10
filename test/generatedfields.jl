@@ -16,6 +16,13 @@ g = EmptySpatialField()
 g = SpatialGaussian(σ,σ,0.0,0.5,1)
 @test g(0,0.5+σ) ≈ g(σ,0.5) ≈ g(-σ,0.5) ≈ g(0,0.5-σ) ≈ exp(-1)/(π*σ^2)
 
+u = 1
+v = 0
+gc = SpatialGaussian(σ,σ,0.0,0.5,1,u,v)
+t = 1
+@test gc(u*t,0.5+σ+v*t,t) ≈ gc(σ+u*t,0.5+v*t,t) ≈ gc(-σ+u*t,0.5+v*t,t) ≈ gc(0+u*t,0.5-σ+v*t,t) ≈ exp(-1)/(π*σ^2)
+
+
 
 g = EmptySpatialField()
 for x in [-0.5,0,0.5], y in [-0.5,0,0.5]

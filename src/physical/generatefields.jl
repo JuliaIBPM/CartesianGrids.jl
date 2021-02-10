@@ -2,6 +2,7 @@
 
 import Base: *, -, +, show
 
+abstract type Abstract1DFunction end
 abstract type AbstractSpatialField end
 abstract type AbstractGeneratedField end
 
@@ -24,7 +25,8 @@ julia> g(2,3)
 ```
 """
 struct EmptySpatialField <: AbstractSpatialField end
-(g::EmptySpatialField)(x,y) = Float64(0)
+(g::EmptySpatialField)(a...) = Float64(0)
+
 
 ## Gaussian
 
@@ -45,7 +47,7 @@ julia> g(0.2)
 1.0377687435514866
 ```
 """
-struct Gaussian
+struct Gaussian <: Abstract1DFunction
   σ :: Real
   x0 :: Real
   A :: Real
@@ -62,7 +64,7 @@ strength(g::Gaussian) = g.A
 
 (g::Gaussian)(x) = g.fact*gaussian((x-center(g))/radius(g))
 
-struct DGaussian
+struct DGaussian <: Abstract1DFunction
   σ :: Float64
   x0 :: Float64
   A :: Float64
@@ -91,25 +93,38 @@ radii `σx` and `σy` in the respective directions and amplitude `A`. If the
 optional parameter `deriv` is set to 1 or 2, then it returns the first
 derivative of a Gaussian in that direction (`x` or `y`, respectively).
 """
-struct SpatialGaussian{GX,GY} <: AbstractSpatialField
+struct SpatialGaussian{CT,GX,GY} <: AbstractSpatialField
   gx :: GX
   gy :: GY
   A :: Float64
-  SpatialGaussian(gx,gy,A) = new{typeof(gx),typeof(gy)}(gx,gy,A)
+  u :: Float64
+  v :: Float64
+  SpatialGaussian(gx::Abstract1DFunction,gy::Abstract1DFunction,A,u,v) = new{true,typeof(gx),typeof(gy)}(gx,gy,A,u,v)
+  SpatialGaussian(gx::Abstract1DFunction,gy::Abstract1DFunction,A) = new{false,typeof(gx),typeof(gy)}(gx,gy,A,0.0,0.0)
 end
 
-SpatialGaussian(σx,σy,x0,y0,A;deriv::Int=0) = _spatialdgaussian(σx,σy,x0,y0,A,Val(deriv))
+SpatialGaussian(σx::Real,σy::Real,x0::Real,y0::Real,A::Real;deriv::Int=0) =
+                _spatialdgaussian(σx,σy,x0,y0,A,Val(deriv))
+SpatialGaussian(σx::Real,σy::Real,x0::Real,y0::Real,A::Real,u::Real,v::Real;deriv::Int=0) =
+                _spatialdgaussian(σx,σy,x0,y0,A,u,v,Val(deriv))
+
 
 _spatialdgaussian(σx,σy,x0,y0,A,::Val{0}) = SpatialGaussian(Gaussian(σx,x0,A),Gaussian(σy,y0,1),A)
 _spatialdgaussian(σx,σy,x0,y0,A,::Val{1}) = SpatialGaussian(DGaussian(σx,x0,A),Gaussian(σy,y0,1),A)
 _spatialdgaussian(σx,σy,x0,y0,A,::Val{2}) = SpatialGaussian(Gaussian(σx,x0,A),DGaussian(σy,y0,1),A)
 
+_spatialdgaussian(σx,σy,x0,y0,A,u,v,::Val{0}) = SpatialGaussian(Gaussian(σx,x0,A),Gaussian(σy,y0,1),A,u,v)
+_spatialdgaussian(σx,σy,x0,y0,A,u,v,::Val{1}) = SpatialGaussian(DGaussian(σx,x0,A),Gaussian(σy,y0,1),A,u,v)
+_spatialdgaussian(σx,σy,x0,y0,A,u,v,::Val{2}) = SpatialGaussian(Gaussian(σx,x0,A),DGaussian(σy,y0,1),A,u,v)
+
 
 SpatialGaussian(σ,x0,y0,A;deriv::Int=0) = SpatialGaussian(σ,σ,x0,y0,A,deriv=deriv)
 
 
-(g::SpatialGaussian)(x,y) = g.gx(x)*g.gy(y)
-
+(g::SpatialGaussian{GX,GY})(x,y) where {CT,GX,GY} = g.gx(x)*g.gy(y)
+# ignore the time argument if it is called with this...
+(g::SpatialGaussian{false,GX,GY})(x,y,t) where {GX,GY} = g(x,y)
+(g::SpatialGaussian{true,GX,GY})(x,y,t) where {GX,GY} = g.gx(x-g.u*t)*g.gy(y-g.v*t)
 
 
 ## Scaling spatial fields
@@ -123,7 +138,12 @@ function show(io::IO, p::ScaledField)
 end
 s::Number * p::AbstractSpatialField = ScaledField(s, p)
 -(p::AbstractSpatialField) = ScaledField(-1, p)
+
 (p::ScaledField)(x,y) = p.s*p.p(x,y)
+(p::ScaledField)(x,y,t) = p.s*p.p(x,y,t)
+
+
+## Adding spatial fields together.
 
 struct AddedFields{T <: Tuple} <: AbstractSpatialField
     ps::T
@@ -134,8 +154,6 @@ function show(io::IO, Σp::AddedFields)
         println(io, "  $p")
     end
 end
-
-## Adding spatial fields together
 
 """
     p₁::AbstractSpatialField + p₂::AbstractSpatialField
@@ -153,10 +171,20 @@ end
 
 +(p::AbstractSpatialField...) = AddedFields(p)
 
+# Evaluate at x,y , assuming that t = 0 for any time-varying member
 function (Σp::AddedFields)(x,y)
     f = 0.0
     for p in Σp.ps
-        f += p(x,y)
+        f += p(x,y,0.0)
+    end
+    f
+end
+
+# Evaluate at x,y,t, ignoring t for any constant member
+function (Σp::AddedFields)(x,y,t)
+    f = 0.0
+    for p in Σp.ps
+        f += p(x,y,t)
     end
     f
 end
@@ -177,23 +205,40 @@ struct GeneratedField{T <: GridData}
 end
 
 function GeneratedField(d::ScalarGridData,field::AbstractSpatialField,g::PhysicalGrid)
-    xg, yg = coordinates(d,g)
-    tmp = _generatedfield(xg,yg,field,d)
+    #xg, yg = coordinates(d,g)
+    #tmp = _generatedfield(xg,yg,field,d,0.0)
+    tmp = similar(d)
+    _generatedfield!(tmp,field,g,0.0)
     GeneratedField{typeof(tmp)}(tmp,AbstractSpatialField[field],g)
 end
 
 function GeneratedField(d::CollectedGridData,fields::Vector{AbstractSpatialField},g::PhysicalGrid)
   @assert length(fields) == _numberofcomponents(typeof(d))
   tmp = similar(d)
+  _generatedfield!(tmp,fields,g,0.0)
+  GeneratedField{typeof(tmp)}(tmp,fields,g)
+end
+
+function _generatedfield!(d::ScalarGridData,field::AbstractSpatialField,g::PhysicalGrid,t::Real)
+    xg, yg = coordinates(d,g)
+    d .= _generatedfield(xg,yg,field,d,t)
+    return d
+end
+
+_generatedfield!(d::ScalarGridData,fields::Vector{AbstractSpatialField},g::PhysicalGrid,t::Real) =
+    _generatedfield!(d,fields[1],g,t)
+
+
+function _generatedfield!(d::CollectedGridData,fields::Vector{AbstractSpatialField},g::PhysicalGrid,t::Real)
   cnt = 0
   for (i,fname) in enumerate(propertynames(d))
     if typeof(getfield(d,fname)) <: GridData
         cnt += 1
         x, y = coordinates(getfield(d,fname),g)
-        getfield(tmp,fname) .= _generatedfield(x,y,fields[cnt],getfield(d,fname))
+        getfield(d,fname) .= _generatedfield(x,y,fields[cnt],getfield(d,fname),t)
     end
   end
-  GeneratedField{typeof(tmp)}(tmp,fields,g)
+  return d
 end
 
 GeneratedField(d::VectorGridData,
@@ -201,13 +246,21 @@ GeneratedField(d::VectorGridData,
       g::PhysicalGrid) = GeneratedField(d,AbstractSpatialField[fieldu,fieldv],g)
 
 
-_generatedfield(xg,yg,field::AbstractSpatialField,d::ScalarGridData) =
-          typeof(d)(field.(xg*ones(1,length(yg)),ones(length(xg))*yg'))
+_generatedfield(xg,yg,field::AbstractSpatialField,d::ScalarGridData,t) =
+          typeof(d)(_evaluatefield(field,xg,yg,t))
+
+_evaluatefield(field,xg,yg,t) = field.(xg*ones(1,length(yg)),ones(length(xg))*yg',t)
 
 datatype(f::GeneratedField{T}) where {T} = T
 grid(f::GeneratedField{T}) where {T} = f.grid
 
 (f::GeneratedField{T})() where {T} = f.fielddata
+
+function (f::GeneratedField)(t::Real) where {T<:ScalarGridData}
+    _generatedfield!(f.fielddata,f.fieldfcns,f.grid,t)
+end
+
+
 
 ## For generating a transient form of a spatial field
 
