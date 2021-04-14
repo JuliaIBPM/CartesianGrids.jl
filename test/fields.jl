@@ -612,7 +612,7 @@ dualfaceyunit.v[i,j] = a
   q = similar(facexunit)
   q .= facexunit
   @test q.u[i,j] == a
-  @test iszero(q.v)
+  @test iszero(q.v.data)
 end
 
 @testset "Basic complex operations" begin

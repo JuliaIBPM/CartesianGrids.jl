@@ -162,7 +162,7 @@ function Regularize(x::AbstractVector{T},y::AbstractVector{T},dx::T;
     ddf = GradDDF(graddir,ddftype=ddftype,dx=1.0)
   end
 
-  Regularize{length(x),filter}(x/dx.+I0[1],y/dx.+I0[2],1.0/(dx*dx),
+  Regularize{length(x),filter}(x./dx.+I0[1],y./dx.+I0[2],1.0/(dx*dx),
                       wtvec,ddf,_get_regularization_radius(baseddf),_issymmetric)
 end
 
