@@ -80,7 +80,7 @@ import LinearAlgebra: norm, dot, mul!
 
     data = zeros(Float64,length(q))
     q2 = typeof(q)(data)
-    @test all(q2.data .== 0.0)
+    @test all(q2 .== 0.0)
     @test vec(q2) == data
 
     q2.u .= 2.0
@@ -99,16 +99,16 @@ import LinearAlgebra: norm, dot, mul!
     q = Edges(Dual,w)
     q.u .= 1.0
     q2 = 2*q
-    @test all(q2.u.data .== 2.0)
+    @test all(q2.u .== 2.0)
     q2 .= q + q2
-    @test all(q2.u.data .== 3.0)
+    @test all(q2.u .== 3.0)
 
     t = EdgeGradient(Dual,w)
     t .= 1.0
     t2 = 2*t
-    @test all(t2.data .== 2.0)
+    @test all(t2 .== 2.0)
     t2 = -t
-    @test all(t2.data .== -1.0)
+    @test all(t2 .== -1.0)
 
 
   end

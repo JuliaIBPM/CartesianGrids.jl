@@ -410,10 +410,27 @@ end
 
 ### Operations on complex point data
 
-for f in (:real, :imag, :abs)
+for f in (:real, :imag, :abs, :abs2, :conj)
   @eval function $f(A::PointData{N,T}) where {N,T <: ComplexF64}
       Acopy = similar(A,element_type=Float64)
-      Acopy .= broadcast($f,A)
+      Acopy.data .= broadcast($f,A.data)
       return Acopy
   end
+end
+
+# This enables fused in-place broadcasting of all grid data
+Base.BroadcastStyle(::Type{<:PointData}) = Broadcast.ArrayStyle{PointData}()
+
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{PointData}},::Type{T}) where {T}
+    similar(unpack(bc),element_type=T)
+end
+
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{PointData}})
+    similar(unpack(bc))
+end
+
+
+function Base.copyto!(dest::T,bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{PointData}}) where {T <: PointData}
+    copyto!(dest.data,unpack_data(bc, nothing))
+    dest
 end

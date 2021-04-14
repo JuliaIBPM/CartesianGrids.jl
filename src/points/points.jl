@@ -1,6 +1,5 @@
 import Base: size, show, summary, similar, parent, parentindices
 
-abstract type PointData{N,T} <: AbstractVector{T} end
 
 const NDIM = 2
 

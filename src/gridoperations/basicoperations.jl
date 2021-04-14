@@ -201,22 +201,14 @@ end
 Base.BroadcastStyle(::Type{<:GridData}) = Broadcast.ArrayStyle{GridData}()
 
 
-#=
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{GridData}},::Type{T}) where {T}
-    similar(unpack(bc,nothing),element_type=T)
+    similar(unpack(bc),element_type=T)
 end
 
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{GridData}})
-    similar(unpack(bc,nothing))
+    similar(unpack(bc))
 end
 
-unpack(bc::Base.Broadcast.Broadcasted) = unpack(bc.args)
-unpack(args::Tuple) = unpack(unpack(args[1]), Base.tail(args))
-unpack(x) = x
-unpack(::Tuple{}) = nothing
-unpack(a::GridData, rest) = a
-unpack(::Any, rest) = unpack(rest)
-=#
 
 #=
 @inline unpack(bc::Broadcast.Broadcasted, i) = Broadcast.Broadcasted(bc.f, unpack_args(i, bc.args))
@@ -232,12 +224,3 @@ function Base.copyto!(dest::T,bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{Gri
     copyto!(dest.data,unpack_data(bc, nothing))
     dest
 end
-
-
-@inline unpack_data(bc::Broadcast.Broadcasted, i) = Broadcast.Broadcasted(bc.f, unpack_data_args(i, bc.args))
-unpack_data(x,::Any) = x
-unpack_data(x::GridData, ::Nothing) = x.data
-
-@inline unpack_data_args(i, args::Tuple) = (unpack_data(args[1], i), unpack_data_args(i, Base.tail(args))...)
-unpack_data_args(i, args::Tuple{Any}) = (unpack_data(args[1], i),)
-unpack_data_args(::Any, args::Tuple{}) = ()

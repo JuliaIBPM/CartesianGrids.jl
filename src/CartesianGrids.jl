@@ -47,6 +47,9 @@ abstract type VectorGridData{NX,NY,T} <: GridData{NX,NY,T} end
 abstract type TensorGridData{NX,NY,T} <: GridData{NX,NY,T} end
 CollectedGridData = Union{VectorGridData,TensorGridData}
 
+abstract type PointData{N,T} <: AbstractVector{T} end
+
+
 # List of scalar grid types. Each pair of numbers specifies
 # the number of grid points in each direction for this data type, relative
 # to the reference grid. The two pairs of numbers correspond to Primal
@@ -78,6 +81,24 @@ end
 @othertype Primal Dual
 @othertype Dual Primal
 @othertype CellType CellType
+
+unpack(bc::Base.Broadcast.Broadcasted) = unpack(bc.args)
+unpack(args::Tuple) = unpack(unpack(args[1]), Base.tail(args))
+unpack(x) = x
+unpack(::Tuple{}) = nothing
+unpack(a::GridData, rest) = a
+unpack(a::PointData, rest) = a
+unpack(::Any, rest) = unpack(rest)
+
+@inline unpack_data(bc::Broadcast.Broadcasted, i) = Broadcast.Broadcasted(bc.f, unpack_data_args(i, bc.args))
+unpack_data(x,::Any) = x
+unpack_data(x::GridData, ::Nothing) = x.data
+unpack_data(x::PointData, ::Nothing) = x.data
+
+@inline unpack_data_args(i, args::Tuple) = (unpack_data(args[1], i), unpack_data_args(i, Base.tail(args))...)
+unpack_data_args(i, args::Tuple{Any}) = (unpack_data(args[1], i),)
+unpack_data_args(::Any, args::Tuple{}) = ()
+
 
 #@wraparray ScalarGridData data 2
 
