@@ -10,6 +10,26 @@ struct Identity end
 (*)(::Identity,s::GridData) = s
 
 
+# This enables fused in-place broadcasting of all grid data
+Base.BroadcastStyle(::Type{<:GridData}) = Broadcast.ArrayStyle{GridData}()
+
+function Base.copyto!(dest::T,bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{GridData}}) where {T <: GridData}
+    bcf = Broadcast.flatten(bc)
+    bcf′ = Broadcast.preprocess(dest, bcf)
+    copyto!(dest.data,unpack(bc, nothing))
+    dest
+end
+
+@inline unpack(bc::Broadcast.Broadcasted, i) = Broadcast.Broadcasted(bc.f, unpack_args(i, bc.args))
+unpack(x,::Any) = x
+unpack(x::GridData, ::Nothing) = x.data
+
+@inline unpack_args(i, args::Tuple) = (unpack(args[1], i), unpack_args(i, Base.tail(args))...)
+unpack_args(i, args::Tuple{Any}) = (unpack(args[1], i),)
+unpack_args(::Any, args::Tuple{}) = ()
+
+
+
 ### On scalar grid data ####
 
 # Set it to negative of itself
