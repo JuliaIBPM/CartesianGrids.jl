@@ -10,23 +10,9 @@ struct Identity end
 (*)(::Identity,s::GridData) = s
 
 
-# This enables fused in-place broadcasting of all grid data
-Base.BroadcastStyle(::Type{<:GridData}) = Broadcast.ArrayStyle{GridData}()
 
-function Base.copyto!(dest::T,bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{GridData}}) where {T <: GridData}
-    bcf = Broadcast.flatten(bc)
-    bcf′ = Broadcast.preprocess(dest, bcf)
-    copyto!(dest.data,unpack(bc, nothing))
-    dest
-end
 
-@inline unpack(bc::Broadcast.Broadcasted, i) = Broadcast.Broadcasted(bc.f, unpack_args(i, bc.args))
-unpack(x,::Any) = x
-unpack(x::GridData, ::Nothing) = x.data
 
-@inline unpack_args(i, args::Tuple) = (unpack(args[1], i), unpack_args(i, Base.tail(args))...)
-unpack_args(i, args::Tuple{Any}) = (unpack(args[1], i),)
-unpack_args(::Any, args::Tuple{}) = ()
 
 
 
@@ -197,7 +183,7 @@ zero(::Type{T}) where {T <: GridData} = T()
 for f in (:conj,)
     @eval function $f(A::GridData{NX,NY,T}) where {NX,NY,T <: ComplexF64}
         Acopy = deepcopy(A)
-        Acopy .= broadcast($f,Acopy)
+        Acopy.data .= broadcast($f,Acopy.data)
         return Acopy
     end
 end
@@ -205,7 +191,53 @@ end
 for f in (:real, :imag, :abs, :abs2)
   @eval function $f(A::GridData{NX,NY,T}) where {NX,NY,T <: ComplexF64}
       Acopy = similar(A,element_type=Float64)
-      Acopy .= broadcast($f,A)
+      Acopy.data .= broadcast($f,A.data)
       return Acopy
   end
 end
+
+
+# This enables fused in-place broadcasting of all grid data
+Base.BroadcastStyle(::Type{<:GridData}) = Broadcast.ArrayStyle{GridData}()
+
+
+#=
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{GridData}},::Type{T}) where {T}
+    similar(unpack(bc,nothing),element_type=T)
+end
+
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{GridData}})
+    similar(unpack(bc,nothing))
+end
+
+unpack(bc::Base.Broadcast.Broadcasted) = unpack(bc.args)
+unpack(args::Tuple) = unpack(unpack(args[1]), Base.tail(args))
+unpack(x) = x
+unpack(::Tuple{}) = nothing
+unpack(a::GridData, rest) = a
+unpack(::Any, rest) = unpack(rest)
+=#
+
+#=
+@inline unpack(bc::Broadcast.Broadcasted, i) = Broadcast.Broadcasted(bc.f, unpack_args(i, bc.args))
+unpack(x,::Any) = x
+unpack(x::GridData, ::Nothing) = x
+
+@inline unpack_args(i, args::Tuple) = (unpack(args[1], i), unpack_args(i, Base.tail(args))...)
+unpack_args(i, args::Tuple{Any}) = (unpack(args[1], i),)
+unpack_args(::Any, args::Tuple{}) = ()
+=#
+
+function Base.copyto!(dest::T,bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{GridData}}) where {T <: GridData}
+    copyto!(dest.data,unpack_data(bc, nothing))
+    dest
+end
+
+
+@inline unpack_data(bc::Broadcast.Broadcasted, i) = Broadcast.Broadcasted(bc.f, unpack_data_args(i, bc.args))
+unpack_data(x,::Any) = x
+unpack_data(x::GridData, ::Nothing) = x.data
+
+@inline unpack_data_args(i, args::Tuple) = (unpack_data(args[1], i), unpack_data_args(i, Base.tail(args))...)
+unpack_data_args(i, args::Tuple{Any}) = (unpack_data(args[1], i),)
+unpack_data_args(::Any, args::Tuple{}) = ()
