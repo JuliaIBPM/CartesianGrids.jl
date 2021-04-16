@@ -11,37 +11,28 @@ struct Identity end
 
 
 
-
-
-
-
-
 ### On scalar grid data ####
 
-# Set it to negative of itself
 function (-)(p_in::GridData)
-  p = deepcopy(p_in)
-  p.data .= -p.data
-  return p
+  Base.broadcast(-,p_in)
 end
 
-function (-)(p1::T,p2::T) where {T <: GridData}
-   return T(p1.data .- p2.data)
- end
-
-function (+)(p1::T,p2::T) where {T <: GridData}
-  return T(p1.data .+ p2.data)
+for op in (:+, :-, :*)
+    @eval function $op(p1::T,p2::T) where {T <: GridData}
+       Base.broadcast($op,p1,p2)
+    end
+    @eval function $op(p1::Number,p2::GridData)
+       Base.broadcast($op,p1,p2)
+    end
+    @eval function $op(p1::GridData,p2::Number)
+       Base.broadcast($op,p1,p2)
+    end
 end
 
-# Multiply and divide by a constant
-function (*)(p::T,c::Number) where {T<:GridData}
-  return T(c*p.data)
-end
-
-(*)(c::Number,p::T) where {T<:GridData} = *(p,c)
-
-function (/)(p::T,c::Number) where {T<:GridData}
-  return T(p.data ./ c)
+for op in (:/,)
+    @eval function $op(p1::GridData,p2::Number)
+       Base.broadcast($op,p1,p2)
+    end
 end
 
 """
@@ -180,13 +171,15 @@ zero(::Type{T}) where {T <: GridData} = T()
 
 #### ON COMPLEX GRID DATA
 
+
 for f in (:conj,)
     @eval function $f(A::GridData{NX,NY,T}) where {NX,NY,T <: ComplexF64}
-        Acopy = deepcopy(A)
-        Acopy.data .= broadcast($f,Acopy.data)
+        Acopy = similar(A)
+        Acopy.data .= broadcast($f,A.data)
         return Acopy
     end
 end
+
 
 for f in (:real, :imag, :abs, :abs2)
   @eval function $f(A::GridData{NX,NY,T}) where {NX,NY,T <: ComplexF64}
@@ -196,6 +189,8 @@ for f in (:real, :imag, :abs, :abs2)
   end
 end
 
+
+## BROADCASTING
 
 # This enables fused in-place broadcasting of all grid data
 Base.BroadcastStyle(::Type{<:GridData}) = Broadcast.ArrayStyle{GridData}()
@@ -209,16 +204,6 @@ function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{GridData}})
     similar(unpack(bc))
 end
 
-
-#=
-@inline unpack(bc::Broadcast.Broadcasted, i) = Broadcast.Broadcasted(bc.f, unpack_args(i, bc.args))
-unpack(x,::Any) = x
-unpack(x::GridData, ::Nothing) = x
-
-@inline unpack_args(i, args::Tuple) = (unpack(args[1], i), unpack_args(i, Base.tail(args))...)
-unpack_args(i, args::Tuple{Any}) = (unpack(args[1], i),)
-unpack_args(::Any, args::Tuple{}) = ()
-=#
 
 function Base.copyto!(dest::T,bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{GridData}}) where {T <: GridData}
     copyto!(dest.data,unpack_data(bc, nothing))
