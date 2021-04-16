@@ -3,6 +3,30 @@ import LinearAlgebra: transpose!, transpose
 
 export pointwise_dot, tensorproduct!, pointwise_dot!, cross!
 
+import Base: -, +, *, /
+function (-)(p_in::PointData)
+  Base.broadcast(-,p_in)
+end
+
+for op in (:+, :-, :*)
+    @eval function $op(p1::T,p2::T) where {T <: PointData}
+       Base.broadcast($op,p1,p2)
+    end
+    @eval function $op(p1::Number,p2::PointData)
+       Base.broadcast($op,p1,p2)
+    end
+    @eval function $op(p1::PointData,p2::Number)
+       Base.broadcast($op,p1,p2)
+    end
+end
+
+for op in (:/,)
+    @eval function $op(p1::PointData,p2::Number)
+       Base.broadcast($op,p1,p2)
+    end
+end
+
+#=
 # Set it to negative of itself
 function (-)(p_in::PointData)
   p = similar(p_in)
@@ -39,7 +63,7 @@ function (/)(p::T,c::Number) where {T<:PointData}
 end
 
 (*)(c::Number,p::T) where {T<:PointData} = *(p,c)
-
+=#
 
 #function (*)(p1::T,p2::T) where {T<:PointData}
 #  q = similar(p1,element_type=promote_type(eltype(p1),eltype(p2)))
@@ -406,11 +430,19 @@ function dot(A::Tuple{T,T},B::TensorData) where {T<:Number}
 end
 
 
-
+### BROADCASTING
 
 ### Operations on complex point data
 
-for f in (:real, :imag, :abs, :abs2, :conj)
+for f in (:conj,)
+  @eval function $f(A::PointData{N,T}) where {N,T <: ComplexF64}
+      Acopy = similar(A)
+      Acopy.data .= broadcast($f,A.data)
+      return Acopy
+  end
+end
+
+for f in (:real, :imag, :abs, :abs2)
   @eval function $f(A::PointData{N,T}) where {N,T <: ComplexF64}
       Acopy = similar(A,element_type=Float64)
       Acopy.data .= broadcast($f,A.data)
