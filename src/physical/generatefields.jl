@@ -5,7 +5,9 @@ import Base: *, -, +, show
 abstract type AbstractSpatialField end
 abstract type AbstractGeneratedField end
 
-include("motionprofiles.jl")
+#include("motionprofiles.jl")
+using SpaceTimeFields
+import SpaceTimeFields: Abstract1DProfile, radius, strength
 
 
 ## Empty spatial field
@@ -49,8 +51,8 @@ struct SpatialGaussian{CT,GX,GY} <: AbstractSpatialField
   A :: Float64
   u :: Float64
   v :: Float64
-  SpatialGaussian(gx::Profile,gy::Profile,A,u,v) = new{true,typeof(gx),typeof(gy)}(gx,gy,A,u,v)
-  SpatialGaussian(gx::Profile,gy::Profile,A) = new{false,typeof(gx),typeof(gy)}(gx,gy,A,0.0,0.0)
+  SpatialGaussian(gx::Abstract1DProfile,gy::Abstract1DProfile,A,u,v) = new{true,typeof(gx),typeof(gy)}(gx,gy,A,u,v)
+  SpatialGaussian(gx::Abstract1DProfile,gy::Abstract1DProfile,A) = new{false,typeof(gx),typeof(gy)}(gx,gy,A,0.0,0.0)
 end
 
 SpatialGaussian(σx::Real,σy::Real,x0::Real,y0::Real,A::Real;deriv::Int=0) =
@@ -223,7 +225,7 @@ end
 
 ## For generating a transient form of a spatial field
 """
-    ModulatedField(g::GeneratedField,modfcn::Profile)
+    ModulatedField(g::GeneratedField,modfcn::Abstract1DProfile)
 
 Create a time-modulated form of a generated spatial field, useful for
 introducing a forcing field onto the grid. The supplied field `g`
@@ -233,7 +235,7 @@ resulting object can be evaluated with a single argument (time) and returns a
 """
 struct ModulatedField
   gfield :: GeneratedField
-  modfcn :: Profile
+  modfcn :: Abstract1DProfile
 end
 
 (f::ModulatedField)(t) = f.modfcn(t)*f.gfield()
@@ -254,7 +256,7 @@ resulting object can be evaluated with a single argument (time) and returns a
 #=
 struct PulseField
   gfield :: GeneratedField
-  modfcn :: Profile
+  modfcn :: Abstract1DProfile
 end
 =#
 
