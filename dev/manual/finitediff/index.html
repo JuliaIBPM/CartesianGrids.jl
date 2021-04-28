@@ -9,14 +9,14 @@
 \renewcommand{\d}{\,\mathrm{d}}\]</p><h2 id="Field-differencing-operations"><a class="docs-heading-anchor" href="#Field-differencing-operations">Field differencing operations</a><a id="Field-differencing-operations-1"></a><a class="docs-heading-anchor-permalink" href="#Field-differencing-operations" title="Permalink"></a></h2><p>Field operations transform one data type to another. Some of these are differencing operations, analogous to differential counterparts in continuum calculus: <code>curl</code>, <code>divergence</code>, and <code>gradient</code>. For example, a <code>curl</code> operation can act upon dual nodal data (like streamfunction) and return primal edge data (i.e. velocity); a <code>divergence</code> operation acts on edge data (primal or dual) and returns nodal data of the same cell type. Note that these operations are <em>mimetic</em>: they maintain some of the same properties as the continuous counterparts. For example, the divergence of the curl of any dual nodal data is exactly zero. The curl of the gradient of primal nodal data is also zero.</p><p>Let&#39;s take the curl of the dual nodal data we constructed:</p><pre><code class="language-julia-repl">
 
 julia&gt; curl(w)
-Edges{Primal,5,4,Float64,Array{Float64,1}} data
+Edges{Primal, 5, 4, Float64, Vector{Float64}} data
 u (in grid orientation)
-3×5 Array{Float64,2}:
+3×5 Matrix{Float64}:
  5.0  5.0  5.0  5.0  5.0
  5.0  5.0  5.0  5.0  5.0
  5.0  5.0  5.0  5.0  5.0
 v (in grid orientation)
-4×4 Array{Float64,2}:
+4×4 Matrix{Float64}:
  -1.0  -1.0  -1.0  -1.0
  -1.0  -1.0  -1.0  -1.0
  -1.0  -1.0  -1.0  -1.0
@@ -24,40 +24,40 @@ v (in grid orientation)
 Curl()
 
 julia&gt; C*w
-Edges{Primal,5,4,Float64,Array{Float64,1}} data
+Edges{Primal, 5, 4, Float64, Vector{Float64}} data
 u (in grid orientation)
-3×5 Array{Float64,2}:
+3×5 Matrix{Float64}:
  5.0  5.0  5.0  5.0  5.0
  5.0  5.0  5.0  5.0  5.0
  5.0  5.0  5.0  5.0  5.0
 v (in grid orientation)
-4×4 Array{Float64,2}:
+4×4 Matrix{Float64}:
  -1.0  -1.0  -1.0  -1.0
  -1.0  -1.0  -1.0  -1.0
  -1.0  -1.0  -1.0  -1.0
  -1.0  -1.0  -1.0  -1.0</code></pre><p>Note that <code>C</code> is not actually a matrix. Rather, it is simply another name for the <code>curl</code> operator, and <code>*</code> is defined in this context to apply <code>curl</code> to whatever is to the right of it. The other operators have similar constructs.</p><p>Suppose we wish to apply the <code>curl</code> operation over and over. The <code>curl()</code> function allocates memory for the result whenever it is used; this would become expensive if it is done often. So it makes sense to preallocate space for this result and use the <code>curl!()</code> function, which simply fills in the elements:</p><pre><code class="language-julia-repl">julia&gt; q = Edges(Primal,w)
-Edges{Primal,5,4,Float64,Array{Float64,1}} data
+Edges{Primal, 5, 4, Float64, Vector{Float64}} data
 u (in grid orientation)
-3×5 Array{Float64,2}:
+3×5 Matrix{Float64}:
  0.0  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0  0.0
 v (in grid orientation)
-4×4 Array{Float64,2}:
+4×4 Matrix{Float64}:
  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0
 
 julia&gt; curl!(q,w)
-Edges{Primal,5,4,Float64,Array{Float64,1}} data
+Edges{Primal, 5, 4, Float64, Vector{Float64}} data
 u (in grid orientation)
-3×5 Array{Float64,2}:
+3×5 Matrix{Float64}:
  5.0  5.0  5.0  5.0  5.0
  5.0  5.0  5.0  5.0  5.0
  5.0  5.0  5.0  5.0  5.0
 v (in grid orientation)
-4×4 Array{Float64,2}:
+4×4 Matrix{Float64}:
  -1.0  -1.0  -1.0  -1.0
  -1.0  -1.0  -1.0  -1.0
  -1.0  -1.0  -1.0  -1.0
@@ -65,15 +65,15 @@ v (in grid orientation)
 Divergence()
 
 julia&gt; D*(C*w)
-Nodes{Primal,5,4,Float64,Array{Float64,2}} data
+Nodes{Primal, 5, 4, Float64, Matrix{Float64}} data
 Printing in grid orientation (lower left is (1,1))
-3×4 Array{Float64,2}:
+3×4 Matrix{Float64}:
  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0</code></pre><h2 id="The-Laplacian-and-its-inverse"><a class="docs-heading-anchor" href="#The-Laplacian-and-its-inverse">The Laplacian and its inverse</a><a id="The-Laplacian-and-its-inverse-1"></a><a class="docs-heading-anchor-permalink" href="#The-Laplacian-and-its-inverse" title="Permalink"></a></h2><p><code>CartesianGrids</code> also makes heavy use of the discrete Laplacian operator, <span>$L$</span>. This mimics the continuous operator, <span>$\nabla^2$</span>, and acts upon data of any type. Let&#39;s apply this to the original data:</p><pre><code class="language-julia-repl">julia&gt; laplacian(w)
-Nodes{Dual,5,4,Float64,Array{Float64,2}} data
+Nodes{Dual, 5, 4, Float64, Matrix{Float64}} data
 Printing in grid orientation (lower left is (1,1))
-4×5 Array{Float64,2}:
+4×5 Matrix{Float64}:
  0.0  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0  0.0
@@ -82,27 +82,27 @@ Discrete Laplacian on a (nx = 5, ny = 4) grid acting on Float64 data with
                factor 1.0 and spacing 1.0
 
 julia&gt; L*w
-Nodes{Dual,5,4,Float64,Array{Float64,2}} data
+Nodes{Dual, 5, 4, Float64, Matrix{Float64}} data
 Printing in grid orientation (lower left is (1,1))
-4×5 Array{Float64,2}:
+4×5 Matrix{Float64}:
  0.0  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0  0.0
  0.0  0.0  0.0  0.0  0.0</code></pre><p>An important part of <code>CartesianGrids</code> is the <em>inverse</em> of this operator. That is, we need the ability to solve the discrete Poisson system</p><p class="math-container">\[Ls = w\]</p><p>for <span>$s$</span>, for given data <span>$w$</span>. We achieve this in <code>CartesianGrids</code> with the <em>lattice Green&#39;s function</em>. To outfit the operator with its inverse, we simply set the optional flag:</p><pre><code class="language-julia-repl">julia&gt; L = plan_laplacian(size(w),with_inverse=true)
 Discrete Laplacian (and inverse) on a (nx = 5, ny = 4) grid acting on Float64 data with
                factor 1.0 and spacing 1.0</code></pre><p>Then, the Poisson system is solved with the backslash (<code>\</code>),</p><pre><code class="language-julia-repl">julia&gt; s = L\w
-Nodes{Dual,5,4,Float64,Array{Float64,2}} data
+Nodes{Dual, 5, 4, Float64, Matrix{Float64}} data
 Printing in grid orientation (lower left is (1,1))
-4×5 Array{Float64,2}:
+4×5 Matrix{Float64}:
  24.082   15.9349  12.2076  13.0464  19.5282
  23.5931  15.0969  11.0184  11.7015  18.2956
  29.2015  21.841   18.0677  18.4457  23.9041
  37.5698  31.9978  28.9659  29.1093  33.016
 
 julia&gt; L*s
-Nodes{Dual,5,4,Float64,Array{Float64,2}} data
+Nodes{Dual, 5, 4, Float64, Matrix{Float64}} data
 Printing in grid orientation (lower left is (1,1))
-4×5 Array{Float64,2}:
+4×5 Matrix{Float64}:
  0.0   0.0   0.0   0.0  0.0
  0.0  12.0  13.0  14.0  0.0
  0.0   7.0   8.0   9.0  0.0
@@ -129,9 +129,9 @@ julia&gt; plot(E*u0)
 Plot{Plots.PyPlotBackend() n=1}</code></pre><p><img src="../Ew1.svg" alt/></p><p>Note that <span>$E(0) = I$</span>, where <span>$I$</span> is the identity. Also, the integrating factor has the useful property that <span>$E(t+\tau) = E(t)E(\tau)$</span>. From these properties, it follows that <span>$E^{-1}(t) = E(-t)$</span>. Let&#39;s suppose we wish to advance <span>$u$</span> from time <span>$t = \tau-h$</span> to time <span>$t = \tau$</span>. For any <span>$t$</span> in this interval, we can define an auxiliary quantity, <span>$v(t;\tau) = E(\tau-t)u(t)$</span>, which represents the instantaneous value of <span>$u$</span>, but diffused to the end of the time interval. This new quantity satisfies the modified set of ODEs</p><p class="math-container">\[\ddt v = E(\tau-t) f\left[ E(t-\tau) v(t;\tau),t\right],\quad v(\tau-h;\tau) = E(h)u(\tau-h)\]</p><p>The result of integrating this set of ODEs to <span>$t = \tau$</span> is <span>$v(\tau;\tau) = u(\tau)$</span>. In other words, the integrating factor allows us to solve a somewhat reduced set of ODEs.</p><h2 id="Other-field-operations"><a class="docs-heading-anchor" href="#Other-field-operations">Other field operations</a><a id="Other-field-operations-1"></a><a class="docs-heading-anchor-permalink" href="#Other-field-operations" title="Permalink"></a></h2><p>Other field operations shift the data, by local averaging, from one data type to another. These operations are all called <code>grid_interpolate!</code>, and they require that the target data be preallocated. For example, to interpolate dual node data to the dual edges,</p><pre><code class="language-julia-repl">julia&gt; w = Nodes(Dual,(5,4));
 
 julia&gt; w .= reshape(1:20,5,4)
-Nodes{Dual,5,4,Float64,Array{Float64,2}} data
+Nodes{Dual, 5, 4, Float64, Matrix{Float64}} data
 Printing in grid orientation (lower left is (1,1))
-4×5 Array{Float64,2}:
+4×5 Matrix{Float64}:
  16.0  17.0  18.0  19.0  20.0
  11.0  12.0  13.0  14.0  15.0
   6.0   7.0   8.0   9.0  10.0
@@ -140,41 +140,41 @@ Printing in grid orientation (lower left is (1,1))
 julia&gt; Ww = Edges(Dual,w);
 
 julia&gt; grid_interpolate!(Ww,w)
-Edges{Dual,5,4,Float64,Array{Float64,1}} data
+Edges{Dual, 5, 4, Float64, Vector{Float64}} data
 u (in grid orientation)
-4×4 Array{Float64,2}:
+4×4 Matrix{Float64}:
   0.0   0.0   0.0   0.0
  11.5  12.5  13.5  14.5
   6.5   7.5   8.5   9.5
   0.0   0.0   0.0   0.0
 v (in grid orientation)
-3×5 Array{Float64,2}:
+3×5 Matrix{Float64}:
  0.0  14.5  15.5  16.5  0.0
  0.0   9.5  10.5  11.5  0.0
  0.0   4.5   5.5   6.5  0.0</code></pre><p>Note that the edges in the ghost cells are 0; these edges are not assigned any values in the interpolate operation.</p><p>We can then interpolate this to primal edges:</p><pre><code class="language-julia-repl">julia&gt; q = Edges(Primal,w);
 
 julia&gt; grid_interpolate!(q,Ww)
-Edges{Primal,5,4,Float64,Array{Float64,1}} data
+Edges{Primal, 5, 4, Float64, Vector{Float64}} data
 u (in grid orientation)
-3×5 Array{Float64,2}:
+3×5 Matrix{Float64}:
  0.0  6.0   6.5   7.0  0.0
  0.0  9.5  10.5  11.5  0.0
  0.0  3.5   4.0   4.5  0.0
 v (in grid orientation)
-4×4 Array{Float64,2}:
+4×4 Matrix{Float64}:
  0.0   0.0   0.0  0.0
  6.0  12.5  13.5  7.0
  3.5   7.5   8.5  4.5
  0.0   0.0   0.0  0.0</code></pre><p>We can also compute the Hadamard (i.e. element by element) product of any data of the same type, e.g.,</p><pre><code class="language-julia-repl">julia&gt; q∘q
-Edges{Primal,5,4,Float64,Array{Float64,1}} data
+Edges{Primal, 5, 4, Float64, Vector{Float64}} data
 u (in grid orientation)
-3×5 Array{Float64,2}:
+3×5 Matrix{Float64}:
  0.0  36.0    42.25   49.0   0.0
  0.0  90.25  110.25  132.25  0.0
  0.0  12.25   16.0    20.25  0.0
 v (in grid orientation)
-4×4 Array{Float64,2}:
+4×4 Matrix{Float64}:
   0.0     0.0     0.0    0.0
  36.0   156.25  182.25  49.0
  12.25   56.25   72.25  20.25
-  0.0     0.0     0.0    0.0</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../fielddata/">« Setting up field data</a><a class="docs-footer-nextpage" href="../immersed/">Immersed data and their operations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 16 December 2020 06:03">Wednesday 16 December 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  0.0     0.0     0.0    0.0</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../fielddata/">« Setting up field data</a><a class="docs-footer-nextpage" href="../immersed/">Immersed data and their operations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 28 April 2021 16:48">Wednesday 28 April 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
