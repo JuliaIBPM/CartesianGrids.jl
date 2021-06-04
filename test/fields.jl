@@ -366,6 +366,9 @@ import LinearAlgebra: norm, dot, mul!
   randomize!(f1,offset=offset)
   randomize!(f2,offset=offset)
 
+  w = Nodes(Dual,u)
+  randomize!(w,offset=offset)
+
   dq = EdgeGradient(Primal,v)
   dv = EdgeGradient(Primal,v)
   dqd = EdgeGradient(Dual,v)
@@ -383,7 +386,10 @@ import LinearAlgebra: norm, dot, mul!
 
   qtmp = Edges(Primal,u)
   qtmpd = Edges(Dual,u)
+  qtmp1d = Edges(Dual,u)
+  qtmp2d = Edges(Dual,u)
   ftmp = Nodes(Primal,u)
+  wtmp = Nodes(Dual,u)
   utmp = EdgeGradient(Primal,u)
   utmpd = EdgeGradient(Dual,u)
 
@@ -445,6 +451,19 @@ import LinearAlgebra: norm, dot, mul!
     rhsn .= ftmp + f1∘divergence(u)
     @test isapprox(norm(lhsn-rhsn),0.0,atol=100.0*eps())
 
+    # div(u*w) = grad(w).u + w*(div u)
+    lhsnd .= 0
+    rhsnd .= 0
+    qtmp1d .= 0
+    qtmp2d .= 0
+    lhsnd .= divergence(grid_interpolate!(qtmp1d,u)∘grid_interpolate!(qtmp2d,w))
+    qtmp1d .= 0
+    grid_interpolate!(rhsnd,grid_interpolate!(qtmp1d,u)∘grad(w))
+    wtmp .= 0
+    rhsnd .+= w∘grid_interpolate!(wtmp,divergence(u))
+    @test isapprox(norm(lhsnd-rhsnd),0.0,atol=100.0*eps())
+
+
     # div(uv) = u.grad v + (div u)v
     divuv = zero(u)
     uv = EdgeGradient(Primal,u)
@@ -488,6 +507,7 @@ import LinearAlgebra: norm, dot, mul!
     product!(vdivu,grid_interpolate!(qtmpd,divergence(ud)),vd)
 
     @test isapprox(norm(divuv - ugradv - vdivu),0.0,atol=100.0*eps())
+
 
 
   end
