@@ -620,7 +620,7 @@ for (gridtype,ctype,dunx,duny,dvnx,dvny,shiftux,shiftuy,shiftvx,shiftvy) in @gen
       Hmat[1:lenu,          1:N]    = Hdudx.M
       Hmat[lenu+1:lenu+lenv,N+1:2N] = Hdudy.M
       Hmat[lenu+lenv+1:lenu+2lenv,2N+1:3N] = Hdudy.M
-      Hmat[lenu+2lenv+1:2lenu+2lenv,3N+1+4N] = Hdudx.M
+      Hmat[lenu+2lenv+1:2lenu+2lenv,3N+1:4N] = Hdudx.M
       return RegularizationMatrix{typeof(target),typeof(src)}(Hmat),InterpolationMatrix{typeof(target),typeof(src)}(Hmat)
     else
       Hdudx = RegularizationMatrix(H,src.dudx,target.dudx)
