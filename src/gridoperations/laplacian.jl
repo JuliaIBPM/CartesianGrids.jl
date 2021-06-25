@@ -254,9 +254,10 @@ function plan_laplacian end
 
 """
     plan_laplacian!(dims::Tuple,[with_inverse=false],[fftw_flags=FFTW.ESTIMATE],
-                          [factor=1.0])
+                          [factor=1.0][,nthreads=length(Sys.cpu_info())])
 
-Same as [`plan_laplacian`](@ref), but operates in-place on data.
+Same as [`plan_laplacian`](@ref), but operates in-place on data. The number of threads `threads` defaults to the number of
+logical CPU cores on the system.
 """
 function plan_laplacian! end
 
@@ -272,24 +273,24 @@ Base.eltype(::Laplacian{NX,NY,T}) where {NX,NY,T} = T
 for (lf,inplace) in ((:plan_laplacian,false),
                      (:plan_laplacian!,true))
     @eval function $lf(dims::Tuple{Int,Int};
-                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Real = 1.0, dx = 1.0, dtype = Float64)
+                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Real = 1.0, dx = 1.0, dtype = Float64, nthreads = length(Sys.cpu_info()))
         NX, NY = dims
         if !with_inverse
             return Laplacian{NX, NY, dtype, false, $inplace}(convert(dtype,factor),convert(Float64,dx),nothing)
         end
 
         G = view(LGF_TABLE, 1:NX, 1:NY)
-        Laplacian{NX, NY, dtype, true, $inplace}(convert(dtype,factor),convert(Float64,dx),CircularConvolution(G, fftw_flags,dtype=dtype))
+        Laplacian{NX, NY, dtype, true, $inplace}(convert(dtype,factor),convert(Float64,dx),CircularConvolution(G, fftw_flags,dtype=dtype,nthreads=nthreads))
     end
 
     @eval function $lf(nx::Int, ny::Int;
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64)
-        $lf((nx, ny), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype)
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64, nthreads = length(Sys.cpu_info()))
+        $lf((nx, ny), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype, nthreads = nthreads)
     end
 
     @eval function $lf(w::ScalarGridData;
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64) where {T<:CellType,NX,NY}
-        $lf(size(w), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype)
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64, nthreads = length(Sys.cpu_info())) where {T<:CellType,NX,NY}
+        $lf(size(w), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype, nthreads = nthreads)
     end
 end
 
