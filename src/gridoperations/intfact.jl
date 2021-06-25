@@ -51,10 +51,11 @@ Printing in grid orientation (lower left is (1,1))
 function plan_intfact end
 
 """
-    plan_intfact!(a::Real,dims::Tuple,[fftw_flags=FFTW.ESTIMATE])
+    plan_intfact!(a::Real,dims::Tuple,[fftw_flags=FFTW.ESTIMATE][,nthreads=length(Sys.cpu_info())])
 
 Same as [`plan_intfact`](@ref), but the resulting operator performs an in-place
-operation on data.
+operation on data. The number of threads `threads` defaults to the number of
+logical CPU cores on the system.
 """
 function plan_intfact! end
 
@@ -74,7 +75,7 @@ end
 for (lf,inplace) in ((:plan_intfact,false),
                      (:plan_intfact!,true))
 
-    @eval function $lf(a::Real,dims::Tuple{Int,Int};fftw_flags = FFTW.ESTIMATE)
+    @eval function $lf(a::Real,dims::Tuple{Int,Int};fftw_flags = FFTW.ESTIMATE, nthreads = length(Sys.cpu_info()))
         NX, NY = dims
 
         if a == 0
@@ -94,11 +95,11 @@ for (lf,inplace) in ((:plan_intfact,false),
         end
         qtab = [max(x,y) <= Nmax ? intfact(x, y, a_internal) : 0.0 for x in 0:NX-1, y in 0:NY-1]
         #IntFact{NX, NY, a, $inplace}(Nullable(CircularConvolution(qtab, fftw_flags)))
-        IntFact{NX, NY, signType, $inplace}(a_internal,CircularConvolution(qtab, fftw_flags))
+        IntFact{NX, NY, signType, $inplace}(a_internal,CircularConvolution(qtab, fftw_flags,nthreads=nthreads))
       end
 
-      @eval $lf(a::Real,w::ScalarGridData; fftw_flags = FFTW.ESTIMATE) where {T<:CellType,NX,NY} =
-          $lf(a,size(w), fftw_flags = fftw_flags)
+      @eval $lf(a::Real,w::ScalarGridData; fftw_flags = FFTW.ESTIMATE, nthreads = length(Sys.cpu_info())) where {T<:CellType,NX,NY} =
+          $lf(a,size(w), fftw_flags = fftw_flags, nthreads = nthreads)
 
 
 end

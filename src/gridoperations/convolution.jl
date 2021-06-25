@@ -38,6 +38,7 @@ struct CircularConvolution{M, N, T, K, KI}
     Ĝ::Matrix{ComplexF64}
     F::K
     F⁻¹::KI
+    nthreads::Int
 
     paddedSpace::Matrix{T}
     Â::Matrix{ComplexF64}
@@ -47,8 +48,8 @@ function Base.show(io::IO, c::CircularConvolution{M, N, T}) where {M, N, T}
     print(io, "Circular convolution on a $M × $N matrix of data type $T")
 end
 
-function CircularConvolution(G::AbstractMatrix{T},fftw_flags = FFTW.ESTIMATE; dtype = Float64) where {T}
-    FFTW.set_num_threads(2)
+function CircularConvolution(G::AbstractMatrix{T},fftw_flags = FFTW.ESTIMATE; dtype = Float64, nthreads = length(Sys.cpu_info())) where {T}
+    FFTW.set_num_threads(nthreads)
 
     M, N = size(G)
     #paddedSpace = Matrix{Float64}(undef, 2M-1, 2N-1)
@@ -72,11 +73,12 @@ function CircularConvolution(G::AbstractMatrix{T},fftw_flags = FFTW.ESTIMATE; dt
       F⁻¹ = FFTW.plan_irfft(Â, 2M, flags = fftw_flags)
     end
 
-    CircularConvolution{M, N, dtype, typeof(F), typeof(F⁻¹)}(Ĝ, F, F⁻¹, paddedSpace, Â)
+    CircularConvolution{M, N, dtype, typeof(F), typeof(F⁻¹)}(Ĝ, F, F⁻¹, nthreads, paddedSpace, Â)
 end
 
 function mul!(out, C::CircularConvolution{M, N, T}, B) where {M, N, T}
-    FFTW.set_num_threads(2)
+    FFTW.set_num_threads(C.nthreads)
+    
     MB, NB = size(B)
     #@assert size(out) == size(B) == (M, N)
     @assert size(out) == (MB, NB)
