@@ -22,6 +22,9 @@ using LinearAlgebra
     f2 = zero(f)
     @test typeof(f2) == typeof(f)
 
+    ft2 = zero(ft)
+    @test typeof(ft2) == typeof(ft)
+
   end
 
   @testset "Point operations" begin
