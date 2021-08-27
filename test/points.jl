@@ -19,6 +19,9 @@ using LinearAlgebra
     ft[25] = 4
     @test ft.dvdx[5] == 4
 
+    f2 = zero(f)
+    @test typeof(f2) == typeof(f)
+
   end
 
   @testset "Point operations" begin

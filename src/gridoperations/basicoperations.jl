@@ -168,6 +168,8 @@ transpose(q::EdgeGradient{C,D,NX,NY}) where {C<:CellType,D<:CellType,NX,NY} =
 
 
 zero(::Type{T}) where {T <: GridData} = T()
+zero(::T) where {T <: GridData} = T()
+
 
 #### ON COMPLEX GRID DATA
 
