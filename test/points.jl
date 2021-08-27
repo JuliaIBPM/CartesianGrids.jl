@@ -272,6 +272,54 @@ using LinearAlgebra
 
   end
 
+  @testset "Matrix representation dispatch" begin
+
+  u = Nodes(Primal,(nx,ny))
+  w = XEdges(Primal,u)
+  dq = EdgeGradient(Primal,w)
+  dq2 = EdgeGradient(Primal,w)
+
+  s = NodePair(Dual,w)
+  s2 = NodePair(Dual,w)
+
+  q = Edges(Primal,w)
+  q2 = Edges(Primal,w)
+
+  f = ScalarData(X)
+  h = VectorData(X)
+
+  Hmat = RegularizationMatrix(H,f,w)
+  Hmatn = RegularizationMatrix(H,f,u)
+  Hmate = RegularizationMatrix(H,h,q)
+
+  Emat = InterpolationMatrix(H,w,f)
+  Ematn = InterpolationMatrix(H,u,f)
+  Emate = InterpolationMatrix(H,q,h)
+
+  @test_throws MethodError mul!(w,Hmat,h)
+  @test_throws MethodError mul!(q,Hmate,f)
+  @test_throws MethodError mul!(h,Emat,w)
+  @test_throws MethodError mul!(f,Emate,q)
+
+  # None of these should throw an error
+  mul!(w,Hmat,h.u)
+  mul!(u,Hmatn,f)
+  mul!(h.u,Emat,w)
+  mul!(h.u,Emat,q.u)
+  mul!(f,Emat,q.u)
+  mul!(h.u,Ematn,u)
+  mul!(f,Ematn,u)
+
+  Hmat*h.u
+  Hmate*h
+  Emat*w
+  Emat*q.u
+
+  @test_throws DimensionMismatch Hmat*h
+  @test_throws DimensionMismatch Emate*w
+
+
+  end
 
   @testset "Matrix representation" begin
 
@@ -286,6 +334,12 @@ using LinearAlgebra
   mul!(w,Hmat,f)
   H(w2,f)
   @test w ≈ w2
+
+  # Test that scalar data of different data representation can be used with matrix
+  # Here, Hmat has the second parameter ScalarData with its DT parameter
+  # different from that of X.u (which is a SubArray)
+  mul!(w,Hmat,X.u)
+  @test typeof(Hmat*X.u) == typeof(w2)
 
   @test_throws MethodError mul!(f,Hmat,w)
 
