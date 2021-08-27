@@ -266,6 +266,14 @@ Element-by-element transpose of `TensorData` `p`
 """
 transpose(p::TensorData) = transpose!(zero(p),p)
 
+"""
+    zero(p::PointData)
+
+Return data of the same type as `p`, filled with zeros.
+"""
+zero(::Type{T}) where {T <: PointData} = T()
+zero(::T) where {T <: PointData} = T()
+
 
 """
     cross(a::Number/ScalarData,A::VectorData) -> VectorData

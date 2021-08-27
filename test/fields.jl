@@ -42,6 +42,11 @@ import LinearAlgebra: norm, dot, mul!
   @test griddatatype(NodePair(Dual,dualfacezero)) == NodePair
   @test griddatatype(EdgeGradient(Dual,cellzero)) == EdgeGradient
 
+  cellzero2 = typeof(cellzero)()
+  @test typeof(cellzero2) == typeof(cellzero)
+
+  cellzero2 = zero(cellzero)
+  @test typeof(cellzero2) == typeof(cellzero)
 
   cellunit = deepcopy(cellzero)
   cellunit[i,j] = 1.0
@@ -950,7 +955,7 @@ end
         s = Nodes(Dual,(5,4))
         s .= rand(5, 4)
 
-        @test iszero(divergence(curl(s)))
+        @test norm(divergence(curl(s))) ≈ 0 atol=eps()
 
         s = Nodes(Primal,s)
         q′ = Edges(Primal,s)
