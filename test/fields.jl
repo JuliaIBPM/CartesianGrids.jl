@@ -955,7 +955,7 @@ end
         s = Nodes(Dual,(5,4))
         s .= rand(5, 4)
 
-        @test iszero(divergence(curl(s)))
+        @test norm(divergence(curl(s))) ≈ 0 atol=eps()
 
         s = Nodes(Primal,s)
         q′ = Edges(Primal,s)
