@@ -42,6 +42,9 @@ import LinearAlgebra: norm, dot, mul!
   @test griddatatype(NodePair(Dual,dualfacezero)) == NodePair
   @test griddatatype(EdgeGradient(Dual,cellzero)) == EdgeGradient
 
+  cellzero2 = typeof(cellzero)()
+  @test typeof(cellzero2) == typeof(cellzero)
+
 
   cellunit = deepcopy(cellzero)
   cellunit[i,j] = 1.0

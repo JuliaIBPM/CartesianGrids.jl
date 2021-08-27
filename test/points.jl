@@ -315,8 +315,8 @@ using LinearAlgebra
   Emat*w
   Emat*q.u
 
-  @test_throws DimensionMismatch Hmat*h
-  @test_throws DimensionMismatch Emate*w
+  @test_throws MethodError Hmat*h
+  @test_throws MethodError Emate*w
 
 
   end
