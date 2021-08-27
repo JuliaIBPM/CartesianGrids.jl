@@ -167,6 +167,11 @@ transpose(q::EdgeGradient{C,D,NX,NY}) where {C<:CellType,D<:CellType,NX,NY} =
     transpose!(zero(q),q)
 
 
+"""
+    zero(p::GridData)
+
+Return data of the same type as `p`, filled with zeros.
+"""
 zero(::Type{T}) where {T <: GridData} = T()
 zero(::T) where {T <: GridData} = T()
 
