@@ -45,6 +45,8 @@ import LinearAlgebra: norm, dot, mul!
   cellzero2 = typeof(cellzero)()
   @test typeof(cellzero2) == typeof(cellzero)
 
+  cellzero2 = zero(cellzero)
+  @test typeof(cellzero2) == typeof(cellzero)
 
   cellunit = deepcopy(cellzero)
   cellunit[i,j] = 1.0
@@ -77,12 +79,16 @@ import LinearAlgebra: norm, dot, mul!
 
     # providing a vector of data to GridData
     data = zeros(Float64,length(w))
-    w2 = typeof(w)(data)
+    #w2 = typeof(w)(data)
+    w2 = similar(w)
+    w2 .= data
     w2[1,1] = 2.0
     @test vec(w2) == data
 
     data = zeros(Float64,length(q))
-    q2 = typeof(q)(data)
+    q2 = similar(q)
+    q2 .= data
+    #q2 = typeof(q)(data)
     @test all(q2 .== 0.0)
     @test vec(q2) == data
 
