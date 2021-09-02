@@ -366,7 +366,6 @@ using LinearAlgebra
   Emat = InterpolationMatrix(H,w,f)
   Ẽmat = InterpolationMatrix(H̃,w,f)
 
-
   w2 = Nodes(Primal,(nx,ny))
   mul!(w,Hmat,f)
   H(w2,f)
@@ -382,6 +381,10 @@ using LinearAlgebra
   mul!(f,Ẽmat,w)
   H̃(f2,w)
   @test f ≈ f2
+
+  # Construct the filtering matrix Ẽ*H
+  Cmat = Ẽmat*Hmat
+
 
   f = VectorData(X)
   f.u .= rand(n)
@@ -502,6 +505,7 @@ using LinearAlgebra
   Hsmat, Esmat = RegularizationMatrix(Hs,f,p)
   mul!(p,Hsmat,f)
   @test p.dudx ≈ p2.dudx && p.dudy ≈ p2.dudy && p.dvdx ≈ p2.dvdx && p.dvdy ≈ p2.dvdy
+
 
 
   end

@@ -664,7 +664,7 @@ for f in [:Nodes,:XEdges,:YEdges]
     @eval mul!(f,Emat::InterpolationMatrix{S2,F},u::S1) where {F,S1<:$f{C,NX,NY,T},S2<:$f{C,NX,NY,T}} where {C,NX,NY,T} = _mul!(f,Emat,u)
     @eval (*)(Emat::InterpolationMatrix{S2,F},u::S1) where {F,S1<:$f{C,NX,NY,T},S2<:$f{C,NX,NY,T}} where {C,NX,NY,T} = mul!(F(),Emat,u)
     # This is meant to generate a MethodError for non-matching point types:
-    @eval (*)(Emat::InterpolationMatrix{S2,F},u) where {F,S2<:$f{C,NX,NY,T}} where {C,NX,NY,T} = mul!(F(),Emat,u)
+    @eval (*)(Emat::InterpolationMatrix{S2,F},u::GridData) where {F,S2<:$f{C,NX,NY,T}} where {C,NX,NY,T} = mul!(F(),Emat,u)
 end
 # Handle all collected grid data in a stricter fashion, since underlying data
 # is always stored as Vector type
