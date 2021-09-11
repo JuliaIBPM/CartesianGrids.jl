@@ -411,6 +411,9 @@ using LinearAlgebra
   H̃(f2,p)
   @test f.u ≈ f2.u && f.v ≈ f2.v
 
+  # test for method ambiguity
+  Cmat = Ẽmat*Hmat
+
   p = NodePair(Dual,(nx,ny))
   p2 = deepcopy(p)
   Hmat = RegularizationMatrix(H,f,p)
@@ -431,6 +434,9 @@ using LinearAlgebra
   H̃(f2,p)
   @test f.u ≈ f2.u && f.v ≈ f2.v
 
+  # test for method ambiguity
+  Cmat = Ẽmat*Hmat
+
   p = NodePair(Primal,(nx,ny))
   p2 = deepcopy(p)
   Hmat = RegularizationMatrix(H,f,p)
@@ -449,6 +455,9 @@ using LinearAlgebra
   mul!(f,Ẽmat,p)
   H̃(f2,p)
   @test f.u ≈ f2.u && f.v ≈ f2.v
+
+  # test for method ambiguity
+  Cmat = Ẽmat*Hmat
 
   f = TensorData(X)
   f.dudx .= rand(n)
@@ -479,6 +488,9 @@ using LinearAlgebra
   H̃(f2,p)
   @test f.dudx ≈ f2.dudx && f.dudy ≈ f2.dudy && f.dvdx ≈ f2.dvdx && f.dvdy ≈ f2.dvdy
 
+  # test for method ambiguity
+  Cmat = Ẽmat*Hmat
+
   p = EdgeGradient(Primal,(nx,ny))
   p2 = deepcopy(p)
   Hmat = RegularizationMatrix(H,f,p)
@@ -506,7 +518,8 @@ using LinearAlgebra
   mul!(p,Hsmat,f)
   @test p.dudx ≈ p2.dudx && p.dudy ≈ p2.dudy && p.dvdx ≈ p2.dvdx && p.dvdy ≈ p2.dvdy
 
-
+  # test for method ambiguity
+  Cmat = Ẽmat*Hmat
 
   end
 
