@@ -730,7 +730,12 @@ function mul!(C::Array{Float64},Emat::InterpolationMatrix{G,F},
   return C
 end
 
+
 (*)(Emat::InterpolationMatrix,Hmat::RegularizationMatrix) =
+        mul!(Array{eltype(Emat),2}(undef,Emat.M.n,Hmat.M.n),Emat,Hmat)
+
+# This fixes a method ambiguity
+(*)(Emat::InterpolationMatrix{G,F},Hmat::RegularizationMatrix) where {G <: Union{VectorGridData,TensorGridData},F}=
         mul!(Array{eltype(Emat),2}(undef,Emat.M.n,Hmat.M.n),Emat,Hmat)
 
 
