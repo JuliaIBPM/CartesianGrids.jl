@@ -98,8 +98,10 @@ for (lf,inplace) in ((:plan_intfact,false),
         IntFact{NX, NY, signType, $inplace}(a_internal,CircularConvolution(qtab, fftw_flags,nthreads=nthreads))
       end
 
-      @eval $lf(a::Real,w::ScalarGridData; fftw_flags = FFTW.ESTIMATE, nthreads = length(Sys.cpu_info())) where {T<:CellType,NX,NY} =
-          $lf(a,size(w), fftw_flags = fftw_flags, nthreads = nthreads)
+      # Base the size on the dual grid associated with any grid data, since this
+      # is what the efficient grid size in PhysicalGrid has been established with
+      @eval $lf(a::Real,w::ScalarGridData{NX,NY}; fftw_flags = FFTW.ESTIMATE, nthreads = length(Sys.cpu_info())) where {T<:CellType,NX,NY} =
+          $lf(a,(NX,NY), fftw_flags = fftw_flags, nthreads = nthreads)
 
 
 end

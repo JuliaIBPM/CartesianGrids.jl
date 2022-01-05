@@ -96,7 +96,7 @@ end
 for (lf,inplace) in ((:plan_helmholtz,false),
                      (:plan_helmholtz!,true))
     @eval function $lf(dims::Tuple{Int,Int},α::Number;
-                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0)
+                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, nthreads = length(Sys.cpu_info()))
         NX, NY = dims
         if !with_inverse
             return Helmholtz{NX, NY, false, dx, $inplace}(nothing)
@@ -107,13 +107,13 @@ for (lf,inplace) in ((:plan_helmholtz,false),
     end
 
     @eval function $lf(nx::Int, ny::Int,α::Number;
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0)
-        $lf((nx, ny), α, with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx)
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, nthreads = length(Sys.cpu_info()))
+        $lf((nx, ny), α, with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx, nthreads = nthreads)
     end
 
-    @eval function $lf(nodes::Nodes{C,NX,NY,T},α::Number;
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0) where {C<:CellType,NX,NY,T<:ComplexF64}
-        $lf(node_inds(C,(NX,NY)), α, with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx)
+    @eval function $lf(nodes::ScalarGridData{NX,NY,T},α::Number;
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, nthreads = length(Sys.cpu_info())) where {NX,NY,T<:ComplexF64}
+        $lf((NX,NY), α, with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx, nthreads = nthreads)
     end
 end
 
