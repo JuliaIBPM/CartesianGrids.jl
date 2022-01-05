@@ -96,7 +96,7 @@ end
 for (lf,inplace) in ((:plan_helmholtz,false),
                      (:plan_helmholtz!,true))
     @eval function $lf(dims::Tuple{Int,Int},α::Number;
-                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0)
+                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, nthreads = length(Sys.cpu_info()))
         NX, NY = dims
         if !with_inverse
             return Helmholtz{NX, NY, false, dx, $inplace}(nothing)
