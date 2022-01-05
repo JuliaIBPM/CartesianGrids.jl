@@ -108,12 +108,12 @@ for (lf,inplace) in ((:plan_helmholtz,false),
 
     @eval function $lf(nx::Int, ny::Int,α::Number;
         with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, nthreads = length(Sys.cpu_info()))
-        $lf((nx, ny), α, with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx, , nthreads = nthreads)
+        $lf((nx, ny), α, with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx, nthreads = nthreads)
     end
 
     @eval function $lf(nodes::ScalarGridData{NX,NY,T},α::Number;
         with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, nthreads = length(Sys.cpu_info())) where {NX,NY,T<:ComplexF64}
-        $lf((NX,NY), α, with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx, , nthreads = nthreads)
+        $lf((NX,NY), α, with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx, nthreads = nthreads)
     end
 end
 
