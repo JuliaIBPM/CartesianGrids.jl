@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Mimetic calculus on grid data · CartesianGrids.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">CartesianGrids.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../overview/">Overview of staggered grids</a></li><li><a class="tocitem" href="../fielddata/">Setting up field data</a></li><li class="is-active"><a class="tocitem" href>Mimetic calculus on grid data</a><ul class="internal"><li><a class="tocitem" href="#Field-differencing-operations"><span>Field differencing operations</span></a></li><li><a class="tocitem" href="#The-Laplacian-and-its-inverse"><span>The Laplacian and its inverse</span></a></li><li><a class="tocitem" href="#The-integrating-factor"><span>The integrating factor</span></a></li><li><a class="tocitem" href="#Other-field-operations"><span>Other field operations</span></a></li></ul></li><li><a class="tocitem" href="../immersed/">Immersed data and their operations</a></li><li><a class="tocitem" href="../methods/">Index</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Manual</a></li><li class="is-active"><a href>Mimetic calculus on grid data</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Mimetic calculus on grid data</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaIBPM/CartesianGrids.jl/blob/master/docs/src/manual/finitediff.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Mimetic-calculus-on-grid-data"><a class="docs-heading-anchor" href="#Mimetic-calculus-on-grid-data">Mimetic calculus on grid data</a><a id="Mimetic-calculus-on-grid-data-1"></a><a class="docs-heading-anchor-permalink" href="#Mimetic-calculus-on-grid-data" title="Permalink"></a></h1><p class="math-container">\[\def\ddt#1{\frac{\mathrm{d}#1}{\mathrm{d}t}}
+
+\renewcommand{\vec}{\boldsymbol}
+\newcommand{\uvec}[1]{\vec{\hat{#1}}}
+\newcommand{\utangent}{\uvec{\tau}}
+\newcommand{\unormal}{\uvec{n}}
+
+\renewcommand{\d}{\,\mathrm{d}}\]</p><h2 id="Field-differencing-operations"><a class="docs-heading-anchor" href="#Field-differencing-operations">Field differencing operations</a><a id="Field-differencing-operations-1"></a><a class="docs-heading-anchor-permalink" href="#Field-differencing-operations" title="Permalink"></a></h2><p>Field operations transform one data type to another. Some of these are differencing operations, analogous to differential counterparts in continuum calculus: <code>curl</code>, <code>divergence</code>, and <code>gradient</code>. For example, a <code>curl</code> operation can act upon dual nodal data (like streamfunction) and return primal edge data (i.e. velocity); a <code>divergence</code> operation acts on edge data (primal or dual) and returns nodal data of the same cell type. Note that these operations are <em>mimetic</em>: they maintain some of the same properties as the continuous counterparts. For example, the divergence of the curl of any dual nodal data is exactly zero. The curl of the gradient of primal nodal data is also zero.</p><p>Let&#39;s take the curl of the dual nodal data we constructed:</p><pre><code class="nohighlight hljs ansi" style="display:block;"></code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; curl(w)</code><code class="nohighlight hljs ansi" style="display:block;">Edges{Primal, 5, 4, Float64, Vector{Float64}} data
+u (in grid orientation)
+3×5 Matrix{Float64}:
+ 5.0  5.0  5.0  5.0  5.0
+ 5.0  5.0  5.0  5.0  5.0
+ 5.0  5.0  5.0  5.0  5.0
+v (in grid orientation)
+4×4 Matrix{Float64}:
+ -1.0  -1.0  -1.0  -1.0
+ -1.0  -1.0  -1.0  -1.0
+ -1.0  -1.0  -1.0  -1.0
+ -1.0  -1.0  -1.0  -1.0</code></pre><p>We could also make this a little more cute by giving the curl operator a symbol and then acting upon the data as though it were a matrix-vector operation:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; C = Curl()</code><code class="nohighlight hljs ansi" style="display:block;">Curl()</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; C*w</code><code class="nohighlight hljs ansi" style="display:block;">Edges{Primal, 5, 4, Float64, Vector{Float64}} data
+u (in grid orientation)
+3×5 Matrix{Float64}:
+ 5.0  5.0  5.0  5.0  5.0
+ 5.0  5.0  5.0  5.0  5.0
+ 5.0  5.0  5.0  5.0  5.0
+v (in grid orientation)
+4×4 Matrix{Float64}:
+ -1.0  -1.0  -1.0  -1.0
+ -1.0  -1.0  -1.0  -1.0
+ -1.0  -1.0  -1.0  -1.0
+ -1.0  -1.0  -1.0  -1.0</code></pre><p>Note that <code>C</code> is not actually a matrix. Rather, it is simply another name for the <code>curl</code> operator, and <code>*</code> is defined in this context to apply <code>curl</code> to whatever is to the right of it. The other operators have similar constructs.</p><p>Suppose we wish to apply the <code>curl</code> operation over and over. The <code>curl()</code> function allocates memory for the result whenever it is used; this would become expensive if it is done often. So it makes sense to preallocate space for this result and use the <code>curl!()</code> function, which simply fills in the elements:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; q = Edges(Primal,w)</code><code class="nohighlight hljs ansi" style="display:block;">Edges{Primal, 5, 4, Float64, Vector{Float64}} data
+u (in grid orientation)
+3×5 Matrix{Float64}:
+ 0.0  0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0  0.0
+v (in grid orientation)
+4×4 Matrix{Float64}:
+ 0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; curl!(q,w)</code><code class="nohighlight hljs ansi" style="display:block;">Edges{Primal, 5, 4, Float64, Vector{Float64}} data
+u (in grid orientation)
+3×5 Matrix{Float64}:
+ 5.0  5.0  5.0  5.0  5.0
+ 5.0  5.0  5.0  5.0  5.0
+ 5.0  5.0  5.0  5.0  5.0
+v (in grid orientation)
+4×4 Matrix{Float64}:
+ -1.0  -1.0  -1.0  -1.0
+ -1.0  -1.0  -1.0  -1.0
+ -1.0  -1.0  -1.0  -1.0
+ -1.0  -1.0  -1.0  -1.0</code></pre><p>Note that we used a convenience function for setting up primal edge data <code>q</code> of a size that corresponds with <code>w</code>.</p><p>Let&#39;s check that divergence of the curl is indeed zero:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; D = Divergence()</code><code class="nohighlight hljs ansi" style="display:block;">Divergence()</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; D*(C*w)</code><code class="nohighlight hljs ansi" style="display:block;">Nodes{Primal, 5, 4, Float64, Matrix{Float64}} data
+Printing in grid orientation (lower left is (1,1))
+3×4 Matrix{Float64}:
+ 0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0</code></pre><h2 id="The-Laplacian-and-its-inverse"><a class="docs-heading-anchor" href="#The-Laplacian-and-its-inverse">The Laplacian and its inverse</a><a id="The-Laplacian-and-its-inverse-1"></a><a class="docs-heading-anchor-permalink" href="#The-Laplacian-and-its-inverse" title="Permalink"></a></h2><p><code>CartesianGrids</code> also makes heavy use of the discrete Laplacian operator, <span>$L$</span>. This mimics the continuous operator, <span>$\nabla^2$</span>, and acts upon data of any type. Let&#39;s apply this to the original data:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; laplacian(w)</code><code class="nohighlight hljs ansi" style="display:block;">Nodes{Dual, 5, 4, Float64, Matrix{Float64}} data
+Printing in grid orientation (lower left is (1,1))
+4×5 Matrix{Float64}:
+ 0.0  0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0  0.0</code></pre><p>As with the other operators, we can also construct a shorthand of the discrete Laplacian operator,</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; L = plan_laplacian(size(w))</code><code class="nohighlight hljs ansi" style="display:block;">Discrete Laplacian on a (nx = 5, ny = 4) grid acting on Float64 data with
+               factor 1.0 and spacing 1.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; L*w</code><code class="nohighlight hljs ansi" style="display:block;">Nodes{Dual, 5, 4, Float64, Matrix{Float64}} data
+Printing in grid orientation (lower left is (1,1))
+4×5 Matrix{Float64}:
+ 0.0  0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0  0.0
+ 0.0  0.0  0.0  0.0  0.0</code></pre><p>An important part of <code>CartesianGrids</code> is the <em>inverse</em> of this operator. That is, we need the ability to solve the discrete Poisson system</p><p class="math-container">\[Ls = w\]</p><p>for <span>$s$</span>, for given data <span>$w$</span>. We achieve this in <code>CartesianGrids</code> with the <em>lattice Green&#39;s function</em>. To outfit the operator with its inverse, we simply set the optional flag:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; L = plan_laplacian(size(w),with_inverse=true)</code><code class="nohighlight hljs ansi" style="display:block;">Discrete Laplacian (and inverse) on a (nx = 5, ny = 4) grid acting on Float64 data with
+               factor 1.0 and spacing 1.0</code></pre><p>Then, the Poisson system is solved with the backslash (<code>\</code>),</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; s = L\w</code><code class="nohighlight hljs ansi" style="display:block;">Nodes{Dual, 5, 4, Float64, Matrix{Float64}} data
+Printing in grid orientation (lower left is (1,1))
+4×5 Matrix{Float64}:
+ 24.082   15.9349  12.2076  13.0464  19.5282
+ 23.5931  15.0969  11.0184  11.7015  18.2956
+ 29.2015  21.841   18.0677  18.4457  23.9041
+ 37.5698  31.9978  28.9659  29.1093  33.016</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; L*s</code><code class="nohighlight hljs ansi" style="display:block;">Nodes{Dual, 5, 4, Float64, Matrix{Float64}} data
+Printing in grid orientation (lower left is (1,1))
+4×5 Matrix{Float64}:
+ 0.0   0.0   0.0   0.0  0.0
+ 0.0  12.0  13.0  14.0  0.0
+ 0.0   7.0   8.0   9.0  0.0
+ 0.0   0.0   0.0   0.0  0.0</code></pre><p>It should be observed that the cells on the perimeter have not recovered the original values of <code>w</code>. These are the ghost cells, and the Laplacian operation does not apply to these.</p><p>It is also important to note that, although it looks as though we&#39;ve constructed a matrix <code>L</code> and performed various matrix-vector operations with it, this is not actually the case. In fact, the <code>\</code> operation associated with <code>L</code> is significantly faster than a matrix inversion. Internally, it carries out a fast convolution between the data in <code>w</code> and the lattice Green&#39;s function, via fast Fourier transform. The lattice Green&#39;s function (LGF) table is pre-computed and pre-transformed in the original construction of <code>L</code>. (In fact, because this table is not dependent on the size of the grid, it is actually computed once for all time and stored in a file; subsequent applications of it just load it in and use the portion of it necessary for a certain grid.)</p><p>The lattice Green&#39;s function has the advantage that it is independent of the grid size. Let&#39;s solve the Poisson system when <span>$w$</span> is a unit field, i.e. a field of zeros, except for a single <span>$1$</span> entry at one node. The solution <span>$s$</span> represents the influence of this point on all nodes. To see that the LGF does not depend on the grid size, let&#39;s use a grid that is long and skinny and plot the solution on it</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; w = Nodes(Dual,(50,10));</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; w[20,5] = 1.0</code><code class="nohighlight hljs ansi" style="display:block;">1.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; L = plan_laplacian(w,with_inverse=true)</code><code class="nohighlight hljs ansi" style="display:block;">Discrete Laplacian (and inverse) on a (nx = 50, ny = 10) grid acting on Float64 data with
+               factor 1.0 and spacing 1.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; plot(L\w)</code><code class="nohighlight hljs ansi" style="display:block;">Plot{Plots.PyPlotBackend() n=1}</code><code class="nohighlight hljs ansi" style="display:block;">┌ Warning: `vendor()` is deprecated, use `BLAS.get_config()` and inspect the output instead
+│   caller = npyinitialize() at numpy.jl:67
+└ @ PyCall ~/.julia/packages/PyCall/L0fLP/src/numpy.jl:67
+sys:1: UserWarning: The following kwargs were not used by contour: &#39;label&#39;</code></pre><p><img src="../Linvw.svg" alt/></p><p>The influence is not affected by the narrow grid dimensions.</p><h2 id="The-integrating-factor"><a class="docs-heading-anchor" href="#The-integrating-factor">The integrating factor</a><a id="The-integrating-factor-1"></a><a class="docs-heading-anchor-permalink" href="#The-integrating-factor" title="Permalink"></a></h2><p>An operator related to the lattice Green&#39;s function is the <em>integrating factor</em>. Suppose we have the system of ODEs</p><p class="math-container">\[\ddt u = L u + f(u,t), \quad u(0) = u_0,\]</p><p>where <span>$L$</span> is the discrete Laplacian (on an infinite uniform grid), and <span>$u$</span> are nodal data (and <span>$f$</span> is a nodal-valued function acting on this nodal data). The exact solution of this problem is</p><p class="math-container">\[u(t) = E(t)u_0 + \int_0^t E(t-\tau) f(u(\tau),\tau)\,\mathrm{d}\tau,\]</p><p>where <span>$E(t)$</span> is the integrating factor (or matrix exponential) for the system. The easiest way to understand the role of <span>$E(t)$</span> is to consider its behavior when <span>$f$</span> is zero and <span>$u_0$</span> contains a field of zeros except for a single <span>$1$</span> entry at one cell. Let&#39;s set up this initial data:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; u0 = Nodes(Dual,(100,100));</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; u0[40,50] = 1.0</code><code class="nohighlight hljs ansi" style="display:block;">1.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; plot(u0)</code><code class="nohighlight hljs ansi" style="display:block;">Plot{Plots.PyPlotBackend() n=1}</code><code class="nohighlight hljs ansi" style="display:block;"></code></pre><p><img src="../w1.svg" alt/></p><p>Then, <span>$E(t)u_0$</span> diffuses this initial unit perturbation in each direction. Here, we apply it with <span>$t = 5$</span>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; E = plan_intfact(5,u0)</code><code class="nohighlight hljs ansi" style="display:block;">Integrating factor with parameter 5.0 on a (nx = 100, ny = 100) grid</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; plot(E*u0)</code><code class="nohighlight hljs ansi" style="display:block;">Plot{Plots.PyPlotBackend() n=1}</code><code class="nohighlight hljs ansi" style="display:block;"></code></pre><p><img src="../Ew1.svg" alt/></p><p>Note that <span>$E(0) = I$</span>, where <span>$I$</span> is the identity. Also, the integrating factor has the useful property that <span>$E(t+\tau) = E(t)E(\tau)$</span>. From these properties, it follows that <span>$E^{-1}(t) = E(-t)$</span>. Let&#39;s suppose we wish to advance <span>$u$</span> from time <span>$t = \tau-h$</span> to time <span>$t = \tau$</span>. For any <span>$t$</span> in this interval, we can define an auxiliary quantity, <span>$v(t;\tau) = E(\tau-t)u(t)$</span>, which represents the instantaneous value of <span>$u$</span>, but diffused to the end of the time interval. This new quantity satisfies the modified set of ODEs</p><p class="math-container">\[\ddt v = E(\tau-t) f\left[ E(t-\tau) v(t;\tau),t\right],\quad v(\tau-h;\tau) = E(h)u(\tau-h)\]</p><p>The result of integrating this set of ODEs to <span>$t = \tau$</span> is <span>$v(\tau;\tau) = u(\tau)$</span>. In other words, the integrating factor allows us to solve a somewhat reduced set of ODEs.</p><h2 id="Other-field-operations"><a class="docs-heading-anchor" href="#Other-field-operations">Other field operations</a><a id="Other-field-operations-1"></a><a class="docs-heading-anchor-permalink" href="#Other-field-operations" title="Permalink"></a></h2><p>Other field operations shift the data, by local averaging, from one data type to another. These operations are all called <code>grid_interpolate!</code>, and they require that the target data be preallocated. For example, to interpolate dual node data to the dual edges,</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; w = Nodes(Dual,(5,4));</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; w .= reshape(1:20,5,4)</code><code class="nohighlight hljs ansi" style="display:block;">Nodes{Dual, 5, 4, Float64, Matrix{Float64}} data
+Printing in grid orientation (lower left is (1,1))
+4×5 Matrix{Float64}:
+ 16.0  17.0  18.0  19.0  20.0
+ 11.0  12.0  13.0  14.0  15.0
+  6.0   7.0   8.0   9.0  10.0
+  1.0   2.0   3.0   4.0   5.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; Ww = Edges(Dual,w);</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; grid_interpolate!(Ww,w)</code><code class="nohighlight hljs ansi" style="display:block;">Edges{Dual, 5, 4, Float64, Vector{Float64}} data
+u (in grid orientation)
+4×4 Matrix{Float64}:
+  0.0   0.0   0.0   0.0
+ 11.5  12.5  13.5  14.5
+  6.5   7.5   8.5   9.5
+  0.0   0.0   0.0   0.0
+v (in grid orientation)
+3×5 Matrix{Float64}:
+ 0.0  14.5  15.5  16.5  0.0
+ 0.0   9.5  10.5  11.5  0.0
+ 0.0   4.5   5.5   6.5  0.0</code></pre><p>Note that the edges in the ghost cells are 0; these edges are not assigned any values in the interpolate operation.</p><p>We can then interpolate this to primal edges:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; q = Edges(Primal,w);</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; grid_interpolate!(q,Ww)</code><code class="nohighlight hljs ansi" style="display:block;">Edges{Primal, 5, 4, Float64, Vector{Float64}} data
+u (in grid orientation)
+3×5 Matrix{Float64}:
+ 0.0  6.0   6.5   7.0  0.0
+ 0.0  9.5  10.5  11.5  0.0
+ 0.0  3.5   4.0   4.5  0.0
+v (in grid orientation)
+4×4 Matrix{Float64}:
+ 0.0   0.0   0.0  0.0
+ 6.0  12.5  13.5  7.0
+ 3.5   7.5   8.5  4.5
+ 0.0   0.0   0.0  0.0</code></pre><p>We can also compute the Hadamard (i.e. element by element) product of any data of the same type, e.g.,</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; q∘q</code><code class="nohighlight hljs ansi" style="display:block;">Edges{Primal, 5, 4, Float64, Vector{Float64}} data
+u (in grid orientation)
+3×5 Matrix{Float64}:
+ 0.0  36.0    42.25   49.0   0.0
+ 0.0  90.25  110.25  132.25  0.0
+ 0.0  12.25   16.0    20.25  0.0
+v (in grid orientation)
+4×4 Matrix{Float64}:
+  0.0     0.0     0.0    0.0
+ 36.0   156.25  182.25  49.0
+ 12.25   56.25   72.25  20.25
+  0.0     0.0     0.0    0.0</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../fielddata/">« Setting up field data</a><a class="docs-footer-nextpage" href="../immersed/">Immersed data and their operations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.10 on <span class="colophon-date" title="Wednesday 5 January 2022 21:44">Wednesday 5 January 2022</span>. Using Julia version 1.7.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
