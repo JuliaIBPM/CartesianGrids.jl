@@ -59,13 +59,15 @@ end
 
 """
     plan_helmholtz(dims::Tuple,α::Number,[with_inverse=false],[fftw_flags=FFTW.ESTIMATE],
-                          [dx=1.0])
+                          [factor=1.0],[dx=1.0])
 
 Constructor to set up an operator for evaluating the discrete Helmholtz operator on
 complex dual or primal nodal data of dimension `dims`. If the optional keyword
 `with_inverse` is set to `true`, then it also sets up the inverse Helmholtz operator
 (the lattice Green's function, LGF). These can then be applied, respectively, with
-`*` and `\\` operations on data of the appropriate size. The optional parameter
+`*` and `\\` operations on data of the appropriate size. The optional
+parameter `factor` is a scalar used to multiply the result of the operator and
+divide the inverse. The optional parameter
 `dx` is used in adjusting the uniform value of the LGF to match the behavior
 of the continuous analog at large distances; this is set to 1.0 by default.
 
@@ -79,7 +81,7 @@ function plan_helmholtz end
 
 """
     plan_helmholtz!(dims::Tuple,α::Number,[with_inverse=false],[fftw_flags=FFTW.ESTIMATE],
-                          [dx=1.0])
+                          [factor=1.0],[dx=1.0])
 
 Same as [`plan_helmholtz`](@ref), but forms an operator that works in-place on the
 data it operates on.
@@ -88,6 +90,7 @@ function plan_helmholtz! end
 
 struct Helmholtz{NX, NY, R, DX, inplace}
     α::Number
+    factor :: ComplexF64
     conv::Union{CircularConvolution{NX, NY},Nothing}
 end
 
@@ -96,24 +99,24 @@ end
 for (lf,inplace) in ((:plan_helmholtz,false),
                      (:plan_helmholtz!,true))
     @eval function $lf(dims::Tuple{Int,Int},α::Number;
-                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, nthreads = length(Sys.cpu_info()))
+                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Number = 1.0, dx = 1.0, nthreads = length(Sys.cpu_info()))
         NX, NY = dims
         if !with_inverse
-            return Helmholtz{NX, NY, false, dx, $inplace}(nothing)
+            return Helmholtz{NX, NY, false, dx, $inplace}(α,convert(ComplexF64,factor),nothing)
         end
         lgfh_table = load_lgf_helmholtz(NX+1,α)
         G = view(lgfh_table, 1:NX, 1:NY)
-        Helmholtz{NX, NY, true, dx, $inplace}(α,CircularConvolution(G, fftw_flags,dtype=ComplexF64))
+        Helmholtz{NX, NY, true, dx, $inplace}(α,convert(ComplexF64,factor),CircularConvolution(G, fftw_flags,dtype=ComplexF64))
     end
 
     @eval function $lf(nx::Int, ny::Int,α::Number;
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, nthreads = length(Sys.cpu_info()))
-        $lf((nx, ny), α, with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx, nthreads = nthreads)
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Number = 1.0, dx = 1.0, nthreads = length(Sys.cpu_info()))
+        $lf((nx, ny), α, with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, nthreads = nthreads)
     end
 
     @eval function $lf(nodes::ScalarGridData{NX,NY,T},α::Number;
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, dx = 1.0, nthreads = length(Sys.cpu_info())) where {NX,NY,T<:ComplexF64}
-        $lf((NX,NY), α, with_inverse = with_inverse, fftw_flags = fftw_flags, dx = dx, nthreads = nthreads)
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Number = 1.0, dx = 1.0, nthreads = length(Sys.cpu_info())) where {NX,NY,T<:ComplexF64}
+        $lf((NX,NY), α, with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, nthreads = nthreads)
     end
 end
 
@@ -123,12 +126,12 @@ function Base.show(io::IO, L::Helmholtz{NX, NY, R, DX, inplace}) where {NX, NY, 
     nodedims = "(nx = $NX, ny = $NY)"
     inverse = R ? " (and inverse)" : ""
     isinplace = inplace ? " in-place" : ""
-    print(io, "Discrete$isinplace Helmholtz operator$inverse on a $nodedims grid with spacing $DX")
+    print(io, "Discrete$isinplace Helmholtz operator$inverse on a $nodedims grid with factor $(L.factor) and spacing $DX")
 end
 
-mul!(out::Nodes{C,NX,NY,T}, L::Helmholtz, s::Nodes{C,NX,NY,T}) where {C<:CellType,NX,NY,T<:ComplexF64} = helmholtz!(out, s, L.α)
+mul!(out::Nodes{C,NX,NY,T}, L::Helmholtz, s::Nodes{C,NX,NY,T}) where {C<:CellType,NX,NY,T<:ComplexF64} = (helmholtz!(out, s, L.α); output .*= L.factor)
 *(L::Helmholtz{MX,MY,R,DX,false}, s::Nodes{C,NX,NY,T}) where {MX,MY,R,DX,C <: CellType,NX,NY,T<:ComplexF64} =
-      helmholtz(s,L.α)
+      L.factor*helmholtz(s,L.α)
 function (*)(L::Helmholtz{MX,MY,R,DX,true}, s::Nodes{C,NX,NY,T}) where {MX,MY,R,DX,C <: CellType,NX,NY,T<:ComplexF64}
     helmholtz!(s,deepcopy(s),L.α)
 end
@@ -139,9 +142,11 @@ function ldiv!(out::Nodes{C,NX, NY,T},
                    s::Nodes{C, NX, NY,T}) where {C <: CellType, NX, NY, T<:ComplexF64, MX, MY, DX, inplace}
 
     mul!(out.data, L.conv, s.data)
+    inv_factor = 1.0/L.factor
 
     # Adjust the behavior at large distance to match continuous kernel
     #out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(DX))
+    out.data .*= inv_factor
     out
 end
 
