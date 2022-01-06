@@ -847,16 +847,26 @@ Lscale = plan_laplacian(nx,ny;with_inverse=true,factor=2.0,dtype=ComplexF64)
 
 end
 
-
-α = 0.07
-LH = plan_helmholtz(nx,ny,α;with_inverse=true)
-
 @testset "Helmholtz of the LGF" begin
+
+  α = 0.07
+
+  LH = plan_helmholtz(nx,ny,α;with_inverse=true)
+
   ψ = LH\cellunit
   helmψ = LH*ψ
   @test helmψ[i,j]≈1.0*a
   @test isapprox(maximum(abs.(helmψ[Not(i),:])),0.0;atol=100.0*eps()) &&
           isapprox(maximum(abs.(helmψ[:,Not(j)])),0.0;atol=100.0*eps())
+
+  LH2 = plan_helmholtz(nx,ny,α;factor=2.0,with_inverse=true)
+
+  ψ2 = LH2\cellunit
+  @test ψ2[i,j] ≈ ψ[i,j]/2.0
+  helmψ2 = LH2*ψ2
+  @test helmψ2[i,j]≈1.0*a
+  @test isapprox(maximum(abs.(helmψ2[Not(i),:])),0.0;atol=100.0*eps()) &&
+          isapprox(maximum(abs.(helmψ2[:,Not(j)])),0.0;atol=100.0*eps())
 end
 
 end
