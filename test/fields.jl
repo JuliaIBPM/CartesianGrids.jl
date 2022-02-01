@@ -519,6 +519,8 @@ import LinearAlgebra: norm, dot, mul!
 
   L = plan_laplacian(nx,ny;with_inverse=true)
 
+  _size(::CartesianGrids.Laplacian{NX,NY}) where {NX,NY} = NX,NY
+
   @testset "Laplacian of the LGF" begin
     ψ = L\cellunit
     lapψ = L*ψ
@@ -561,6 +563,10 @@ import LinearAlgebra: norm, dot, mul!
     ψ = L2\nodeunit
     lapψ = L2*ψ
     @test lapψ[i,j]≈1.0
+
+
+    L2_2 = plan_laplacian(Edges(Primal,nodeunit),with_inverse=true)
+    @test _size(L2_2) == _size(L2)
 
   end
 
