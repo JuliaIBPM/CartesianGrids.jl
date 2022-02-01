@@ -1,7 +1,7 @@
 using RecipesBase
 using ColorTypes
 using LaTeXStrings
-import PlotUtils: cgrad
+#import PlotUtils: cgrad
 
 
 const mygreen = RGBA{Float64}(151/255,180/255,118/255,1)
