@@ -114,7 +114,7 @@ for (lf,inplace) in ((:plan_helmholtz,false),
         $lf((nx, ny), α, with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, nthreads = nthreads)
     end
 
-    @eval function $lf(nodes::ScalarGridData{NX,NY,T},α::Number;
+    @eval function $lf(::GridData{NX,NY,T},α::Number;
         with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Number = 1.0, dx = 1.0, nthreads = length(Sys.cpu_info())) where {NX,NY,T<:ComplexF64}
         $lf((NX,NY), α, with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, nthreads = nthreads)
     end
