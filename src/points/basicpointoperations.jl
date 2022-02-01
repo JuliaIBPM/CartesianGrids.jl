@@ -1,7 +1,7 @@
 import Base: +, -, ∘, real, imag, abs
 import LinearAlgebra: transpose!, transpose
 
-export pointwise_dot, tensorproduct!, pointwise_dot!, pointwise_cross, pointwise_cross!
+export pointwise_dot, pointwise_tensorproduct!, pointwise_dot!, pointwise_cross, pointwise_cross!
 
 import Base: -, +, *, /
 function (-)(p_in::PointData)
@@ -223,12 +223,12 @@ for f in (:VectorData, :TensorData)
 end
 
 """
-    tensorproduct!(pq::TensorData,p::VectorData,q::VectorData) -> TensorData
+    pointwise_tensorproduct!(pq::TensorData,p::VectorData,q::VectorData) -> TensorData
 
 Calculate the element by element tensor product between vectors `p`
 and `q`, returning data in `pq`
 """
-function tensorproduct!(pq::TensorData{N},p::VectorData{N},q::VectorData{N}) where {N}
+function pointwise_tensorproduct!(pq::TensorData{N},p::VectorData{N},q::VectorData{N}) where {N}
     product!(pq.dudx,p.u,q.u)
     product!(pq.dudy,p.v,q.u)
     product!(pq.dvdx,p.u,q.v)
@@ -244,7 +244,7 @@ Calculate the element by element tensor product between vectors `p`
 and `q`, returning `TensorData` type.
 """
 (*)(p::VectorData{N},q::VectorData{N}) where {N} =
-      tensorproduct!(TensorData(p,dtype=promote_type(eltype(p),eltype(q))),p,q)
+      pointwise_tensorproduct!(TensorData(p,dtype=promote_type(eltype(p),eltype(q))),p,q)
 
 """
     transpose!(pt::TensorData,p::TensorData)
