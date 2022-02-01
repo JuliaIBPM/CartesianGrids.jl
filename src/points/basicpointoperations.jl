@@ -1,7 +1,7 @@
 import Base: +, -, ∘, real, imag, abs
 import LinearAlgebra: transpose!, transpose
 
-export pointwise_dot, tensorproduct!, pointwise_dot!, cross!
+export pointwise_dot, tensorproduct!, pointwise_dot!, pointwise_cross, pointwise_cross!
 
 import Base: -, +, *, /
 function (-)(p_in::PointData)
@@ -276,13 +276,12 @@ zero(::T) where {T <: PointData} = T()
 
 
 """
-    cross(a::Number/ScalarData,A::VectorData) -> VectorData
-    ×(a::Number/ScalarData,A::VectorData) -> VectorData
+    pointwise_cross(a::Number/ScalarData,A::VectorData) -> VectorData
 
 Compute the cross product between the scalar `a` (treated as an out-of-plane component of a vector)
 and the planar vector data `A`.
 """
-function cross(a::Union{Number,ScalarData},A::VectorData)
+function pointwise_cross(a::Union{Number,ScalarData},A::VectorData)
     B = similar(A)
     @. B.u = -a*A.v
     @. B.v = a*A.u
@@ -290,27 +289,60 @@ function cross(a::Union{Number,ScalarData},A::VectorData)
 end
 
 """
-    cross!(C::ScalarData,A::VectorData,B::VectorData) -> ScalarData
+    pointwise_cross!(C::ScalarData,A::VectorData,B::VectorData) -> ScalarData
 
 Compute the cross product between the vector point data `A` and `B`
 and return the result as scalar data `C` (treated as an out-of-plane
 component of a vector).
 """
-function cross!(C::ScalarData{N},A::VectorData{N},B::VectorData{N}) where {N}
+function pointwise_cross!(C::ScalarData{N},A::VectorData{N},B::VectorData{N}) where {N}
     @. C = A.u*B.v - A.v*B.u
     return C
 end
 
 """
-    cross(A::VectorData,B::VectorData) -> ScalarData
-    ×(A::VectorData,A::VectorData) -> ScalarData
+    pointwise_cross!(C::VectorData,A::ScalarData/VectorData,B::VectorData/ScalarData) -> VectorData
+
+Compute the cross product between the point data `A` and `B`, one of which
+is scalar data and treated as an out-of-plane component of a vector, while
+the other is in-plane vector data, and return the result as vector data `C`.
+"""
+function pointwise_cross!(C::VectorData{N},A::ScalarData{N},B::VectorData{N}) where {N}
+    @. C.u = -A*B.v
+    @. C.v = A*B.u
+    return C
+end
+
+function pointwise_cross!(C::VectorData{N},A::VectorData{N},B::ScalarData{N}) where {N}
+    @. C.u = A.v*B
+    @. C.v = -A.u*B
+    return C
+end
+
+"""
+    pointwise_cross(A::VectorData,B::VectorData) -> ScalarData
 
 Compute the cross product between the vector point data `A` and `B`
 and return the result as scalar data (treated as an out-of-plane
 component of a vector).
 """
-cross(A::VectorData{N},B::VectorData{N}) where {N} =
-      cross!(ScalarData(N,dtype=promote_type(eltype(A),eltype(B))),A,B)
+pointwise_cross(A::VectorData{N},B::VectorData{N}) where {N} =
+      pointwise_cross!(ScalarData(N,dtype=promote_type(eltype(A),eltype(B))),A,B)
+
+"""
+    pointwise_cross(A::VectorData/ScalarData,B::ScalarData/VectorData) -> VectorData
+
+Compute the cross product between the point data `A` and `B`, one of which
+is scalar data and treated as an out-of-plane component of a vector, while
+the other is in-plane vector data, and return the result as vector data
+"""
+pointwise_cross(A::ScalarData{N},B::VectorData{N}) where {N} =
+      pointwise_cross!(VectorData(N,dtype=promote_type(eltype(A),eltype(B))),A,B)
+
+pointwise_cross(A::VectorData{N},B::ScalarData{N}) where {N} =
+      pointwise_cross!(VectorData(N,dtype=promote_type(eltype(A),eltype(B))),A,B)
+
+
 
 """
     pointwise_dot!(C::ScalarData,A::VectorData,B::VectorData) -> ScalarData

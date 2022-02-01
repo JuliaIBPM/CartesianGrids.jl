@@ -274,5 +274,5 @@ Another useful operation is a cross product, which can be carried out between a 
 using LinearAlgebra
 X = VectorData(4)
 fill!(X.u,1)
-2.0×X
+pointwise_cross(2.0,X)
 ```

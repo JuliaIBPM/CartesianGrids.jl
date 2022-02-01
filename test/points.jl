@@ -71,7 +71,7 @@ using LinearAlgebra
     X = (1,2) - Y
     @test X.u[4] == 1.0
 
-    Z = 2.0 × X
+    Z = pointwise_cross(2.0,X)
     @test typeof(Z) <: VectorData
     @test Z.u[1] == -4.0
 
@@ -147,7 +147,7 @@ using LinearAlgebra
     uv = pointwise_dot(u,v)
     @test uv == u.u ∘ v.u + u.v ∘ v.v
 
-    uv = cross(u,v)
+    uv = pointwise_cross(u,v)
     @test uv == u.u ∘ v.v - u.v ∘ v.u
 
     A = TensorData(N,dtype=Float64)
