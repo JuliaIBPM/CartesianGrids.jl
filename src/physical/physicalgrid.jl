@@ -1,4 +1,5 @@
-export coordinates, PhysicalGrid, limits, origin, cellsize, volume
+export coordinates, PhysicalGrid, limits, origin, cellsize, volume, test_cputime,
+         optimize_gridsize
 
 """
     coordinates(w::GridData;[dx=1.0],[I0=(1,1)])
@@ -31,7 +32,7 @@ for (gridtype,ctype,dnx,dny,shiftx,shifty) in @generate_scalarlist(SCALARLIST)
 end
 
 for (gridtype,ctype,dunx,duny,dvnx,dvny,shiftux,shiftuy,shiftvx,shiftvy) in @generate_collectionlist(VECTORLIST)
-   @eval coordinates(w::$gridtype{$(ctype...),NX,NY,T};dx::Float64=1.0,I0::Tuple{Int,Int}=(1,1)) where {NX,NY,T,DDT} =
+   @eval coordinates(w::$gridtype{$(ctype...),NX,NY,T};dx::Float64=1.0,I0::Tuple{Int,Int}=(1,1)) where {NX,NY,T} =
     dx.*((1-I0[1]-$shiftux):(NX-$dunx-I0[1]-$shiftux),
          (1-I0[2]-$shiftuy):(NY-$duny-I0[2]-$shiftuy),
          (1-I0[1]-$shiftvx):(NX-$dvnx-I0[1]-$shiftvx),
@@ -45,6 +46,7 @@ struct PhysicalGrid{ND}
   I0 :: NTuple{ND,Int}
   Δx :: Float64
   xlim :: NTuple{ND,Tuple{Real,Real}}
+  nthreads_opt :: Int
 end
 
 """
@@ -61,7 +63,7 @@ of the cell to which the physical origin corresponds. Note that the corner
 corresponding to the lowest limit in each direction has indices (1,1).
 """
 function PhysicalGrid(xlim::Tuple{Real,Real},
-                      ylim::Tuple{Real,Real},Δx::Float64)
+                      ylim::Tuple{Real,Real},Δx::Float64;nthreads_max=MAX_NTHREADS)
 
 
   #= set grid spacing and the grid position of the origin
@@ -72,18 +74,34 @@ function PhysicalGrid(xlim::Tuple{Real,Real},
   xmin, xmax = xlim
   ymin, ymax = ylim
   @assert xmax >= xmin && ymax >= ymin "Maximum limits must exceed minimum limits"
-  Lx = xmax-xmin
-  Ly = ymax-ymin
 
-  NX, i0, xlimnew = _find_efficient_1d_grid(xmin,xmax,Δx)
-  NY, j0, ylimnew = _find_efficient_1d_grid(ymin,ymax,Δx)
+  #NX, i0, xlimnew = _find_efficient_1d_grid(xmin,xmax,Δx)
+  #NY, j0, ylimnew = _find_efficient_1d_grid(ymin,ymax,Δx)
+  #NX0, i0, xlim = _set_1d_grid(xmin,xmax,Δx)
+  #NY0, j0, ylim = _set_1d_grid(ymin,ymax,Δx)
 
-  PhysicalGrid((NX,NY),(i0,j0),Δx,(xlimnew,ylimnew))
+  # Create a nominal grid based on the desired dimensions
+  NX0, i0, xlimnew = _set_1d_grid(xmin,xmax,Δx)
+  NY0, j0, ylimnew = _set_1d_grid(ymin,ymax,Δx)
+
+  # Expand this grid and find the optimal number of threads
+  NX, NY, nt, cput_opt = optimize_gridsize(NX0,NY0,nthreads_max=nthreads_max,nsamp=3)
+  NX, i0, xlimnew = _expand_1d_grid(NX,NX0,xlimnew...,Δx)
+  NY, j0, ylimnew = _expand_1d_grid(NY,NY0,ylimnew...,Δx)
+
+  PhysicalGrid((NX,NY),(i0,j0),Δx,(xlimnew,ylimnew),nt)
 end
 
 function _set_1d_grid(xmin::Real,xmax::Real,Δx::Float64)
   NL, NR = floor(Int,xmin/Δx), ceil(Int,xmax/Δx)
   return NR-NL+2, 1-NL, (Δx*NL, Δx*NR)
+end
+
+function _expand_1d_grid(N::Int,Nold::Int,xminold::Real,xmaxold::Real,Δx::Float64)
+  NLold, NRold = floor(Int,xminold/Δx), ceil(Int,xmaxold/Δx)
+  dN = (N - Nold)÷2
+  NL, NR = NLold-dN, NRold+dN
+  return NR-NL+2,1-NL,(Δx*NL, Δx*NR)
 end
 
 function _factor_prime(N::Integer)
@@ -117,6 +135,77 @@ function _find_efficient_1d_grid(xmin::Real,xmax::Real,Δx::Float64)
     end
     return N, i0, xlimnew
 end
+
+"""
+    test_cputime(nx,ny,nthreads;[nsamp=1]) -> Float64
+
+Evaluate a sample problem (solution of Poisson problem) with
+the given size of grid `nx` x `ny` and the provided number of threads `nthreads`.
+Returns the computational time. The optional argument `nsamp` can be
+used to perform an average timing over multiple samples.
+"""
+function test_cputime(nx,ny,nthreads;nsamp=1)
+    w = Nodes(Dual,(nx,ny))
+    w .= rand(Float64,size(w))
+    L = plan_laplacian(w,with_inverse=true,nthreads=nthreads)
+    ldiv!(w,L,w) # to compile the function
+    cput = 0.0
+    for n in 1:nsamp
+        out = @timed CartesianGrids.ldiv!(w,L,w)
+        cput += out.time
+    end
+    return cput/nsamp
+end
+
+function optimize_nthreads(nx,ny;nthreads_max = MAX_NTHREADS, kwargs...)
+    nt0 = 1
+    cput_opt = test_cputime(nx,ny,nt0;kwargs...)
+    nt_opt = nt0
+    for nt in 2:nthreads_max
+        cput = test_cputime(nx,ny,nt;kwargs...)
+        if cput < cput_opt
+            cput_opt = cput
+            nt_opt = nt
+        end
+    end
+    return nt_opt, cput_opt
+end
+
+"""
+    optimize_gridsize(nx0,ny0[;region_size=4,nthreads_max=length(cpu_info()),nsamp=1])
+
+Given a nominal grid size (`nx0` x `ny0`), determine the optimal grid size
+and optimal number of threads (if multithreading is allowed) that minimizes
+the compute time.
+"""
+function optimize_gridsize(nx0,ny0;region_size=4,nthreads_max=MAX_NTHREADS,kwargs...)
+    nt0 = 1
+    cput0 = test_cputime(nx0,ny0,nt0;kwargs...)
+    nx_opt, ny_opt, nt_opt = nx0, ny0, nt0
+    cput_opt = cput0
+
+    ny = ny0
+    for nx in nx0:2:nx0+2region_size
+        nt, cput = optimize_nthreads(nx,ny;nthreads_max=nthreads_max,kwargs...)
+        if cput < cput_opt
+            cput_opt = cput
+            nx_opt = nx
+            nt_opt = nt
+        end
+    end
+    nx = nx_opt
+    for ny in ny0:2:ny0+2region_size
+        nt, cput = optimize_nthreads(nx,ny;nthreads_max=nthreads_max,kwargs...)
+        if cput < cput_opt
+            cput_opt = cput
+            ny_opt = ny
+            nt_opt = nt
+        end
+    end
+    return nx_opt, ny_opt, nt_opt, cput_opt
+end
+
+### Utilities ###
 
 """
     size(g::PhysicalGrid,d::Int) -> Int
@@ -175,6 +264,13 @@ origin(g::PhysicalGrid) = g.I0
 """
     cellsize(g::PhysicalGrid) -> Float64
 
-Return the grid cell size of system `sys`
+Return the grid cell size of grid `g`
 """
 cellsize(g::PhysicalGrid) = g.Δx
+
+"""
+    optimal_nthreads(g::PhysicalGrid) -> Int
+
+Return the optimal number of threads for grid `g`.
+"""
+optimal_nthreads(g::PhysicalGrid) = g.nthreads_opt

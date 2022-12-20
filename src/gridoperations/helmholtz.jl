@@ -99,7 +99,7 @@ end
 for (lf,inplace) in ((:plan_helmholtz,false),
                      (:plan_helmholtz!,true))
     @eval function $lf(dims::Tuple{Int,Int},α::Number;
-                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Number = 1.0, dx = 1.0, nthreads = length(Sys.cpu_info()))
+                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Number = 1.0, dx = 1.0, nthreads = MAX_NTHREADS)
         NX, NY = dims
         if !with_inverse
             return Helmholtz{NX, NY, false, dx, $inplace}(α,convert(ComplexF64,factor),nothing)
@@ -110,12 +110,12 @@ for (lf,inplace) in ((:plan_helmholtz,false),
     end
 
     @eval function $lf(nx::Int, ny::Int,α::Number;
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Number = 1.0, dx = 1.0, nthreads = length(Sys.cpu_info()))
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Number = 1.0, dx = 1.0, nthreads = MAX_NTHREADS)
         $lf((nx, ny), α, with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, nthreads = nthreads)
     end
 
     @eval function $lf(::GridData{NX,NY,T},α::Number;
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Number = 1.0, dx = 1.0, nthreads = length(Sys.cpu_info())) where {NX,NY,T<:ComplexF64}
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Number = 1.0, dx = 1.0, nthreads = MAX_NTHREADS) where {NX,NY,T<:ComplexF64}
         $lf((NX,NY), α, with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, nthreads = nthreads)
     end
 end

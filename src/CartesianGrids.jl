@@ -69,6 +69,8 @@ const TENSORLIST = [:EdgeGradient, [:Dual,:Primal]],
                    [:EdgeGradient, [:Primal,:Dual]]
 
 
+const MAX_NTHREADS = length(Sys.cpu_info())
+
 function othertype end
 
 macro othertype(celltype, k)

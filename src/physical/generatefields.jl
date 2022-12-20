@@ -79,7 +79,7 @@ _spatialdgaussian(σx,σy,x0,y0,A,u,v,::Val{2}) = SpatialGaussian(Gaussian(σx,A
 SpatialGaussian(σ,x0,y0,A;deriv::Int=0) = SpatialGaussian(σ,σ,x0,y0,A,deriv=deriv)
 
 
-(g::SpatialGaussian{GX,GY})(x,y) where {CT,GX,GY} = g.gx(x)*g.gy(y)
+(g::SpatialGaussian{GX,GY})(x,y) where {GX,GY} = g.gx(x)*g.gy(y)
 # ignore the time argument if it is called with this...
 (g::SpatialGaussian{false,GX,GY})(x,y,t) where {GX,GY} = g(x,y)
 (g::SpatialGaussian{true,GX,GY})(x,y,t) where {GX,GY} = g.gx(x-g.u*t)*g.gy(y-g.v*t)
@@ -217,7 +217,7 @@ grid(f::GeneratedField{T}) where {T} = f.grid
 
 (f::GeneratedField{T})() where {T} = f.fielddata
 
-function (f::GeneratedField)(t::Real) where {T<:ScalarGridData}
+function (f::GeneratedField)(t::Real)
     _generatedfield!(f.fielddata,f.fieldfcns,f.grid,t)
 end
 

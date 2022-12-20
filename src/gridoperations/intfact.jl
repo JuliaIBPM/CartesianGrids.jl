@@ -75,7 +75,7 @@ end
 for (lf,inplace) in ((:plan_intfact,false),
                      (:plan_intfact!,true))
 
-    @eval function $lf(a::Real,dims::Tuple{Int,Int};fftw_flags = FFTW.ESTIMATE, nthreads = length(Sys.cpu_info()))
+    @eval function $lf(a::Real,dims::Tuple{Int,Int};fftw_flags = FFTW.ESTIMATE, nthreads = MAX_NTHREADS)
         NX, NY = dims
 
         if a == 0
@@ -100,7 +100,7 @@ for (lf,inplace) in ((:plan_intfact,false),
 
       # Base the size on the dual grid associated with any grid data, since this
       # is what the efficient grid size in PhysicalGrid has been established with
-      @eval $lf(a::Real,::GridData{NX,NY}; fftw_flags = FFTW.ESTIMATE, nthreads = length(Sys.cpu_info())) where {T<:CellType,NX,NY} =
+      @eval $lf(a::Real,::GridData{NX,NY}; fftw_flags = FFTW.ESTIMATE, nthreads = MAX_NTHREADS) where {NX,NY} =
           $lf(a,(NX,NY), fftw_flags = fftw_flags, nthreads = nthreads)
 
 
