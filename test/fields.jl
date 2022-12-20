@@ -1,13 +1,10 @@
 using FFTW
 
-struct Not{T}
-  idx::T
-end
-import Base: to_indices, uncolon, tail, _maybetail
+#import Base: to_indices, uncolon, tail, _maybetail
 import LinearAlgebra: norm, dot, mul!
 
-@inline to_indices(A, inds, I::Tuple{Not, Vararg{Any}}) =
-   (setdiff(uncolon(inds, (:, tail(I)...)), I[1].idx), to_indices(A, _maybetail(inds), tail(I))...)
+#@inline to_indices(A, inds, I::Tuple{Not, Vararg{Any}}) =
+#   (setdiff(uncolon(inds, (:, tail(I)...)), I[1].idx), to_indices(A, _maybetail(inds), tail(I))...)
 
 @testset "Grid Routines" begin
 
@@ -525,39 +522,40 @@ import LinearAlgebra: norm, dot, mul!
     ψ = L\cellunit
     lapψ = L*ψ
     @test lapψ[i,j]≈1.0
-    @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
-            isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+    lapψ[1:end .∉ i,:]
+    @test isapprox(maximum(abs.(lapψ[1:end .∉ i,:])),0.0;atol=10.0*eps()) &&
+            isapprox(maximum(abs.(lapψ[:,1:end .∉ j])),0.0;atol=10.0*eps())
 
     ψ = L\nodeunit
     lapψ = L*ψ
     @test lapψ[i,j]≈1.0
-    @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
-            isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+    @test isapprox(maximum(abs.(lapψ[1:end .∉ i,:])),0.0;atol=10.0*eps()) &&
+            isapprox(maximum(abs.(lapψ[:,1:end .∉ j])),0.0;atol=10.0*eps())
 
     ψ = L\facexunit.u
     lapψ = L*ψ
     @test lapψ[i,j]≈1.0
-    @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
-            isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+    @test isapprox(maximum(abs.(lapψ[1:end .∉ i,:])),0.0;atol=10.0*eps()) &&
+            isapprox(maximum(abs.(lapψ[:,1:end .∉ j])),0.0;atol=10.0*eps())
 
     ψ = L\faceyunit.v
     lapψ = L*ψ
     @test lapψ[i,j]≈1.0
-    @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
-            isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+    @test isapprox(maximum(abs.(lapψ[1:end .∉ i,:])),0.0;atol=10.0*eps()) &&
+            isapprox(maximum(abs.(lapψ[:,1:end .∉ j])),0.0;atol=10.0*eps())
 
 
     ψ = L\dualfacexunit.u
     lapψ = L*ψ
     @test lapψ[i,j]≈1.0
-    @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
-            isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+    @test isapprox(maximum(abs.(lapψ[1:end .∉ i,:])),0.0;atol=10.0*eps()) &&
+            isapprox(maximum(abs.(lapψ[:,1:end .∉ j])),0.0;atol=10.0*eps())
 
     ψ = L\dualfaceyunit.v
     lapψ = L*ψ
     @test lapψ[i,j]≈1.0
-    @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=10.0*eps()) &&
-            isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=10.0*eps())
+    @test isapprox(maximum(abs.(lapψ[1:end .∉ i,:])),0.0;atol=10.0*eps()) &&
+            isapprox(maximum(abs.(lapψ[:,1:end .∉ j])),0.0;atol=10.0*eps())
 
     L2 = plan_laplacian(nodeunit,with_inverse=true)
     ψ = L2\nodeunit
@@ -833,8 +831,9 @@ L = plan_laplacian(nx,ny;with_inverse=true,dtype=ComplexF64)
   ψ = L\cellunit
   lapψ = L*ψ
   @test lapψ[i,j]≈1.0*a
-  @test isapprox(maximum(abs.(lapψ[Not(i),:])),0.0;atol=100.0*eps()) &&
-          isapprox(maximum(abs.(lapψ[:,Not(j)])),0.0;atol=100.0*eps())
+  @test isapprox(maximum(abs.(lapψ[1:end .∉ i,:])),0.0;atol=100.0*eps()) &&
+          isapprox(maximum(abs.(lapψ[:,1:end .∉ j])),0.0;atol=100.0*eps())
+
 end
 
 Lscale = plan_laplacian(nx,ny;with_inverse=true,factor=2.0,dtype=ComplexF64)
@@ -863,15 +862,16 @@ LH2 = plan_helmholtz(nx,ny,α;factor=2.0,with_inverse=true)
   ψ = LH\cellunit
   helmψ = LH*ψ
   @test helmψ[i,j]≈1.0*a
-  @test isapprox(maximum(abs.(helmψ[Not(i),:])),0.0;atol=100.0*eps()) &&
-          isapprox(maximum(abs.(helmψ[:,Not(j)])),0.0;atol=100.0*eps())
+  @test isapprox(maximum(abs.(helmψ[1:end .∉ i,:])),0.0;atol=100.0*eps()) &&
+          isapprox(maximum(abs.(helmψ[:,1:end .∉ j])),0.0;atol=100.0*eps())
 
   ψ2 = LH2\cellunit
   @test ψ2[i,j] ≈ ψ[i,j]/2.0
   helmψ2 = LH2*ψ2
   @test helmψ2[i,j]≈1.0*a
-  @test isapprox(maximum(abs.(helmψ2[Not(i),:])),0.0;atol=100.0*eps()) &&
-          isapprox(maximum(abs.(helmψ2[:,Not(j)])),0.0;atol=100.0*eps())
+  @test isapprox(maximum(abs.(helmψ2[1:end .∉ i,:])),0.0;atol=100.0*eps()) &&
+          isapprox(maximum(abs.(helmψ2[:,1:end .∉ j])),0.0;atol=100.0*eps())
+
 end
 
 end
