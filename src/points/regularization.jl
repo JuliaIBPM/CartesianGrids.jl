@@ -129,7 +129,7 @@ v (in grid orientation)
 ```
 """
 function Regularize(x::AbstractVector{T},y::AbstractVector{T},dx::T;
-                    ddftype=Yang3,graddir::Int=0,
+                    ddftype::DataType=Yang3,graddir::Int=0,
                     I0::Tuple{Int,Int}=(1,1),
                     weights::Union{T,Vector{T}}=1.0,
                     filter::Bool = false,
