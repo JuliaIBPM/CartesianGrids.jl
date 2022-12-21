@@ -31,7 +31,8 @@ end
 
 function load_lgf_helmholtz(N,α)
     if isfile(lgfh_file(α))
-        G = deserialize(open(lgfh_file(α), "r"))
+        io = open(lgfh_file(α),"r")
+        G = deserialize(io)        
         if size(G,1) ≥ N
             return G
         end
@@ -63,7 +64,12 @@ function build_lgf_helmholtz(N,α)
 
     G = Symmetric(g)
     mkpath(LGFH_DIR)
-    serialize(open(lgfh_file(α),"w"),G)
+    #open(lgfh_file(α),"w") do io
+    #       write(io, G)
+    #end
+    io = open(lgfh_file(α),"w")
+    serialize(io,G)
+    close(io)
     G
 end
 
