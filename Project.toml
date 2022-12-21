@@ -2,7 +2,7 @@ name = "CartesianGrids"
 uuid = "3e975e5d-2cf8-4263-9573-8460aaf534d9"
 authors = ["Jeff Eldredge <jdeldre@g.ucla.edu>"]
 repo = "https://github.com/JuliaIBPM/CartesianGrids.jl.git"
-version = "0.1.21"
+version = "0.1.22"
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
@@ -35,7 +35,7 @@ ProgressMeter = "^1.1"
 RecipesBase = "1"
 SpaceTimeFields = "0.1.1"
 SpecialFunctions = "0.8.0, 0.10, 1.2"
-julia = "1"
+julia = "1.6"
 
 [extras]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
