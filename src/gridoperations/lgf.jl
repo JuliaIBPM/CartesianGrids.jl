@@ -1,5 +1,4 @@
 using FastGaussQuadrature
-using Serialization
 #using Compat: @info
 
 const GL_NODES, GL_WEIGHTS = gausslegendre(100)
@@ -26,10 +25,9 @@ function build_lgf(N)
 
     G = Symmetric(g)
     mkpath(LGF_DIR)
-    #open(LGF_FILE, "w") do f
-    #    serialize(f, G)
-    #end
-    serialize(open(LGF_FILE,"w"),G)
+    io = open(LGF_FILE,"w")
+    serialize(io,G)
+    close(io)
     G
 end
 

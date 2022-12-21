@@ -6,6 +6,7 @@ import Base: @propagate_inbounds, show, summary, fill!
 using FFTW
 using SpecialFunctions
 using Statistics
+using Serialization
 
 using LinearAlgebra
 using SparseArrays
