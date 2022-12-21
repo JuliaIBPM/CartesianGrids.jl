@@ -18,7 +18,7 @@ const LGFH_DIR  = joinpath(@__DIR__, "cache")
 
 #using ProgressMeter
 
-alpha_to_string(α::Float64) = string(100000+α*10000)[2:6]
+alpha_to_string(α::Float64) = string(round(Int,10000*α),pad=5)
 
 lgfh_file(α) = joinpath(LGFH_DIR,"lgfhtable_alpha"*alpha_to_string(α)*".dat")
 
