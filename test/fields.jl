@@ -1,10 +1,6 @@
 using FFTW
 
-#import Base: to_indices, uncolon, tail, _maybetail
 import LinearAlgebra: norm, dot, mul!
-
-#@inline to_indices(A, inds, I::Tuple{Not, Vararg{Any}}) =
-#   (setdiff(uncolon(inds, (:, tail(I)...)), I[1].idx), to_indices(A, _maybetail(inds), tail(I))...)
 
 @testset "Grid Routines" begin
 
@@ -1069,15 +1065,15 @@ end
 
     @testset "Physical grid" begin
 
-        g = PhysicalGrid((-1.0,3.0),(-2.0,3.0),0.02)
-        @test size(g) == (208,252)
+        g = PhysicalGrid((-1.0,3.0),(-2.0,3.0),0.02,nthreads_max=1)
+        @test size(g) == (208,256)
         @test size(g,1) == 208
-        @test size(g,2) == 252
-        @test length(g) == 208*252
-        @test origin(g) == (54,101)
+        @test size(g,2) == 256
+        @test length(g) == 208*256
+        @test origin(g) == (54,103)
         @test cellsize(g) == 0.02
         @test limits(g,1) == (-1.06,3.06)
-        @test limits(g,2) == (-2.0,3.0)
+        @test limits(g,2) == (-2.04,3.04)
 
     end
 end

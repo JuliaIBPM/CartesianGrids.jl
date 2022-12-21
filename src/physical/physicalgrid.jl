@@ -46,11 +46,11 @@ struct PhysicalGrid{ND}
   I0 :: NTuple{ND,Int}
   Δx :: Float64
   xlim :: NTuple{ND,Tuple{Real,Real}}
-  nthreads_opt :: Int
+  nthreads :: Int
 end
 
 """
-    PhysicalGrid(xlim::Tuple{Real,Real},ylim::Tuple{Real,Real},Δx::Float64)
+    PhysicalGrid(xlim::Tuple{Real,Real},ylim::Tuple{Real,Real},Δx::Float64;[optimize=true,nthreads_max=length(Sys.cpu_info())])
 
 Constructor to set up a grid connected to physical space. The region to be
 discretized by the grid is defined by the limits `xlim` and `ylim`, and the
@@ -63,7 +63,7 @@ of the cell to which the physical origin corresponds. Note that the corner
 corresponding to the lowest limit in each direction has indices (1,1).
 """
 function PhysicalGrid(xlim::Tuple{Real,Real},
-                      ylim::Tuple{Real,Real},Δx::Float64;nthreads_max=MAX_NTHREADS)
+                      ylim::Tuple{Real,Real},Δx::Float64;optimize=true,nthreads_max=MAX_NTHREADS)
 
 
   #= set grid spacing and the grid position of the origin
@@ -85,9 +85,14 @@ function PhysicalGrid(xlim::Tuple{Real,Real},
   NY0, j0, ylimnew = _set_1d_grid(ymin,ymax,Δx)
 
   # Expand this grid and find the optimal number of threads
-  NX, NY, nt, cput_opt = optimize_gridsize(NX0,NY0,nthreads_max=nthreads_max,nsamp=3)
-  NX, i0, xlimnew = _expand_1d_grid(NX,NX0,xlimnew...,Δx)
-  NY, j0, ylimnew = _expand_1d_grid(NY,NY0,ylimnew...,Δx)
+  if optimize
+    NX, NY, nt, cput_opt = optimize_gridsize(NX0,NY0,nthreads_max=nthreads_max,nsamp=3)
+    NX, i0, xlimnew = _expand_1d_grid(NX,NX0,xlimnew...,Δx)
+    NY, j0, ylimnew = _expand_1d_grid(NY,NY0,ylimnew...,Δx)
+  else
+    NX0, NY0 = NX, NY
+    nt = nthreads_max
+  end
 
   PhysicalGrid((NX,NY),(i0,j0),Δx,(xlimnew,ylimnew),nt)
 end
@@ -273,4 +278,14 @@ cellsize(g::PhysicalGrid) = g.Δx
 
 Return the optimal number of threads for grid `g`.
 """
-optimal_nthreads(g::PhysicalGrid) = g.nthreads_opt
+optimal_nthreads(g::PhysicalGrid) = g.nthreads
+
+# Extend FFT-based operations
+plan_laplacian(g::PhysicalGrid;kwargs...) = plan_laplacian(size(g);nthreads=g.nthreads,kwargs...)
+plan_laplacian!(g::PhysicalGrid;kwargs...) = plan_laplacian!(size(g);nthreads=g.nthreads,kwargs...)
+
+plan_intfact(a::Real,g::PhysicalGrid;kwargs...) = plan_intfact(a,size(g);nthreads=g.nthreads,kwargs...)
+plan_intfact!(a::Real,g::PhysicalGrid;kwargs...) = plan_intfact!(a,size(g);nthreads=g.nthreads,kwargs...)
+
+plan_helmholtz(g::PhysicalGrid,α::Number;kwargs...) = plan_helmholtz(size(g),α;nthreads=g.nthreads,kwargs...)
+plan_helmholtz!(g::PhysicalGrid,α::Number;kwargs...) = plan_helmholtz!(size(g),α;nthreads=g.nthreads,kwargs...)
