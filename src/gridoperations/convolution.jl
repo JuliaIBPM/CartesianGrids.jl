@@ -9,6 +9,7 @@ A preplanned, circular convolution operator on an M × N matrix of data of type 
 - `Ĝ`: DFT coefficients of the convolution kernel
 - `F`: preplanned rFFT operator
 - `F⁻¹`: preplanned irFFT operator
+- `nthreads` : optimized number of threads to use, if appropriate
 - `paddedSpace`: scratch space to zero-pad the input matrix
 - `Â`: scratch space to store the DFT coefficients of the zero-padded input matrix
 
@@ -48,33 +49,64 @@ function Base.show(io::IO, c::CircularConvolution{M, N, T}) where {M, N, T}
     print(io, "Circular convolution on a $M × $N matrix of data type $T")
 end
 
-function CircularConvolution(G::AbstractMatrix{T},fftw_flags = FFTW.ESTIMATE; dtype = Float64, nthreads = MAX_NTHREADS) where {T}
-    FFTW.set_num_threads(nthreads)
-
-    M, N = size(G)
-    #paddedSpace = Matrix{Float64}(undef, 2M-1, 2N-1)
-    paddedSpace = Matrix{dtype}(undef, 2M, 2N)
-
-    if dtype == ComplexF64
-      F = FFTW.plan_fft(paddedSpace, flags = fftw_flags)
-    else
-      F = FFTW.plan_rfft(paddedSpace, flags = fftw_flags)
+function CircularConvolution(G::AbstractMatrix{T},fftw_flags = FFTW.ESTIMATE; dtype = Float64, optimize = true, nthreads = MAX_NTHREADS) where {T}
+  nt_opt = nthreads
+  if optimize
+    # find the optimal number of threads, up to `nthreads`
+    C = _circular_convolution(G,fftw_flags,dtype,1)
+    cput_mean_opt, cput_std_opt = test_cputime_convolution(_circular_convolution(G,fftw_flags,dtype,1),nsamp=3)
+    nt_opt = 1
+    for nt in 2:nthreads
+      cput_mean, cput_std = test_cputime_convolution(_circular_convolution(G,fftw_flags,dtype,nt),nsamp=3)
+      if cput_mean < cput_mean_opt
+        cput_mean_opt = cput_mean
+        nt_opt = nt
+      end
     end
-
-
-    mirror!(paddedSpace, G)
-    Ĝ = F * paddedSpace
-
-    Â = similar(Ĝ)
-    #F⁻¹ = FFTW.plan_irfft(Â, 2M - 1, flags = fftw_flags)
-    if dtype == ComplexF64
-      F⁻¹ = FFTW.plan_ifft(Â, flags = fftw_flags)
-    else
-      F⁻¹ = FFTW.plan_irfft(Â, 2M, flags = fftw_flags)
-    end
-
-    CircularConvolution{M, N, dtype, typeof(F), typeof(F⁻¹)}(Ĝ, F, F⁻¹, nthreads, paddedSpace, Â)
+  end
+  C = _circular_convolution(G,fftw_flags,dtype,nt_opt)
 end
+
+function _circular_convolution(G,fftw_flags,dtype,nthreads)
+  FFTW.set_num_threads(nthreads)
+
+  M, N = size(G)
+  #paddedSpace = Matrix{Float64}(undef, 2M-1, 2N-1)
+  paddedSpace = Matrix{dtype}(undef, 2M, 2N)
+
+  if dtype == ComplexF64
+    F = FFTW.plan_fft(paddedSpace, flags = fftw_flags)
+  else
+    F = FFTW.plan_rfft(paddedSpace, flags = fftw_flags)
+  end
+
+  mirror!(paddedSpace, G)
+  Ĝ = F * paddedSpace
+
+  Â = similar(Ĝ)
+  #F⁻¹ = FFTW.plan_irfft(Â, 2M - 1, flags = fftw_flags)
+  if dtype == ComplexF64
+    F⁻¹ = FFTW.plan_ifft(Â, flags = fftw_flags)
+  else
+    F⁻¹ = FFTW.plan_irfft(Â, 2M, flags = fftw_flags)
+  end
+
+  CircularConvolution{M, N, dtype, typeof(F), typeof(F⁻¹)}(Ĝ, F, F⁻¹, nthreads, paddedSpace, Â)
+end
+
+function test_cputime_convolution(C::CircularConvolution{M,N,T};nsamp=1) where {M,N,T}
+  prototype = rand(T,(M,N))
+
+  mul!(prototype,C,prototype) # to compile the function
+  cput = zeros(Float64,nsamp)
+  for n in 1:nsamp
+      out = @timed mul!(prototype,C,prototype)
+      cput[n] = out.time
+  end
+  return mean(cput), std(cput)
+end
+
+### ARITHMETIC ###
 
 function mul!(out, C::CircularConvolution{M, N, T}, B) where {M, N, T}
     FFTW.set_num_threads(C.nthreads)
@@ -98,6 +130,8 @@ function mul!(out, C::CircularConvolution{M, N, T}, B) where {M, N, T}
 end
 
 C::CircularConvolution * B = mul!(similar(B), C, B)
+
+### UTILITIES ###
 
 function mirror!(A, a::AbstractArray{T,2}) where {T}
     Nr, Nc = size(a)

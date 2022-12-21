@@ -921,10 +921,10 @@ end
 
         @test_throws MethodError (L \ s)
 
-        L = plan_laplacian(30, 40, with_inverse = true, fftw_flags = FFTW.PATIENT)
+        L = plan_laplacian(30, 40, with_inverse = true) #, fftw_flags = FFTW.PATIENT)
         @test L \ (L*s) ≈ s
 
-        L! = plan_laplacian!(30, 40, with_inverse = true, fftw_flags = FFTW.PATIENT)
+        L! = plan_laplacian!(30, 40, with_inverse = true) #, fftw_flags = FFTW.PATIENT)
         sold = deepcopy(s)
         L! \ (L!*s)
         @test s ≈ sold
