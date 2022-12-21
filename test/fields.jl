@@ -1074,6 +1074,7 @@ end
         @test cellsize(g) == 0.02
         @test limits(g,1) == (-1.06,3.06)
         @test limits(g,2) == (-2.04,3.04)
+        @test Threads.nthreads(g) == 1
 
     end
 end

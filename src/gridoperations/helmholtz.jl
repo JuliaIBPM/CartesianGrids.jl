@@ -106,7 +106,7 @@ for (lf,inplace) in ((:plan_helmholtz,false),
         end
         lgfh_table = load_lgf_helmholtz(NX+1,α)
         G = view(lgfh_table, 1:NX, 1:NY)
-        Helmholtz{NX, NY, true, dx, $inplace}(α,convert(ComplexF64,factor),CircularConvolution(G, fftw_flags,dtype=ComplexF64))
+        Helmholtz{NX, NY, true, dx, $inplace}(α,convert(ComplexF64,factor),CircularConvolution(G, fftw_flags,dtype=ComplexF64,nthreads=nthreads))
     end
 
     @eval function $lf(nx::Int, ny::Int,α::Number;

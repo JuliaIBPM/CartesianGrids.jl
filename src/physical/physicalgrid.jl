@@ -274,11 +274,11 @@ Return the grid cell size of grid `g`
 cellsize(g::PhysicalGrid) = g.Δx
 
 """
-    optimal_nthreads(g::PhysicalGrid) -> Int
+    nthreads(g::PhysicalGrid) -> Int
 
 Return the optimal number of threads for grid `g`.
 """
-optimal_nthreads(g::PhysicalGrid) = g.nthreads
+Threads.nthreads(g::PhysicalGrid) = g.nthreads
 
 # Extend FFT-based operations
 plan_laplacian(g::PhysicalGrid;kwargs...) = plan_laplacian(size(g);nthreads=g.nthreads,kwargs...)
