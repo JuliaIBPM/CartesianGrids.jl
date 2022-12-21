@@ -14,7 +14,7 @@ const GLH_NODES_3500, GLH_WEIGHTS_3500 = gausslegendre(3500)
 const GLH_NODES_10000, GLH_WEIGHTS_10000 = gausslegendre(10000)
 const GLH_N = [100,200,500,1000,2000,2500,3500,10000]
 
-const LGFH_DIR  = joinpath(pwd(), "cache")
+const LGFH_DIR  = joinpath(@__DIR__, "cache")
 
 #using ProgressMeter
 
