@@ -90,7 +90,7 @@ function PhysicalGrid(xlim::Tuple{Real,Real},
     NX, i0, xlimnew = _expand_1d_grid(NX,NX0,xlimnew...,Δx)
     NY, j0, ylimnew = _expand_1d_grid(NY,NY0,ylimnew...,Δx)
   else
-    NX0, NY0 = NX, NY
+    NX, NY = NX0, NY0
   end
 
   PhysicalGrid((NX,NY),(i0,j0),Δx,(xlimnew,ylimnew),nthreads_max)
