@@ -30,6 +30,19 @@ julia> g(2,3)
 struct EmptySpatialField <: AbstractSpatialField end
 (g::EmptySpatialField)(a...) = Float64(0)
 
+## Basic spatial field ##
+"""
+    SpatialField(f::Function)
+
+Creates a lazy instance of a spatial field from a function `f`, which
+must have the signature `f(x,y)`.
+"""
+struct SpatialField{FT<:Function} <: AbstractSpatialField
+  f :: FT
+end
+(field::SpatialField)(x,y) = field.f(x,y)
+(field::SpatialField)(x,y,t) = field.f(x,y) # ignore the time argument
+
 
 ## Spatial Gaussian field ##
 
