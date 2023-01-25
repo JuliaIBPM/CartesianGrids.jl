@@ -2,7 +2,7 @@ name = "CartesianGrids"
 uuid = "3e975e5d-2cf8-4263-9573-8460aaf534d9"
 authors = ["Jeff Eldredge <jdeldre@g.ucla.edu>"]
 repo = "https://github.com/JuliaIBPM/CartesianGrids.jl.git"
-version = "0.1.24"
+version = "0.1.25"
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
