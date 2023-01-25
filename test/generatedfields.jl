@@ -26,6 +26,9 @@ A = 1
 g = EmptySpatialField()
 @test g(rand(2)...) == 0.0
 
+
+
+
 g = SpatialGaussian(σ,σ,0.0,0.5,1)
 @test g(0,0.5+σ) ≈ g(σ,0.5) ≈ g(-σ,0.5) ≈ g(0,0.5-σ) ≈ exp(-1)/(π*σ^2)
 
@@ -34,7 +37,6 @@ v = 0
 gc = SpatialGaussian(σ,σ,0.0,0.5,1,u,v)
 t = 1
 @test gc(u*t,0.5+σ+v*t,t) ≈ gc(σ+u*t,0.5+v*t,t) ≈ gc(-σ+u*t,0.5+v*t,t) ≈ gc(0+u*t,0.5-σ+v*t,t) ≈ exp(-1)/(π*σ^2)
-
 
 
 g = EmptySpatialField()
@@ -56,11 +58,26 @@ gfield = GeneratedField(w,g,gr)
 @test gfield()[104,70] == g(xg[104],yg[70])
 @test datatype(gfield) == typeof(w)
 
+
 wfield = PulseField(gfield,0.5,0.1)
 
 @test maximum(wfield(0.5)) ≈ maximum(gfield()) ≈ 5.532960088678624
 @test maximum(wfield(2)) ≈ 0.0
 @test datatype(wfield) == datatype(gfield) <: ScalarGridData
+
+myfun(x,y) = exp(-x)*exp(-y)
+field = SpatialField(myfun)
+genfield = GeneratedField(w,field,gr)
+
+xc, yc = coordinates(w,gr)
+@test genfield()[104,24] ≈ myfun(xc[24],yc[104])
+
+myfun2(x,y,t) = exp(-x)*exp(-y)*exp(t)
+field2 = SpatialTemporalField(myfun2)
+genfield2 = GeneratedField(w,field2,gr)
+
+xc, yc = coordinates(w,gr)
+@test genfield2(1.0)[104,24] ≈ myfun2(xc[24],yc[104],1.0)
 
 
 q = Edges(Primal,size(gr))

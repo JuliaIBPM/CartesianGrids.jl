@@ -35,7 +35,7 @@ export Primal, Dual, ScalarGridData, VectorGridData, TensorGridData, GridData,
        Regularize, RegularizationMatrix, InterpolationMatrix,
        CircularConvolution,
        AbstractSpatialField, Gaussian, DGaussian, radius, center, strength,
-       EmptySpatialField,
+       EmptySpatialField, SpatialField,SpatialTemporalField,
        SpatialGaussian,GeneratedField, datatype, grid, PulseField, ModulatedField
 
 abstract type CellType end
