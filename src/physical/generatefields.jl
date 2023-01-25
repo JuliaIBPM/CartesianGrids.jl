@@ -43,6 +43,17 @@ end
 (field::SpatialField)(x,y) = field.f(x,y)
 (field::SpatialField)(x,y,t) = field.f(x,y) # ignore the time argument
 
+"""
+    SpatialTemporalField(f::Function)
+
+Creates a lazy instance of a spatial-temporal field from a function `f`, which
+must have the signature `f(x,y,t)`.
+"""
+struct SpatialTemporalField{FT<:Function} <: AbstractSpatialField
+  f :: FT
+end
+(field::SpatialTemporalField)(x,y,t) = field.f(x,y,t)
+
 
 ## Spatial Gaussian field ##
 

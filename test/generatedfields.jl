@@ -72,6 +72,13 @@ genfield = GeneratedField(w,field,gr)
 xc, yc = coordinates(w,gr)
 @test genfield()[104,24] ≈ myfun(xc[24],yc[104])
 
+myfun2(x,y,t) = exp(-x)*exp(-y)*exp(t)
+field2 = SpatialTemporalField(myfun2)
+genfield2 = GeneratedField(w,field2,gr)
+
+xc, yc = coordinates(w,gr)
+@test genfield2(1.0)[104,24] ≈ myfun2(xc[24],yc[104],1.0)
+
 
 q = Edges(Primal,size(gr))
 gauss = SpatialGaussian(0.5,0,0,1)
