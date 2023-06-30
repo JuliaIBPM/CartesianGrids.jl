@@ -9,7 +9,6 @@ end
 ```@setup create
 using CartesianGrids
 using Plots
-pyplot()
 ```
 
 Let's see an example of creating a blank set of dual node data and filling it with
@@ -27,6 +26,4 @@ this in place of the size:
 q = Edges(Primal,w);
 q.u[2,3] = 1;
 q
-```
-
 ```
