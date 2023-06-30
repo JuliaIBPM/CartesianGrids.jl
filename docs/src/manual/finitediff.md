@@ -132,7 +132,6 @@ L = plan_laplacian(w,with_inverse=true)
 plot(L\w)
 savefig("Linvw.svg"); nothing # hide
 ```
-
 ![](Linvw.svg)
 
 The influence is not affected by the narrow grid dimensions.
