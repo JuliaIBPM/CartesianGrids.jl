@@ -109,7 +109,6 @@ with each discrete point. These arguments are used to weight the sum.
 ```@setup regularize
 using CartesianGrids
 using Plots
-pyplot()
 ```
 
 ```@repl regularize

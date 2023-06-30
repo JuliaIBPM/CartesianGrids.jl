@@ -15,7 +15,7 @@ Many of the core aspects of the fluid-body interaction are based on the immersed
 
 This package works on Julia `1.0` and higher and is registered in the general Julia registry. To install, type
 ```julia
-]add CartesianGrids
+] add CartesianGrids
 ```
 
 Then type

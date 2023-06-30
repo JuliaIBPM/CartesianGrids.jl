@@ -23,7 +23,6 @@ end
 ```@setup create
 using CartesianGrids
 using Plots
-pyplot()
 ```
 
 ## Field differencing operations
