@@ -18,7 +18,8 @@ const LGFH_DIR  = joinpath(@__DIR__, "cache")
 
 #using ProgressMeter
 
-alpha_to_string(α::Float64) = string(round(Int,10000*α),pad=5)
+alpha_to_string(α::Number) = string(round(Int,10000*abs(α)),pad=5)
+
 
 lgfh_file(α) = joinpath(LGFH_DIR,"lgfhtable_alpha"*alpha_to_string(α)*".dat")
 
@@ -32,7 +33,7 @@ end
 function load_lgf_helmholtz(N,α)
     if isfile(lgfh_file(α))
         io = open(lgfh_file(α),"r")
-        G = deserialize(io)        
+        G = deserialize(io)
         if size(G,1) ≥ N
             return G
         end
@@ -75,7 +76,7 @@ end
 
 #quadgauss_helmholtz(f::Function) = dot(GLH_WEIGHTS, f(GLH_NODES))
 
-function lgf_helmholtz(i :: Integer, j :: Integer, α::Real)
+function lgf_helmholtz(i :: Integer, j :: Integer, α::Number)
 
   nodes_i, weights_i = _get_gl_data(abs(i))
   nodes_j, weights_j = _get_gl_data(abs(j))
@@ -101,7 +102,7 @@ function lgf_helmholtz(i :: Integer, j :: Integer, α::Real)
 
 end
 
-lgf_helmholtz_asymptotic(i :: Integer, j :: Integer, α::Real) =
+lgf_helmholtz_asymptotic(i :: Integer, j :: Integer, α::Number) =
       conj(im*0.25*hankelh1(0,exp(im*π/4)*sqrt(α)*sqrt(i^2+j^2)))
 
 function _get_lgf_support(α::Number;tol=eps(Float64))

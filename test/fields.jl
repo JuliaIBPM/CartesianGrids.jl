@@ -2,6 +2,13 @@ using FFTW
 
 import LinearAlgebra: norm, dot, mul!
 
+_size(::CartesianGrids.Laplacian{NX,NY}) where {NX,NY} = NX,NY
+
+function randomize!(f::ScalarGridData;offset=0)
+    f[offset:end-offset,offset:end-offset] .= randn(size(f[offset:end-offset,offset:end-offset]))
+    return f
+end
+
 @testset "Grid Routines" begin
 
   # size
@@ -337,10 +344,7 @@ import LinearAlgebra: norm, dot, mul!
     @test iszero(curl(grad(nodeunit)))
   end
 
-  function randomize!(f::ScalarGridData;offset=0)
-      f[offset:end-offset,offset:end-offset] .= randn(size(f[offset:end-offset,offset:end-offset]))
-      return f
-  end
+
 
   v = Edges(Primal,(100,200))
   offset = 4
@@ -512,7 +516,6 @@ import LinearAlgebra: norm, dot, mul!
 
   L = plan_laplacian(nx,ny;with_inverse=true)
 
-  _size(::CartesianGrids.Laplacian{NX,NY}) where {NX,NY} = NX,NY
 
   @testset "Laplacian of the LGF" begin
     ψ = L\cellunit
@@ -590,6 +593,72 @@ import LinearAlgebra: norm, dot, mul!
 
     @test isapprox(real(LH(0,0,CartesianGrids.lgf_helmholtz,alpha)),1.0;atol=100.0*eps())
 
+
+  end
+
+  @testset "Implicit diffusion" begin
+    a = rand()
+    A = plan_implicit_diffusion(a,(nx,ny))
+
+    v = A\cellunit
+    dudt = (v - cellunit)/a
+    lapv = similar(v)
+    laplacian!(lapv,v)
+
+    @test norm(dudt-lapv) < 1000.0*eps()
+
+    u2 = A*v
+    @test u2[i,j] ≈ 1.0
+
+    v = A\nodeunit
+    dudt = (v - nodeunit)/a
+    lapv = similar(v)
+    laplacian!(lapv,v)
+
+    @test norm(dudt[2:end-1,2:end-1]-lapv[2:end-1,2:end-1]) < 1000.0*eps()
+
+    u2 = A*v
+    @test u2[i,j] ≈ 1.0
+
+    v = A\facexunit.u
+    dudt = (v - facexunit.u)/a
+    lapv = similar(v)
+    laplacian!(lapv,v)
+
+    @test norm(dudt[2:end-1,2:end-1]-lapv[2:end-1,2:end-1]) < 1000.0*eps()
+
+    u2 = A*v
+    @test u2[i,j] ≈ 1.0
+
+    v = A\faceyunit.v
+    dudt = (v - faceyunit.v)/a
+    lapv = similar(v)
+    laplacian!(lapv,v)
+
+    @test norm(dudt[2:end-1,2:end-1]-lapv[2:end-1,2:end-1]) < 1000.0*eps()
+
+    u2 = A*v
+    @test u2[i,j] ≈ 1.0
+
+    v = A\dualfacexunit.u
+    dudt = (v - dualfacexunit.u)/a
+    lapv = similar(v)
+    laplacian!(lapv,v)
+
+    @test norm(dudt[2:end-1,2:end-1]-lapv[2:end-1,2:end-1]) < 1000.0*eps()
+
+    u2 = A*v
+    @test u2[i,j] ≈ 1.0
+
+    v = A\dualfaceyunit.v
+    dudt = (v - dualfaceyunit.v)/a
+    lapv = similar(v)
+    laplacian!(lapv,v)
+
+    @test norm(dudt[2:end-1,2:end-1]-lapv[2:end-1,2:end-1]) < 1000.0*eps()
+
+    u2 = A*v
+    @test u2[i,j] ≈ 1.0
 
   end
 

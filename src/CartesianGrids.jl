@@ -27,6 +27,7 @@ export Primal, Dual, ScalarGridData, VectorGridData, TensorGridData, GridData,
        laplacian, laplacian!, laplacian_symm!, plan_laplacian, plan_laplacian!,
        helmholtz, helmholtz!, plan_helmholtz, plan_helmholtz!,
        plan_intfact,plan_intfact!,Identity,
+       plan_implicit_diffusion,plan_implicit_diffusion!,
        product, product!, ∘,
        magsq!,magsq,mag!,mag,
        directional_derivative!, directional_derivative_conserve!, curl_cross!,
@@ -123,6 +124,7 @@ include("gridoperations/lgf-helmholtz.jl")
 include("gridoperations/laplacian.jl")
 include("gridoperations/helmholtz.jl")
 include("gridoperations/intfact.jl")
+include("gridoperations/implicitdiffusion.jl")
 include("gridoperations/diffcalculus.jl")
 include("gridoperations/differencing1d.jl")
 include("gridoperations/interpolation1d.jl")
