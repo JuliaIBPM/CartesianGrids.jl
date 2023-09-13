@@ -312,6 +312,10 @@ end
 
   @testset "Nonlinear operations" begin
     usq = Nodes(Primal,facexunit)
+    gridwise_dot!(usq,facexunit,facexunit)
+    @test usq[i,j] == 0.5
+    @test gridwise_dot(facexunit,facexunit) == usq
+
     magsq!(usq,facexunit)
     @test usq[i,j] == 0.5
     @test magsq(facexunit) == usq

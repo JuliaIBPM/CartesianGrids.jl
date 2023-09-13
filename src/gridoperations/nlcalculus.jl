@@ -1,22 +1,32 @@
 """
+   gridwise_dot!(udotv::Nodes{Primal/Dual},u::Edges{Primal/Dual},v::Edges{Primal/Dual})
+
+Calculate the in-placed dot product of vector grid data `u` and `v`, placing the result on
+the cell centers or nodes in `udotv`.
+"""
+function gridwise_dot!(udotv::Nodes{C},u::Edges{C},v::Edges{C}) where {C <: CartesianGrids.CellType}
+
+  grid_interpolate!(udotv,u∘v)
+
+  return udotv
+end
+
+"""
+   gridwise_dot(u::Edges{Primal/Dual},v::Edges{Primal/Dual})
+
+Calculate the dot product of vector grid data `u` and `v`, placing the result on
+the cell centers (if data are Edges{Primal}) or nodes (if data are Edges{Dual}).
+"""
+gridwise_dot(u::Edges{C},v::Edges{C}) where {C<:CellType} = gridwise_dot!(Nodes(C,u),u,v)
+
+"""
    magsq!(magusq::Nodes{Primal/Dual},u::Edges{Primal/Dual})
 
 Calculate the in-placed squared magnitude of vector grid data `u`, placing the result on
 the cell centers in `magusq`.
 """
-function magsq!(umagsq::Nodes{C},u::Edges{C}) where {C <: CellType}
+magsq!(umagsq::Nodes{C},u::Edges{C}) where {C <: CellType} = gridwise_dot!(umagsq,u,u)
 
-  usq = u∘u
-  usq_nodes = Nodes(C,u)
-
-  grid_interpolate!(usq_nodes,usq.u)
-  umagsq .= usq_nodes
-
-  grid_interpolate!(usq_nodes,usq.v)
-  umagsq .+= usq_nodes
-
-  return umagsq
-end
 
 """
    magsq(u::Edges{Primal/Dual}) -> Nodes{Primal/Dual}
