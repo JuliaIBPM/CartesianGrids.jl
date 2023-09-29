@@ -32,7 +32,7 @@ macro scalarfield(wrapper,primaldn,dualdn)
 
     `$($wrapper)` is a wrapper for scalar-valued data that lie at the centers of either dual cells or
     primary cells. A `$($wrapper)` type can be accessed by indexing like any other array,
-    and allows the use of [`size`](@ref), [`similar`](@ref), [`zero`](@ref).
+    and allows the use of `size`, `similar`, `zero` functions.
 
     # Constructors
     - `$($wrapper)(C,dims)` creates a field of zeros in cells of type `C` (where `C` is

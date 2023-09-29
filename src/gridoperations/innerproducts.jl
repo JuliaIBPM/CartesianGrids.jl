@@ -17,7 +17,10 @@ Computes the inner product between two sets of dual node data on the same grid.
 function dot(p1::Nodes{Dual,NX,NY},p2::Nodes{Dual,NX,NY}) where {NX,NY}
   # remember that sizes NX and NY include the ghost cells
   dims = node_inds(Dual,(NX,NY))
-  return dot(p1[2:dims[1]-1,2:dims[2]-1],p2[2:dims[1]-1,2:dims[2]-1])/((NX-2)*(NY-2))
+  p1_int = view(p1,2:dims[1]-1,2:dims[2]-1)
+  p2_int = view(p2,2:dims[1]-1,2:dims[2]-1)
+  return dot(p1_int,p2_int)/((NX-2)*(NY-2))
+
 end
 
 """
@@ -30,13 +33,13 @@ function dot(p1::Nodes{Primal,NX,NY},p2::Nodes{Primal,NX,NY}) where {NX,NY}
   dims = node_inds(Primal,(NX,NY))
 
   # interior
-  tmp = dot(p1[2:dims[1]-1,2:dims[2]-1],p2[2:dims[1]-1,2:dims[2]-1])
+  tmp = dot(view(p1,2:dims[1]-1,2:dims[2]-1),view(p2,2:dims[1]-1,2:dims[2]-1))
 
   # boundaries
-  tmp += 0.5*dot(p1[1,2:dims[2]-1],      p2[1,2:dims[2]-1])
-  tmp += 0.5*dot(p1[dims[1],2:dims[2]-1],p2[dims[1],2:dims[2]-1])
-  tmp += 0.5*dot(p1[2:dims[1]-1,1],      p2[2:dims[1]-1,1])
-  tmp += 0.5*dot(p1[2:dims[1]-1,dims[2]],p2[2:dims[1]-1,dims[2]])
+  tmp += 0.5*dot(view(p1,1,2:dims[2]-1),      view(p2,1,2:dims[2]-1))
+  tmp += 0.5*dot(view(p1,dims[1],2:dims[2]-1),view(p2,dims[1],2:dims[2]-1))
+  tmp += 0.5*dot(view(p1,2:dims[1]-1,1),      view(p2,2:dims[1]-1,1))
+  tmp += 0.5*dot(view(p1,2:dims[1]-1,dims[2]),view(p2,2:dims[1]-1,dims[2]))
 
   # corners -- use dot to ensure it works for complex types
   tmp += 0.25*dot([p1[1,1],p1[dims[1],1],p1[1,dims[2]],p1[dims[1],dims[2]]],
@@ -57,11 +60,11 @@ function dot(p1::XEdges{Dual,NX,NY},p2::XEdges{Dual,NX,NY}) where {NX,NY}
   udims = xedge_inds(Dual,(NX,NY))
 
   # interior
-  tmp = dot(p1[2:udims[1]-1,2:udims[2]-1],p2[2:udims[1]-1,2:udims[2]-1])
+  tmp = dot(view(p1,2:udims[1]-1,2:udims[2]-1),view(p2,2:udims[1]-1,2:udims[2]-1))
 
   # boundaries
-  tmp += 0.5*dot(p1[1,       2:udims[2]-1],p2[1,       2:udims[2]-1])
-  tmp += 0.5*dot(p1[udims[1],2:udims[2]-1],p2[udims[1],2:udims[2]-1])
+  tmp += 0.5*dot(view(p1,1,2:udims[2]-1),view(p2,1,2:udims[2]-1))
+  tmp += 0.5*dot(view(p1,udims[1],2:udims[2]-1),view(p2,udims[1],2:udims[2]-1))
 
   return tmp/((NX-2)*(NY-2))
 end
@@ -76,11 +79,11 @@ function dot(p1::YEdges{Dual,NX,NY},p2::YEdges{Dual,NX,NY}) where {NX,NY}
   vdims = yedge_inds(Dual,(NX,NY))
 
   # interior
-  tmp = dot(p1[2:vdims[1]-1,2:vdims[2]-1],p2[2:vdims[1]-1,2:vdims[2]-1])
+  tmp = dot(view(p1,2:vdims[1]-1,2:vdims[2]-1),view(p2,2:vdims[1]-1,2:vdims[2]-1))
 
   # boundaries
-  tmp += 0.5*dot(p1[2:vdims[1]-1,1],       p2[2:vdims[1]-1,1])
-  tmp += 0.5*dot(p1[2:vdims[1]-1,vdims[2]],p2[2:vdims[1]-1,vdims[2]])
+  tmp += 0.5*dot(view(p1,2:vdims[1]-1,1),view(p2,2:vdims[1]-1,1))
+  tmp += 0.5*dot(view(p1,2:vdims[1]-1,vdims[2]),view(p2,2:vdims[1]-1,vdims[2]))
 
   return tmp/((NX-2)*(NY-2))
 end
@@ -97,11 +100,11 @@ function dot(p1::XEdges{Primal,NX,NY},p2::XEdges{Primal,NX,NY}) where {NX,NY}
   udims = xedge_inds(Primal,(NX,NY))
 
   # interior
-  tmp = dot(p1[2:udims[1]-1,2:udims[2]-1],p2[2:udims[1]-1,2:udims[2]-1])
+  tmp = dot(view(p1,2:udims[1]-1,2:udims[2]-1),view(p2,2:udims[1]-1,2:udims[2]-1))
 
   # boundaries
-  tmp += 0.5*dot(p1[2:udims[1]-1,1],       p2[2:udims[1]-1,1])
-  tmp += 0.5*dot(p1[2:udims[1]-1,udims[2]],p2[2:udims[1]-1,udims[2]])
+  tmp += 0.5*dot(view(p1,2:udims[1]-1,1),view(p2,2:udims[1]-1,1))
+  tmp += 0.5*dot(view(p1,2:udims[1]-1,udims[2]),view(p2,2:udims[1]-1,udims[2]))
 
   return tmp/((NX-2)*(NY-2))
 end
@@ -116,11 +119,11 @@ function dot(p1::YEdges{Primal,NX,NY},p2::YEdges{Primal,NX,NY}) where {NX,NY}
   vdims = yedge_inds(Primal,(NX,NY))
 
   # interior
-  tmp = dot(p1[2:vdims[1]-1,2:vdims[2]-1],p2[2:vdims[1]-1,2:vdims[2]-1])
+  tmp = dot(view(p1,2:vdims[1]-1,2:vdims[2]-1),view(p2,2:vdims[1]-1,2:vdims[2]-1))
 
   # boundaries
-  tmp += 0.5*dot(p1[1,       2:vdims[2]-1],p2[1,       2:vdims[2]-1])
-  tmp += 0.5*dot(p1[vdims[1],2:vdims[2]-1],p2[vdims[1],2:vdims[2]-1])
+  tmp += 0.5*dot(view(p1,1,2:vdims[2]-1),view(p2,1,2:vdims[2]-1))
+  tmp += 0.5*dot(view(p1,vdims[1],2:vdims[2]-1),view(p2,vdims[1],2:vdims[2]-1))
 
   return tmp/((NX-2)*(NY-2))
 end
