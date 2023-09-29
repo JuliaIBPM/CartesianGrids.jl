@@ -126,7 +126,7 @@ default, it takes this number from `L`.
 exp(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY));nthreads=MAX_NTHREADS) where {NX,NY} =
             plan_intfact(L.factor*a,prototype;nthreads=nthreads)
 # Do not use the number of threads in L (if it has any), since it is not
-# meaningful for the integrating factor tests.            
+# meaningful for the integrating factor tests.
 
 """
     exp!(L::Laplacian,a[,Nodes(Dual)][;nthreads=L.conv.nthreads])
@@ -151,14 +151,16 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
                      E::IntFact{MX, MY, NegExp, inplace},
                      s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
 
-      out .= deepcopy(s)
+      #out .= deepcopy(s)
+      out .= s
   end
 
   @eval function ldiv!(out::$datatype{T,NX, NY},
                      E::IntFact{MX, MY, PosExp, inplace},
                      s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
 
-      out .= deepcopy(s)
+      #out .= deepcopy(s)
+      out .= s
   end
 
   @eval function ldiv!(out::$datatype{T,NX, NY},
@@ -173,13 +175,15 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
   @eval function mul!(out::$datatype{T,NX, NY},
                      E::IntFact{MX, MY, ZeroExp, inplace},
                      s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
-      out .= deepcopy(s)
+      #out .= deepcopy(s)
+      out .= s
   end
 
   @eval function ldiv!(out::$datatype{T,NX, NY},
                      E::IntFact{MX, MY, ZeroExp, inplace},
                      s::$datatype{T, NX, NY}) where {T <: CellType, NX, NY, MX, MY, inplace}
-      out .= deepcopy(s)
+      #out .= deepcopy(s)
+      out .= s
   end
 
 end
