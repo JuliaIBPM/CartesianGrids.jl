@@ -63,7 +63,7 @@ function dot(p1::XEdges{Dual,NX,NY},p2::XEdges{Dual,NX,NY}) where {NX,NY}
   tmp = dot(view(p1,2:udims[1]-1,2:udims[2]-1),view(p2,2:udims[1]-1,2:udims[2]-1))
 
   # boundaries
-  tmp += 0.5*dot(view(p1,1,2:udims[2]-1),view(p2,1,2:udims[2]-1))
+  tmp += 0.5*dot(view(p1,1,       2:udims[2]-1),view(p2,1,       2:udims[2]-1))
   tmp += 0.5*dot(view(p1,udims[1],2:udims[2]-1),view(p2,udims[1],2:udims[2]-1))
 
   return tmp/((NX-2)*(NY-2))

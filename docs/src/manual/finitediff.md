@@ -130,9 +130,7 @@ w = Nodes(Dual,(50,10));
 w[20,5] = 1.0
 L = plan_laplacian(w,with_inverse=true)
 plot(L\w)
-savefig("Linvw.svg"); nothing # hide
 ```
-![](Linvw.svg)
 
 The influence is not affected by the narrow grid dimensions.
 
@@ -157,9 +155,7 @@ cell. Let's set up this initial data:
 u0 = Nodes(Dual,(100,100));
 u0[40,50] = 1.0
 plot(u0)
-savefig("w1.svg"); nothing # hide
 ```
-![](w1.svg)
 
 Then, $E(t)u_0$ diffuses this initial unit perturbation in each direction. Here, we apply it
 with $t = 5$:
@@ -167,9 +163,7 @@ with $t = 5$:
 ```@repl create
 E = plan_intfact(5,u0)
 plot(E*u0)
-savefig("Ew1.svg"); nothing # hide
 ```
-![](Ew1.svg)
 
 Note that $E(0) = I$, where $I$ is the identity. Also, the integrating factor has the useful property that $E(t+\tau) = E(t)E(\tau)$. From these properties, it
 follows that $E^{-1}(t) = E(-t)$. Let's suppose we wish to advance $u$ from time
