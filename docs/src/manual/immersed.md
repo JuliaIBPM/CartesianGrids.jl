@@ -168,7 +168,6 @@ first argument and the source data `f` as the second argument.
 H(q,f);
 plot(q)
 ```
-![](regq.svg)
 
 We could also regularize this to a field of dual edges.
 
@@ -177,7 +176,6 @@ p = Edges(Dual,(nx,ny));
 H(p,f);
 plot(p)
 ```
-![](regp.svg)
 
 Scalar-valued data on the immersed points can only be regularized to nodal fields;
 the syntax is similar, and the regularization operator does not need to be
@@ -190,7 +188,6 @@ w = Nodes(Dual,(nx,ny));
 H(w,g);
 plot(w)
 ```
-![](regw.svg)
 
 For a given regularization operator, $H$, there is a companion interpolation operator,
 $E$. In `CartesianGrids`, this interpolation is also carried out
@@ -205,7 +202,6 @@ H(f2,q);
 plot(f2.u,lab="u")
 plot!(f2.v,lab="v")
 ```
-![](interpf.svg)
 
 Note that interpolation is *not* the inverse of regularization; we don't recover the original data
 when we regularize and then interpolate. However, there is generally a way to scale the quantities on the immersed points and on the grid so that $H = E^T$. If we want to force these
