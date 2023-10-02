@@ -1,12 +1,9 @@
 # Immersed data and their operations
 
 ```@meta
-DocTestSetup = quote
-  using CartesianGrids
-  using Random
-  Random.seed!(1)
-end
+CurrentModule = CartesianGrids
 ```
+
 
 ```math
 \def\ddt#1{\frac{\mathrm{d}#1}{\mathrm{d}t}}
@@ -17,12 +14,6 @@ end
 \newcommand{\unormal}{\uvec{n}}
 
 \renewcommand{\d}{\,\mathrm{d}}
-```
-
-
-```@setup create
-using CartesianGrids
-using Plots
 ```
 
 ## The grid in physical space
@@ -106,12 +97,12 @@ with each discrete point. These arguments are used to weight the sum.
  circle center. We will regularize these vector data to a primal
  edge field on the grid in which these points are immersed.
 
-```@setup regularize
+```@example regularize
 using CartesianGrids
 using Plots
 ```
 
-```@repl regularize
+```@example regularize
 n = 100;
 θ = range(0,stop=2π,length=n+1);
 x = 0.5 .+ 0.25*cos.(θ[1:n]);
@@ -123,7 +114,7 @@ X = VectorData(x,y);
 The variable `X` now holds the coordinates of the immersed points. Now we will set
 up the vector-valued data on these points
 
-```@repl regularize
+```@example regularize
 f = VectorData(X);
 fill!(f.u,1.0);
 f.v .= X.v.-0.5;
@@ -138,7 +129,7 @@ cells surrounding the domain, we use $102$ cells, and set the cell size to 0.01.
 Also, we will set the $(x,y)$ origin to coincide with the lower left corner of
 the domain.
 
-```@repl regularize
+```@example regularize
 nx = 102; ny = 102;
 q = Edges(Primal,(nx,ny));
 Lx = 1.0;
@@ -151,7 +142,7 @@ weight to apply to each immersed point. Since this is a regularization of a curv
 this weight is the differential arc length `ds` associated with each point.
 (This last argument is supplied as a scalar, since it is uniform.)
 
-```@repl regularize
+```@example regularize
 H = Regularize(X,dx,weights=ds)
 ```
 
@@ -164,14 +155,14 @@ space discussed in the previous section).
 Now we can apply the regularization operator. We supply the target field `q` as the
 first argument and the source data `f` as the second argument.
 
-```@repl regularize
+```@example regularize
 H(q,f);
 plot(q)
 ```
 
 We could also regularize this to a field of dual edges.
 
-```@repl regularize
+```@example regularize
 p = Edges(Dual,(nx,ny));
 H(p,f);
 plot(p)
@@ -181,7 +172,7 @@ Scalar-valued data on the immersed points can only be regularized to nodal field
 the syntax is similar, and the regularization operator does not need to be
 reconstructed:
 
-```@repl regularize
+```@example regularize
 g = ScalarData(X);
 fill!(g,1.0);
 w = Nodes(Dual,(nx,ny));
@@ -196,7 +187,7 @@ data are the source and the immersed points are the target. Note that interpolat
 is always a volumetric operation, so the weights assigned during the construction
 of the operator are not used in interpolation. Let's interpolate our regularized field back onto the immersed points.
 
-```@repl regularize
+```@example regularize
 f2 = VectorData(X);
 H(f2,q);
 plot(f2.u,lab="u")
@@ -207,7 +198,7 @@ Note that interpolation is *not* the inverse of regularization; we don't recover
 when we regularize and then interpolate. However, there is generally a way to scale the quantities on the immersed points and on the grid so that $H = E^T$. If we want to force these
 operations to be transposes of each other, we can supply the `issymmetric=true` flag. This flag will override any supplied weights. But here, we will exclude it so that it defaults to the asymmetric form.
 
-```@repl regularize
+```@example regularize
 H = Regularize(X,dx)
 ```
 
@@ -219,7 +210,7 @@ operations much faster than the matrix-free operators described above. To
 generate these matrix operators, we have to supply the data types of the
 source and target of the operation. For example, for regularization from
 scalar field data to dual node data,
-```@repl regularize
+```@example regularize
 g = ScalarData(X);
 w = Nodes(Dual,(nx,ny));
 Hmat = RegularizationMatrix(H,g,w);
@@ -228,14 +219,14 @@ w .= Hmat*g;
 ```
 In general, the interpolation matrix is separately constructed, and the source and target
 are reversed:
-```@repl regularize
+```@example regularize
 Emat = InterpolationMatrix(H,w,g);
 g .= Emat*w;
 ```
 
 Alternatively, if the regularization and interpolation are symmetric, then we
 can get them both when we call for the regularization matrix:
-```@repl regularize
+```@example regularize
 H = Regularize(X,dx,issymmetric=true)
 Hmat, Emat = RegularizationMatrix(H,g,w);
 ```
@@ -245,14 +236,10 @@ given separate types.
 
 ## Other operations with point-type data
 
-```@setup vector
-using CartesianGrids
-```
-
 We have seen point-type data structures, `ScalarData` and `VectorData`; there is also a tensor type of data, `TensorData`, which holds the four components of a 2x2 tensor. One can regularize and interpolate with this tensor data, as well; its companion grid data structure is the `EdgeGradient` type, which is a wrapper for four `Nodes` structures: two `Dual`, and two `Primal`, where the four tensor components are naturally held on the grid.
 
 There are also some extensions of standard operations to the `VectorData` type. For example, we can add a tuple of two numbers to vector data, and these numbers get added to each entry in the set of points, component-wise. For example,
-```@repl vector
+```@example regularize
 Y = VectorData(4)
 Y + (1,2)
 ```
@@ -261,7 +248,7 @@ Subtraction also works, and the operations are commutable.
 
 Another useful operation is a cross product, which can be carried out between a single scalar (treated as though it was the component of an out-of-plane vector) and `VectorData`:
 
-```@repl vector
+```@example regularize
 using LinearAlgebra
 X = VectorData(4)
 fill!(X.u,1)

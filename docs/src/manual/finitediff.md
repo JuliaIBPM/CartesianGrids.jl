@@ -1,12 +1,9 @@
 # Mimetic calculus on grid data
 
 ```@meta
-DocTestSetup = quote
-  using CartesianGrids
-  using Random
-  Random.seed!(1)
-end
+CurrentModule = CartesianGrids
 ```
+
 
 ```math
 \def\ddt#1{\frac{\mathrm{d}#1}{\mathrm{d}t}}
@@ -20,10 +17,7 @@ end
 ```
 
 
-```@setup create
-using CartesianGrids
-using Plots
-```
+
 
 ## Field differencing operations
 
@@ -37,7 +31,13 @@ continuous counterparts. For example, the divergence of the curl of any dual nod
 data is exactly zero. The curl of the gradient of primal nodal data is also zero.
 
 Let's take the curl of the dual nodal data we constructed:
-```@repl create
+
+```@example fdiff
+using CartesianGrids
+using Plots
+```
+
+```@example fdiff
 w = Nodes(Dual,(5,4)) # hide
 w .= reshape(1:20,5,4) # hide
 curl(w)
@@ -45,7 +45,7 @@ curl(w)
 
 We could also make this a little more cute by giving the curl operator a symbol
 and then acting upon the data as though it were a matrix-vector operation:
-```@repl create
+```@example fdiff
 C = Curl()
 C*w
 ```
@@ -57,7 +57,7 @@ Suppose we wish to apply the `curl` operation over and over. The `curl()` functi
 allocates memory for the result whenever it is used; this would become expensive
 if it is done often. So it makes sense to preallocate space for this result and
 use the `curl!()` function, which simply fills in the elements:
-```@repl create
+```@example fdiff
 q = Edges(Primal,w)
 curl!(q,w)
 ```
@@ -65,7 +65,7 @@ Note that we used a convenience function for setting up primal edge data `q` of 
 size that corresponds with `w`.
 
 Let's check that divergence of the curl is indeed zero:
-```@repl create
+```@example fdiff
 D = Divergence()
 D*(C*w)
 ```
@@ -75,13 +75,13 @@ D*(C*w)
 `CartesianGrids` also makes heavy use of the discrete Laplacian operator, $L$. This mimics the
 continuous operator, $\nabla^2$, and acts upon data of any type. Let's apply
 this to the original data:
-```@repl create
+```@example fdiff
 laplacian(w)
 ```
 
 As with the other operators, we can also construct a shorthand of the discrete
 Laplacian operator,
-```@repl create
+```@example fdiff
 L = plan_laplacian(size(w))
 L*w
 ```
@@ -94,12 +94,12 @@ $$Ls = w$$
 for $s$, for given data $w$. We achieve this in `CartesianGrids` with the *lattice Green's
 function*. To outfit the operator with its inverse, we simply set the optional
 flag:
-```@repl create
+```@example fdiff
 L = plan_laplacian(size(w),with_inverse=true)
 ```
 
 Then, the Poisson system is solved with the backslash (`\`),
-```@repl create
+```@example fdiff
 s = L\w
 L*s
 ```
@@ -125,7 +125,7 @@ of zeros, except for a single $1$ entry at one node. The solution $s$ represents
 the influence of this point on all nodes. To see that the LGF does
 not depend on the grid size, let's use a grid that is long and skinny and plot
 the solution on it
-```@repl create
+```@example fdiff
 w = Nodes(Dual,(50,10));
 w[20,5] = 1.0
 L = plan_laplacian(w,with_inverse=true)
@@ -151,7 +151,7 @@ where $E(t)$ is the integrating factor (or matrix exponential) for the system. T
 easiest way to understand the role of $E(t)$ is to consider its behavior when $f$
 is zero and $u_0$ contains a field of zeros except for a single $1$ entry at one
 cell. Let's set up this initial data:
-```@repl create
+```@example fdiff
 u0 = Nodes(Dual,(100,100));
 u0[40,50] = 1.0
 plot(u0)
@@ -160,7 +160,7 @@ plot(u0)
 Then, $E(t)u_0$ diffuses this initial unit perturbation in each direction. Here, we apply it
 with $t = 5$:
 
-```@repl create
+```@example fdiff
 E = plan_intfact(5,u0)
 plot(E*u0)
 ```
@@ -182,7 +182,7 @@ Other field operations shift the data, by local averaging, from one data type to
 another. These operations are all called `grid_interpolate!`, and they require that the
 target data be preallocated. For example, to interpolate dual node data to the dual edges,
 
-```@repl create
+```@example fdiff
 w = Nodes(Dual,(5,4));
 w .= reshape(1:20,5,4)
 Ww = Edges(Dual,w);
@@ -192,13 +192,13 @@ Note that the edges in the ghost cells are 0; these edges are not assigned any
 values in the interpolate operation.
 
 We can then interpolate this to primal edges:
-```@repl create
+```@example fdiff
 q = Edges(Primal,w);
 grid_interpolate!(q,Ww)
 ```
 
 We can also compute the Hadamard (i.e. element by element) product of any data
 of the same type, e.g.,
-```@repl create
+```@example fdiff
 q∘q
 ```
