@@ -130,7 +130,6 @@ w = Nodes(Dual,(50,10));
 w[20,5] = 1.0
 L = plan_laplacian(w,with_inverse=true)
 plot(L\w)
-savefig("Linvw.svg"); nothing # hide
 ```
 ![](Linvw.svg)
 
@@ -157,7 +156,6 @@ cell. Let's set up this initial data:
 u0 = Nodes(Dual,(100,100));
 u0[40,50] = 1.0
 plot(u0)
-savefig("w1.svg"); nothing # hide
 ```
 ![](w1.svg)
 
@@ -167,7 +165,6 @@ with $t = 5$:
 ```@repl create
 E = plan_intfact(5,u0)
 plot(E*u0)
-savefig("Ew1.svg"); nothing # hide
 ```
 ![](Ew1.svg)
 

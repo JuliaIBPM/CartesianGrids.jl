@@ -167,7 +167,6 @@ first argument and the source data `f` as the second argument.
 ```@repl regularize
 H(q,f);
 plot(q)
-savefig("regq.svg"); nothing # hide
 ```
 ![](regq.svg)
 
@@ -177,7 +176,6 @@ We could also regularize this to a field of dual edges.
 p = Edges(Dual,(nx,ny));
 H(p,f);
 plot(p)
-savefig("regp.svg"); nothing # hide
 ```
 ![](regp.svg)
 
@@ -191,7 +189,6 @@ fill!(g,1.0);
 w = Nodes(Dual,(nx,ny));
 H(w,g);
 plot(w)
-savefig("regw.svg"); nothing # hide
 ```
 ![](regw.svg)
 
@@ -207,7 +204,6 @@ f2 = VectorData(X);
 H(f2,q);
 plot(f2.u,lab="u")
 plot!(f2.v,lab="v")
-savefig("interpf.svg"); nothing # hide
 ```
 ![](interpf.svg)
 

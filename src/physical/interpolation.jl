@@ -14,7 +14,7 @@ function interpolatable_field(x::AbstractArray,y::AbstractArray,f::ScalarGridDat
   (length(x) == size(f,1) && length(y) == size(f,2)) ||
     error("incompatible sizes of field and coordinate data")
 
-  return CubicSplineInterpolation((x, y),f, extrapolation_bc = (Flat(),Flat()))
+  return cubic_spline_interpolation((x, y),f, extrapolation_bc = (Flat(),Flat()))
 
 end
 
