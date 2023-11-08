@@ -10,6 +10,7 @@ Manifest.toml
 .ipynb_checkpoints
 *.ipynb
 todo
+*.json
 
 # Documentation
 docs/build/

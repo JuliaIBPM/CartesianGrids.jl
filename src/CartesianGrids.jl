@@ -2,6 +2,9 @@ module CartesianGrids
 
 import Base: @propagate_inbounds, show, summary, fill!
 
+using Reexport
+@reexport using SpaceTimeFields
+
 #using Compat
 using FFTW
 using SpecialFunctions
@@ -34,10 +37,8 @@ export Primal, Dual, ScalarGridData, VectorGridData, TensorGridData, GridData,
        convective_derivative!, convective_derivative_rot!,
        DDF, GradDDF,
        Regularize, RegularizationMatrix, InterpolationMatrix,
-       CircularConvolution,
-       AbstractSpatialField, Gaussian, DGaussian, radius, center, strength,
-       EmptySpatialField, SpatialField,SpatialTemporalField,
-       SpatialGaussian,GeneratedField, datatype, grid, PulseField, ModulatedField
+       CircularConvolution,    
+       GeneratedField, datatype, grid, PulseField, ModulatedField
 
 abstract type CellType end
 abstract type Primal <: CellType end
