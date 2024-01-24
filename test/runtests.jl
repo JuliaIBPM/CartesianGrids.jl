@@ -18,3 +18,7 @@ end
 if GROUP == "All" || GROUP == "GeneratedFields"
   include("generatedfields.jl")
 end
+
+if GROUP == "All" || GROUP == "ForwardDiff"
+  include("forwarddiff.jl")
+end
