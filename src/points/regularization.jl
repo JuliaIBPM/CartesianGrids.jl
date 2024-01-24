@@ -165,7 +165,7 @@ Regularize{length(x),filter}(x./dx.+I0[1],y./dx.+I0[2],1.0/(dx*dx),
     wtvec,ddf,_get_regularization_radius(baseddf),_issymmetric)
 end
 
-function _div_Regularize(ddfx,ddfy,x::FD.Dual{T,V,M},y::FD.Dual{T,V,M}) where {T,V,M}
+function _div_Regularize(ddfx,ddfy,x::FD.Dual{T},y::FD.Dual{T}) where {T}
   xdual = Dual{T}(value(x), ddfx(value(x)) * partials(x))
   ydual = Dual{T}(value(y), ddfy(value(y)) * partials(y))
   return xdual, ydual
