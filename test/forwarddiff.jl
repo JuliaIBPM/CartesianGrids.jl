@@ -21,7 +21,7 @@ FD = ForwardDiff
 
     cfg = FD.JacobianConfig(Regularize, X)
     Xdual = cfg.duals
-    seed!(Xdual, X)
+    FD.seed!(Xdual, X)
     xdual = Xdual[1:2:end]
     ydual = Xdual[2:2:end]
 

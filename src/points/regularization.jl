@@ -166,8 +166,8 @@ Regularize{length(x),filter}(x./dx.+I0[1],y./dx.+I0[2],1.0/(dx*dx),
 end
 
 function _div_Regularize(ddfx,ddfy,x::FD.Dual{T},y::FD.Dual{T}) where {T}
-  xdual = Dual{T}(value(x), ddfx(value(x)) * partials(x))
-  ydual = Dual{T}(value(y), ddfy(value(y)) * partials(y))
+  xdual = FD.Dual{T}(FD.value(x), ddfx(FD.value(x)) * FD.partials(x))
+  ydual = FD.Dual{T}(FD.value(y), ddfy(FD.value(y)) * FD.partials(y))
   return xdual, ydual
 end
 
