@@ -144,12 +144,12 @@ function Regularize(x::AbstractVector{T},y::AbstractVector{T},dx::T;
                       wtvec,ddf,_get_regularization_radius(baseddf),_issymmetric)
 end
 
-function Regularize(x::AbstarctVector{FD.Dual{T}},y::AbstarctVector{FD.Dual{T}},dx::D;
+function Regularize(x::AbstractArray{<:FD.Dual{T,V,M}},y::AbstractArray{<:FD.Dual{T,V,M}},dx::D;
   ddftype::DataType=Yang3,graddir::Int=0,
   I0::Tuple{Int,Int}=(1,1),
   weights::Union{D,Vector{D}}=1.0,
   filter::Bool = false,
-  issymmetric::Bool = false) where {D<:Real,T}
+  issymmetric::Bool = false) where {D<:Real,T,V,M}
 
 wtvec, baseddf, _issymmetric, ddf = _regularize(x,y,issymmetric,filter,weights,dx,ddftype,graddir)
 
@@ -165,7 +165,7 @@ Regularize{length(x),filter}(x./dx.+I0[1],y./dx.+I0[2],1.0/(dx*dx),
     wtvec,ddf,_get_regularization_radius(baseddf),_issymmetric)
 end
 
-function _div_Regularize(ddfx,ddfy,x::FD.Dual{T},y::FD.Dual{T}) where T
+function _div_Regularize(ddfx,ddfy,x::FD.Dual{T,V,M},y::FD.Dual{T,V,M}) where {T,V,M}
   xdual = Dual{T}(value(x), ddfx(value(x)) * partials(x))
   ydual = Dual{T}(value(y), ddfy(value(y)) * partials(y))
   return xdual, ydual
