@@ -1,12 +1,10 @@
-
-
 struct Regularize{N,F}
 
   "x values of points, normalized to grid index space"
-  x :: Vector{Float64}
+  x :: Vector{Real}
 
   "y values of points, normalized to grid index space"
-  y :: Vector{Float64}
+  y :: Vector{Real}
 
   "1/dV factor"
   overdv :: Float64
@@ -135,27 +133,7 @@ function Regularize(x::AbstractVector{T},y::AbstractVector{T},dx::T;
                     filter::Bool = false,
                     issymmetric::Bool = false) where {T<:Real}
 
-  _issymmetric = (filter ? false : issymmetric)
-
-  n = length(x)
-  @assert length(y)==n
-  if !_issymmetric
-    if typeof(weights) == T
-      wtvec = similar(x)
-      fill!(wtvec,weights/(dx*dx))
-    else
-      @assert length(weights)==n
-      wtvec = deepcopy(weights)./(dx*dx)
-    end
-  else
-    # if the regularization and interpolation are symmetric, then the
-    # weights are automatically set to be the cell area in order to cancel it
-    # in the denominator of the regularization operator.
-    wtvec = similar(x)
-    fill!(wtvec,1.0)
-  end
-
-  baseddf = DDF(ddftype=ddftype,dx=1.0)
+  wtvec, baseddf, _issymmetric, ddf = _regularize(x,y,issymmetric,filter,weights,dx,ddftype,graddir)
   if graddir == 0
     ddf = baseddf
   else
@@ -164,6 +142,62 @@ function Regularize(x::AbstractVector{T},y::AbstractVector{T},dx::T;
 
   Regularize{length(x),filter}(x./dx.+I0[1],y./dx.+I0[2],1.0/(dx*dx),
                       wtvec,ddf,_get_regularization_radius(baseddf),_issymmetric)
+end
+
+function Regularize(x::AbstarctVector{FD.Dual{T}},y::AbstarctVector{FD.Dual{T}},dx::D;
+  ddftype::DataType=Yang3,graddir::Int=0,
+  I0::Tuple{Int,Int}=(1,1),
+  weights::Union{D,Vector{D}}=1.0,
+  filter::Bool = false,
+  issymmetric::Bool = false) where {D<:Real,T}
+
+wtvec, baseddf, _issymmetric, ddf = _regularize(x,y,issymmetric,filter,weights,dx,ddftype,graddir)
+
+ddfx = GradDDF(1,ddftype=ddftype,dx=1.0)
+ddfy = GradDDF(2,ddftype=ddftype,dx=1.0)
+
+for i in 1:length(x)
+  x[i],y[i] = _div_Regularize(ddfx,ddfy,x[i],y[i])
+end
+
+
+Regularize{length(x),filter}(x./dx.+I0[1],y./dx.+I0[2],1.0/(dx*dx),
+    wtvec,ddf,_get_regularization_radius(baseddf),_issymmetric)
+end
+
+function _div_Regularize(ddfx,ddfy,x::FD.Dual{T},y::FD.Dual{T}) where T
+  xdual = Dual{T}(value(x), ddfx(value(x)) * partials(x))
+  ydual = Dual{T}(value(y), ddfy(value(y)) * partials(y))
+  return xdual, ydual
+end
+
+function _regularize(x,y,issymmetric,filter,weights,dx::DX,ddftype,graddir) where {DX<:Real}
+  _issymmetric = (filter ? false : issymmetric)
+
+  n = length(x)
+  @assert length(y)==n
+  if !_issymmetric
+  if typeof(weights) == T
+  wtvec = similar(x)
+  fill!(wtvec,weights/(dx*dx))
+  else
+  @assert length(weights)==n
+  wtvec = deepcopy(weights)./(dx*dx)
+  end
+  else
+  # if the regularization and interpolation are symmetric, then the
+  # weights are automatically set to be the cell area in order to cancel it
+  # in the denominator of the regularization operator.
+  wtvec = similar(x,Float64)
+  fill!(wtvec,1.0)
+  end
+
+  baseddf = DDF(ddftype=ddftype,dx=1.0)
+  if graddir == 0
+    ddf = baseddf
+  end
+
+  return wtvec, baseddf, _issymmetric, ddf
 end
 
 Regularize(x::T,y::T,a...;b...) where {T<:Real} = Regularize([x],[y],a...;b...)
