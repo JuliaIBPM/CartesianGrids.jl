@@ -10,6 +10,8 @@ using FFTW
 using SpecialFunctions
 using Statistics
 using Serialization
+using ForwardDiff
+FD = ForwardDiff
 
 using LinearAlgebra
 using SparseArrays
