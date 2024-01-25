@@ -1,3 +1,5 @@
+# TODO : write lines 187-198 for Dual type grid data
+
 import Base: -, +, *, /, \, ∘, zero, conj, real, imag, abs, abs2
 import LinearAlgebra: transpose!, transpose
 
