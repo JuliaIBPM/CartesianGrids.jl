@@ -239,8 +239,8 @@ using `mul!(u,Hmat,f)`. It can also be used as just `Hmat*f`.
 If `H` is a symmetric regularization and interpolation operator, then this
 actually returns a tuple `Hmat, Emat`, where `Emat` is the interpolation matrix.
 """
-struct RegularizationMatrix{TU,TF} <: AbstractMatrix{Float64}
-  M :: SparseMatrixCSC{Float64,Int64}
+struct RegularizationMatrix{TU,TF} <: AbstractMatrix{Real}
+  M :: SparseMatrixCSC{Real,Int64}
 end
 
 
@@ -252,8 +252,8 @@ for data of type `u` to data of type `f`. The resulting matrix `Emat` can then b
 used to apply on grid data of type `u` to interpolate it to point data of type `f`,
 using `mul!(f,Emat,u)`. It can also be used as just `Emat*u`.
 """
-struct InterpolationMatrix{TU,TF} <: AbstractMatrix{Float64}
-  M :: SparseMatrixCSC{Float64,Int64}
+struct InterpolationMatrix{TU,TF} <: AbstractMatrix{Real}
+  M :: SparseMatrixCSC{Real,Int64}
 end
 
 @wraparray RegularizationMatrix M 2
