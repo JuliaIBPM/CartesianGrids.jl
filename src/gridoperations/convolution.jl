@@ -49,7 +49,7 @@ function Base.show(io::IO, c::CircularConvolution{M, N, T}) where {M, N, T}
     print(io, "Circular convolution on a $M × $N matrix of data type $T")
 end
 
-function CircularConvolution(G::AbstractMatrix{T},fftw_flags = FFTW.ESTIMATE; dtype = Float64, optimize = true, nthreads = MAX_NTHREADS) where {T}
+function CircularConvolution(G::AbstractMatrix{T},fftw_flags = FFTW.ESTIMATE; dtype = Real, optimize = true, nthreads = MAX_NTHREADS) where {T}
   nt_opt = nthreads
   if optimize
     # find the optimal number of threads, up to `nthreads`
