@@ -291,7 +291,7 @@ for (lf,inplace) in ((:plan_laplacian,false),
     # Base the size on the dual grid associated with any grid data, since this
     # is what the efficient grid size in PhysicalGrid has been established with
     @eval function $lf(::GridData{NX,NY};
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64, nthreads = MAX_NTHREADS) where {NX,NY}
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Real, nthreads = MAX_NTHREADS) where {NX,NY}
         $lf((NX,NY), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype, nthreads = nthreads)
     end
 end
