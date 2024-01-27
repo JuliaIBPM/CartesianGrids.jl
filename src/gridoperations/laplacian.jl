@@ -273,7 +273,7 @@ Base.eltype(::Laplacian{NX,NY,T}) where {NX,NY,T} = T
 for (lf,inplace) in ((:plan_laplacian,false),
                      (:plan_laplacian!,true))
     @eval function $lf(dims::Tuple{Int,Int};
-                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Real = 1.0, dx = 1.0, dtype = Float64, nthreads = MAX_NTHREADS)
+                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Real = 1.0, dx = 1.0, dtype = Real, nthreads = MAX_NTHREADS)
         NX, NY = dims
         if !with_inverse
             return Laplacian{NX, NY, dtype, false, $inplace}(convert(dtype,factor),convert(Float64,dx),nothing)
@@ -284,7 +284,7 @@ for (lf,inplace) in ((:plan_laplacian,false),
     end
 
     @eval function $lf(nx::Int, ny::Int;
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64, nthreads = MAX_NTHREADS)
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Real, nthreads = MAX_NTHREADS)
         $lf((nx, ny), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype, nthreads = nthreads)
     end
 

@@ -11,7 +11,7 @@ using SpecialFunctions
 using Statistics
 using Serialization
 using ForwardDiff
-FD = ForwardDiff
+const FD = ForwardDiff
 
 using LinearAlgebra
 using SparseArrays
