@@ -85,6 +85,15 @@ macro ddffunc(ddftype)
             end)
 end
 
+#==== DDF accepting ForwardDiff.Dual numbers ====#
+function (::DDF{ddftype})(x::AbstractArray{<:FD.Dual{T,V,M}},y::AbstractArray{<:FD.Dual{T,V,M}}) where {T,V,M,ddftype<: DDFType}
+       ddfx = GradDDF(1,ddftype=ddftype,dx=1.0)
+       ddfy = GradDDF(2,ddftype=ddftype,dx=1.0)
+       ddf = DDF(ddftype=ddftype,dx=1.0)
+       ddf_Dual = [FD.Dual{T}(ddf(FD.value(x[i]),FD.value(y[i])), ddfx(x[i],y[i])*FD.partials(x[i]) + ddfy(x[i],y[i])*FD.partials(y[i])) for i in 1:length(x)]
+       return ddf_Dual
+end
+
 #==== ROMA ====#
 
 @ddffunc Roma
