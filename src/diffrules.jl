@@ -1,5 +1,4 @@
 using DiffRules
-import Base: fill!
 
 DiffRules.@define_diffrule CartesianGrids.(::DDF{ddftype,OVERDX})(x,y) = :((GradDDF(1,ddftype=ddftype,dx=1.0/OVERDX))($x,$y)) , :((GradDDF(2,ddftype=ddftype,dx=1.0/OVERDX))($x,$y))
 
