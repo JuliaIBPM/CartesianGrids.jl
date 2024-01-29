@@ -188,11 +188,8 @@ function _get_regularization_radius(ddf::DDF)
 end
 
 _delta_block(radius,shift) = -radius+shift, radius+shift
-_index_range(x,xmin,xmax,n,dn) = max(1,ceil(Int,x+xmin)), min(n-dn,floor(Int,x+xmax))
-_distance_list(x,imin,imax,shift) = float(imin)-shift-x:float(imax)-shift-x
-# a new method accepting ForwardDiff.Dual numbers
-_index_range(x::FD.Dual{T},xmin,xmax,n,dn) where T = max(1,ceil(Int,FD.value(x)+xmin)), min(n-dn,floor(Int,FD.value(x)+xmax))
-_distance_list(x::FD.Dual{T},imin,imax,shift) where T = float(imin)-shift-FD.value(x):float(imax)-shift-FD.value(x)
+_index_range(x,xmin,xmax,n,dn) = max(1,ceil(Int,FD.value(x)+xmin)), min(n-dn,floor(Int,FD.value(x)+xmax))
+_distance_list(x,imin,imax,shift) = float(imin)-shift-FD.value(x):float(imax)-shift-FD.value(x)
 
 
 """
