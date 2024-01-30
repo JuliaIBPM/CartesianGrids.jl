@@ -149,7 +149,7 @@ function Regularize(x::AbstractVector{D},y::AbstractVector{D},dx::T;
     # if the regularization and interpolation are symmetric, then the
     # weights are automatically set to be the cell area in order to cancel it
     # in the denominator of the regularization operator.
-    wtvec = similar(FD.value.(xdual))
+    wtvec = similar(FD.value.(x))
     fill!(wtvec,1.0)
   end
 
