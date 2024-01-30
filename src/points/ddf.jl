@@ -89,8 +89,9 @@ end
 function (ddf::DDF{ddftype,OVERDX})(x::AbstractArray{FD.Dual{T,V,M}},y::AbstractArray{FD.Dual{T,V,M}}) where {T,V,M,OVERDX,ddftype<: DDFType}
        ddfx = GradDDF(1,ddftype=ddftype,dx=1.0)
        ddfy = GradDDF(2,ddftype=ddftype,dx=1.0)
-       #ddf = DDF(ddftype=ddftype,dx=1.0)
-       ddf_Dual = [FD.Dual{T}(ddf(FD.value(x[i]),FD.value(y[i])), ddfx(FD.value(x[i]),FD.value(y[i]))*FD.partials(x[i]) + ddfy(FD.value(x[i]),FD.value(y[i]))*FD.partials(y[i])) for i in 1:length(x)]
+       ddf_Dual = @. FD.Dual{T}(ddf(FD.value(x),FD.value(y)), ddfx(FD.value(x),FD.value(y))*FD.partials(x) + ddfy(FD.value(x),FD.value(y))*FD.partials(y))
+
+       #ddf_Dual = [FD.Dual{T}(ddf(FD.value(x[i]),FD.value(y[i])), ddfx(FD.value(x[i]),FD.value(y[i]))*FD.partials(x[i]) + ddfy(FD.value(x[i]),FD.value(y[i]))*FD.partials(y[i])) for i in 1:length(x)]
        return ddf_Dual
 end
 
