@@ -86,7 +86,7 @@ macro ddffunc(ddftype)
 end
 
 #==== DDF accepting ForwardDiff.Dual numbers ====#
-function (ddf::DDF{ddftype,OVERDX})(x::AbstractVector{FD.Dual{T,V,M}},y::AbstractVector{FD.Dual{T,V,M}}) where {T,V,M,OVERDX,ddftype<: DDFType}
+function (ddf::DDF{ddftype,OVERDX})(x::AbstractArray{FD.Dual{T,V,M}},y::AbstractArray{FD.Dual{T,V,M}}) where {T,V,M,OVERDX,ddftype<: DDFType}
        ddfx = GradDDF(1,ddftype=ddftype,dx=1.0)
        ddfy = GradDDF(2,ddftype=ddftype,dx=1.0)
        #ddf = DDF(ddftype=ddftype,dx=1.0)
