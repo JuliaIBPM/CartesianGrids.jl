@@ -189,7 +189,7 @@ end
 
 _delta_block(radius,shift) = -radius+shift, radius+shift
 _index_range(x,xmin,xmax,n,dn) = max(1,ceil(Int,FD.value(x)+xmin)), min(n-dn,floor(Int,FD.value(x)+xmax))
-_distance_list(x,imin,imax,shift) = float(imin)-shift-FD.value(x):float(imax)-shift-FD.value(x)
+_distance_list(x,imin,imax,shift) = float(imin)-shift-x:float(imax)-shift-x
 
 
 """
