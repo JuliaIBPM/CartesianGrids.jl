@@ -383,17 +383,15 @@ function ldiv!(out::GridData{NX,NY,FD.Dual{T}},
     mul!(outval,L.conv,valmat)
 
     # matrix including partials of FD.Dual numbers
-    outpar = []
     parmat = FD.partials.(s.data)
     parval = similar(valmat)
-    _parval = deepcopy(parval)
     npar = length(parmat[1,1])
+    outpar = Vector{typeof(parval)}(undef,npar)
 
     for k in 1:npar
       fill!(parval, 0)
       parval .= FD.partials.(s.data,k)
-      mul!(_parval,L.conv,parval)
-      push!(outpar,_parval)
+      mul!(outpar[k],L.conv,parval)
     end
     out.data[i,j] = FD.Dual{T}(outval[i,j],[outpar[k][i,j] for k=1:npar]...)
     
