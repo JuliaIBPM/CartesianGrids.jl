@@ -371,6 +371,39 @@ end
 
 
 
+#==== ldiv! accepting ForwardDiff.Dual numbers ====#
+
+function ldiv!(out::GridData{NX,NY,FD.Dual{T}},
+    L::Laplacian{MX, MY, TL, true, inplace},
+    s::GridData{NX,NY,FD.Dual{T}}) where {NX, NY, MX, MY, T, TL, inplace}
+
+    # matrix including values of FD.Dual numbers
+    valmat = FD.value.(s.data)
+    outval = deepcopy(valmat)
+    mul!(outval,L.conv,valmat)
+
+    # matrix including partials of FD.Dual numbers
+    outpar = []
+    parmat = FD.partials.(s.data)
+    parval = similar(valmat)
+    _parval = deepcopy(parval)
+    npar = length(parmat[1,1])
+
+    for k in 1:npar
+      fill!(parval, 0)
+      parval .= FD.partials.(s.data,k)
+      mul!(_parval,L.conv,parval)
+      push!(outpar,_parval)
+    end
+    out.data[i,j] = FD.Dual{T}(outval[i,j],[outpar[k][i,j] for k=1:npar]...)
+    
+    inv_factor = 1.0/L.factor
+    # Adjust the behavior at large distance to match continuous kernel
+    out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(L.dx))
+    out.data .*= inv_factor
+    out
+end
+
 #=
 \(L::Laplacian{MX,MY,T,R,false},s::Nodes{C,NX,NY}) where {MX,MY,T,R,C <: CellType,NX,NY} =
   ldiv!(Nodes(C,s), L, s)
