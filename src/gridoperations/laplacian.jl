@@ -332,7 +332,7 @@ end
 for (datatype) in (:Nodes, :XEdges, :YEdges)
   @eval function ldiv!(out::$datatype{C,NX, NY,T},
                    L::Laplacian{MX, MY, T, true, inplace},
-                   s::$datatype{C, NX, NY,T}) where {C <: CellType, NX, NY, MX, MY, T, inplace}
+                   s::$datatype{C, NX, NY,T}) where {C <: CellType, NX, NY, MX, MY, T<:Union{Float64,ComplexF64}, inplace}
 
     mul!(out.data, L.conv, s.data)
     inv_factor = 1.0/L.factor
@@ -343,10 +343,44 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
     out
   end
 
+  #==== ldiv! accepting ForwardDiff.Dual numbers ====#
+  @eval function ldiv!(out::$datatype{C,NX,NY,T},
+                    L::Laplacian{MX, MY, TL, true, inplace},
+                    s::$datatype{C,NX,NY,T}) where {C<:CellType, NX, NY, MX, MY, T<:Real, TL, inplace}
+
+    tag = get_tag(s.data[1,1])
+    # matrix including values of FD.Dual numbers
+    valmat = FD.value.(s.data)
+    outval = deepcopy(valmat)
+    mul!(outval,L.conv,valmat)
+
+    # matrix including partials of FD.Dual numbers
+    parmat = FD.partials.(s.data)
+    parval = similar(valmat)
+    npar = length(parmat[1,1])
+    outpar = Vector{typeof(parval)}(undef,npar)
+
+    for k in 1:npar
+      fill!(parval, 0)
+      parval .= FD.partials.(s.data,k)
+      mul!(outpar[k],L.conv,parval)
+    end
+    out.data[i,j] = FD.Dual{tag}(outval[i,j],[outpar[k][i,j] for k=1:npar]...)
+    
+    inv_factor = 1.0/L.factor
+    # Adjust the behavior at large distance to match continuous kernel
+    out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(L.dx))
+    out.data .*= inv_factor
+    out
+  end
+
   #@eval \(L::Laplacian{MX,MY,T,R,false},s::$datatype{C,NX,NY}) where {MX,MY,T,R,C <: CellType,NX,NY} =
   #  ldiv!($datatype(C,s), L, s)
 
+end
 
+function get_tag(::FD.Dual{T}) where T
+  return T
 end
 
 function ldiv!(out::Edges{C,NX,NY},L::Laplacian,s::Edges{C,NX,NY}) where {C,NX,NY}
@@ -369,38 +403,6 @@ end
 \(L::Laplacian{MX,MY,T,R,true},s::GridData{NX,NY}) where {MX,MY,T,R,NX,NY} =
     ldiv!(s, L, deepcopy(s))
 
-
-
-#==== ldiv! accepting ForwardDiff.Dual numbers ====#
-
-function ldiv!(out::GridData{NX,NY,FD.Dual{T}},
-    L::Laplacian{MX, MY, TL, true, inplace},
-    s::GridData{NX,NY,FD.Dual{T}}) where {NX, NY, MX, MY, T, TL, inplace}
-
-    # matrix including values of FD.Dual numbers
-    valmat = FD.value.(s.data)
-    outval = deepcopy(valmat)
-    mul!(outval,L.conv,valmat)
-
-    # matrix including partials of FD.Dual numbers
-    parmat = FD.partials.(s.data)
-    parval = similar(valmat)
-    npar = length(parmat[1,1])
-    outpar = Vector{typeof(parval)}(undef,npar)
-
-    for k in 1:npar
-      fill!(parval, 0)
-      parval .= FD.partials.(s.data,k)
-      mul!(outpar[k],L.conv,parval)
-    end
-    out.data[i,j] = FD.Dual{T}(outval[i,j],[outpar[k][i,j] for k=1:npar]...)
-    
-    inv_factor = 1.0/L.factor
-    # Adjust the behavior at large distance to match continuous kernel
-    out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(L.dx))
-    out.data .*= inv_factor
-    out
-end
 
 #=
 \(L::Laplacian{MX,MY,T,R,false},s::Nodes{C,NX,NY}) where {MX,MY,T,R,C <: CellType,NX,NY} =
