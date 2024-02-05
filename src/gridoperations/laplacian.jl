@@ -365,7 +365,8 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
       parval .= FD.partials.(s.data,k)
       mul!(outpar[k],L.conv,parval)
     end
-    out.data[i,j] = FD.Dual{tag}(outval[i,j],[outpar[k][i,j] for k=1:npar]...)
+
+    out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
     
     inv_factor = 1.0/L.factor
     # Adjust the behavior at large distance to match continuous kernel
