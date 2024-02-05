@@ -348,7 +348,8 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
                     L::Laplacian{MX, MY, TL, true, inplace},
                     s::$datatype{C,NX,NY,T}) where {C<:CellType, NX, NY, MX, MY, T<:Real, TL, inplace}
 
-    tag = get_tag(s.data[1,1])
+    idx = findall(x -> x != 0, s.data)
+    tag = get_tag(s.data[idx][1])
     # matrix including values of FD.Dual numbers
     valmat = FD.value.(s.data)
     outval = deepcopy(valmat)
