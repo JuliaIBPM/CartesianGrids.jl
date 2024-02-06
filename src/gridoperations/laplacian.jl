@@ -348,27 +348,28 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
                     L::Laplacian{MX, MY, TL, true, inplace},
                     s::$datatype{C,NX,NY,T}) where {C<:CellType, NX, NY, MX, MY, T<:Real, TL, inplace}
 
-    idx = findall(x -> x != 0, s.data)
-    tag = get_tag(s.data[idx][1])
     # matrix including values of FD.Dual numbers
     valmat = FD.value.(s.data)
     outval = deepcopy(valmat)
     mul!(outval,L.conv,valmat)
 
-    # matrix including partials of FD.Dual numbers
-    parmat = FD.partials.(s.data)
-    parval = similar(valmat)
-    npar = length(parmat[1,1])
-    outpar = Vector{typeof(parval)}(undef,npar)
+    if !(any(isempty, parmat))
+      idx = findall(x -> x != 0, s.data)
+      tag = get_tag(s.data[idx][1])
+      # matrix including partials of FD.Dual numbers
+      parmat = FD.partials.(s.data)
+      parval = similar(valmat)
+      npar = length(parmat[1,1])
+      outpar = Vector{typeof(parval)}(undef,npar)
 
-    for k in 1:npar
-      fill!(parval, 0)
-      parval .= FD.partials.(s.data,k)
-      mul!(outpar[k],L.conv,parval)
+      for k in 1:npar
+        fill!(parval, 0)
+        parval .= FD.partials.(s.data,k)
+        mul!(outpar[k],L.conv,parval)
+      end
+
+      out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
     end
-
-    out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
-    
     inv_factor = 1.0/L.factor
     # Adjust the behavior at large distance to match continuous kernel
     out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(L.dx))
