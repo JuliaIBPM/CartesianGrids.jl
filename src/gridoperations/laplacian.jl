@@ -363,8 +363,8 @@ function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
     outpar[k] = out.data
   end
 
-  out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
-  out
+  s.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
+  s
 end
 
 #=
