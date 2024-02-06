@@ -352,11 +352,11 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
     valmat = FD.value.(s.data)
     outval = deepcopy(valmat)
     mul!(outval,L.conv,valmat)
-    
+
     parmat = FD.partials.(s.data)
     if !(any(isempty, parmat))
-      idx = findall(x -> x != 0, s.data)
-      tag = get_tag(s.data[idx][1])
+      idx = findfirst(x -> x != 0, s.data)
+      tag = get_tag(s.data[idx])
       # matrix including partials of FD.Dual numbers
       parval = similar(valmat)
       npar = length(parmat[1,1])
