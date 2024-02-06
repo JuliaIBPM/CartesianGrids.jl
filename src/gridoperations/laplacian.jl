@@ -317,30 +317,32 @@ mul!(out::T, L::Laplacian, s::T) where T<:GridData = (laplacian!(out, s); out .*
 
 #==== * accepting ForwardDiff.Dual numbers ====#
 function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
-  valmat = FD.value.(s.data)
-  outval = deepcopy(valmat)
-  mul!(outval,L,s)
-  out.data .= outval
-
   parmat = FD.partials.(s.data)
-  if !(any(isempty, parmat))
-    idx = findfirst(x -> x != 0, s.data)
-    tag = get_tag(s.data[idx])
-    # matrix including partials of FD.Dual numbers
-    parval = similar(valmat)
-    npar = length(parmat[1,1])
-    outpar = Vector{typeof(parval)}(undef,npar)
-
-    for k in 1:npar
-      fill!(parval, 0)
-      parval .= FD.partials.(s.data,k)
-      outpar[k] = deepcopy(parval)
-      mul!(outpar[k],L,parval)
-    end
-
-    out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
+  if any(isempty, parmat)
+    mul!(s,L,deepcopy(s))
+    return s
   end
-  out
+  # out = deepcopy(s)
+  # valmat = FD.value.(s.data)
+  # outval = deepcopy(valmat)
+  # mul!(outval,L,s)
+  # out.data .= outval
+  # idx = findfirst(x -> x != 0, s.data)
+  # tag = get_tag(s.data[idx])
+  # # matrix including partials of FD.Dual numbers
+  # parval = similar(valmat)
+  # npar = length(parmat[1,1])
+  # outpar = Vector{typeof(parval)}(undef,npar)
+
+  # for k in 1:npar
+  #   fill!(parval, 0)
+  #   parval .= FD.partials.(s.data,k)
+  #   outpar[k] = deepcopy(parval)
+  #   mul!(outpar[k],L,parval)
+  # end
+
+  # out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
+  # out
 end
 
 #=
