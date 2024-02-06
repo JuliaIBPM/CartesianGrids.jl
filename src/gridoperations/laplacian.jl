@@ -308,64 +308,64 @@ end
 
 mul!(out::T, L::Laplacian, s::T) where T<:GridData = (laplacian!(out, s); out .*= L.factor)
 
-# *(L::Laplacian{MX,MY,T,R,false}, s::GridData) where {MX,MY,T,R} =
-#       L.factor*laplacian(s)
-
-# function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
-#     mul!(s,L,deepcopy(s))
-# end
-
-#==== * accepting ForwardDiff.Dual numbers ====#
-function (*)(L::Laplacian{MX,MY,T,R,false}, s::GridData) where {MX,MY,T,R}
-  parmat = FD.partials.(s.data)
-  if any(isempty, parmat)
-    return L.factor*laplacian(s)
-  end
-  out = deepcopy(s)
-  out.data .= FD.value.(s.data)
-  out = L.factor*laplacian(out)
-  outval = out.data
-  idx = findfirst(x -> x != 0, s.data)
-  tag = get_tag(s.data[idx])
-  # matrix including partials of FD.Dual numbers
-  npar = length(parmat[1,1])
-  outpar = Vector{typeof(outval)}(undef,npar)
-
-  for k in 1:npar
-    out.data .= FD.partials.(s.data,k)
-    out = L.factor*laplacian(out)
-    outpar[k] = out.data
-  end
-
-  out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
-  out
-end
+*(L::Laplacian{MX,MY,T,R,false}, s::GridData) where {MX,MY,T,R} =
+      L.factor*laplacian(s)
 
 function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
-  parmat = FD.partials.(s.data)
-  if any(isempty, parmat)
     mul!(s,L,deepcopy(s))
-    return s
-  end
-  out = deepcopy(s)
-  out.data .= FD.value.(s.data)
-  mul!(out,L,deepcopy(out))
-  outval = out.data
-  idx = findfirst(x -> x != 0, s.data)
-  tag = get_tag(s.data[idx])
-  # matrix including partials of FD.Dual numbers
-  npar = length(parmat[1,1])
-  outpar = Vector{typeof(outval)}(undef,npar)
-
-  for k in 1:npar
-    out.data .= FD.partials.(s.data,k)
-    mul!(out,L,deepcopy(out))
-    outpar[k] = out.data
-  end
-
-  s.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
-  s
 end
+
+#==== * accepting ForwardDiff.Dual numbers ====#
+# function (*)(L::Laplacian{MX,MY,T,R,false}, s::GridData) where {MX,MY,T,R}
+#   parmat = FD.partials.(s.data)
+#   if any(isempty, parmat)
+#     return L.factor*laplacian(s)
+#   end
+#   out = deepcopy(s)
+#   out.data .= FD.value.(s.data)
+#   out = L.factor*laplacian(out)
+#   outval = out.data
+#   idx = findfirst(x -> x != 0, s.data)
+#   tag = get_tag(s.data[idx])
+#   # matrix including partials of FD.Dual numbers
+#   npar = length(parmat[1,1])
+#   outpar = Vector{typeof(outval)}(undef,npar)
+
+#   for k in 1:npar
+#     out.data .= FD.partials.(s.data,k)
+#     out = L.factor*laplacian(out)
+#     outpar[k] = out.data
+#   end
+
+#   out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
+#   out
+# end
+
+# function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
+#   parmat = FD.partials.(s.data)
+#   if any(isempty, parmat)
+#     mul!(s,L,deepcopy(s))
+#     return s
+#   end
+#   out = deepcopy(s)
+#   out.data .= FD.value.(s.data)
+#   mul!(out,L,deepcopy(out))
+#   outval = out.data
+#   idx = findfirst(x -> x != 0, s.data)
+#   tag = get_tag(s.data[idx])
+#   # matrix including partials of FD.Dual numbers
+#   npar = length(parmat[1,1])
+#   outpar = Vector{typeof(outval)}(undef,npar)
+
+#   for k in 1:npar
+#     out.data .= FD.partials.(s.data,k)
+#     mul!(out,L,deepcopy(out))
+#     outpar[k] = out.data
+#   end
+
+#   s.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
+#   s
+# end
 
 #=
 function ldiv!(out::Nodes{C,NX, NY,T},
