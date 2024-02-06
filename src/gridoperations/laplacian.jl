@@ -352,6 +352,7 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
     valmat = FD.value.(s.data)
     outval = deepcopy(valmat)
     mul!(outval,L.conv,valmat)
+    out.data .= outval
 
     parmat = FD.partials.(s.data)
     if !(any(isempty, parmat))
