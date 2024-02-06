@@ -311,9 +311,9 @@ mul!(out::T, L::Laplacian, s::T) where T<:GridData = (laplacian!(out, s); out .*
 *(L::Laplacian{MX,MY,T,R,false}, s::GridData) where {MX,MY,T,R} =
       L.factor*laplacian(s)
 
-function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
-    mul!(s,L,deepcopy(s))
-end
+# function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
+#     mul!(s,L,deepcopy(s))
+# end
 
 #==== * accepting ForwardDiff.Dual numbers ====#
 function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
