@@ -328,13 +328,13 @@ end
 #   idx = findfirst(x -> x != 0, s.data)
 #   tag = get_tag(s.data[idx])
 #   # matrix including partials of FD.Dual numbers
-#   npar = length(parmat[1,1])
-#   outpar = Vector{typeof(outval)}(undef,npar)
+#   npar = length(parmat[idx])
+#   outpar = []
 
 #   for k in 1:npar
 #     out.data .= FD.partials.(s.data,k)
 #     out = L.factor*laplacian(out)
-#     outpar[k] = out.data
+#     push!(outpar,out.data)
 #   end
 
 #   out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
@@ -354,13 +354,13 @@ end
 #   idx = findfirst(x -> x != 0, s.data)
 #   tag = get_tag(s.data[idx])
 #   # matrix including partials of FD.Dual numbers
-#   npar = length(parmat[1,1])
-#   outpar = Vector{typeof(outval)}(undef,npar)
+#   npar = length(parmat[idx])
+#   outpar = []
 
 #   for k in 1:npar
 #     out.data .= FD.partials.(s.data,k)
 #     mul!(out,L,deepcopy(out))
-#     outpar[k] = out.data
+#     push!(outpar,out.data)
 #   end
 
 #   s.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
