@@ -413,13 +413,15 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
       tag = get_tag(s.data[idx])
       # matrix including partials of FD.Dual numbers
       parval = similar(valmat)
-      npar = length(parmat[1,1])
-      outpar = Vector{typeof(parval)}(undef,npar)
+      npar = length(parmat[idx])
+      outpar = []
 
       for k in 1:npar
         fill!(parval, 0)
         parval .= FD.partials.(s.data,k)
-        mul!(outpar[k],L.conv,parval)
+        _outpar = similar(parval)
+        mul!(_outpar,L.conv,parval)
+        push!(outpar,_outpar)
         outpar[k] .-= (sum(parval)/2π)*(GAMMA+log(8)/2-log(L.dx))
       end
 
