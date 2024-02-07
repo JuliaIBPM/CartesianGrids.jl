@@ -318,7 +318,7 @@ end
 #==== * accepting ForwardDiff.Dual numbers ====#
 # function (*)(L::Laplacian{MX,MY,T,R,false}, s::GridData) where {MX,MY,T,R}
 #   parmat = FD.partials.(s.data)
-#   if any(isempty, parmat)
+#   if all(isempty, parmat)
 #     return L.factor*laplacian(s)
 #   end
 #   out = deepcopy(s)
@@ -343,7 +343,7 @@ end
 
 # function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
 #   parmat = FD.partials.(s.data)
-#   if any(isempty, parmat)
+#   if all(isempty, parmat)
 #     mul!(s,L,deepcopy(s))
 #     return s
 #   end
@@ -408,7 +408,7 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
     out.data .= outval
 
     parmat = FD.partials.(s.data)
-    if !(any(isempty, parmat))
+    if !(all(isempty, parmat))
       idx = findfirst(x -> x != 0, s.data)
       tag = get_tag(s.data[idx])
       # matrix including partials of FD.Dual numbers
