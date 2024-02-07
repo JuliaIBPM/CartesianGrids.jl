@@ -404,6 +404,7 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
     valmat = FD.value.(s.data)
     outval = deepcopy(valmat)
     mul!(outval,L.conv,valmat)
+    outval .-= (sum(valmat)/2π)*(GAMMA+log(8)/2-log(L.dx))
     out.data .= outval
 
     parmat = FD.partials.(s.data)
@@ -419,13 +420,14 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
         fill!(parval, 0)
         parval .= FD.partials.(s.data,k)
         mul!(outpar[k],L.conv,parval)
+        outpar[k] .-= (sum(parval)/2π)*(GAMMA+log(8)/2-log(L.dx))
       end
 
       out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
     end
     inv_factor = 1.0/L.factor
     # Adjust the behavior at large distance to match continuous kernel
-    out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(L.dx))
+    #out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(L.dx))
     out.data .*= inv_factor
     out
   end
