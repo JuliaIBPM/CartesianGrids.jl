@@ -3,8 +3,8 @@ FD = ForwardDiff
 
 Δx = 0.2
 Lx = 1.0
-xlim = (-Lx,Lx)
-ylim = (-Lx,Lx)
+xlim = (0.0,Lx)
+ylim = (0.0,Lx)
 g = PhysicalGrid(xlim,ylim,Δx)
     
 n = 5
@@ -54,6 +54,36 @@ end
             @test FD.partials.(Hdual_ddf,2i)[:,i] == ddfyval[:,i]
         end
     end 
+
+    @testset "Inverse Laplacian for FD.Dual numbers" begin
+        wdual = Nodes(Dual,size(g))
+        Xdvec = VectorData(xdual,ydual)
+        sdual = ScalarData(Xdvec)
+        sdual.data .= xdual
+        Hdual(wdual,sdual)
+
+        w = Nodes(Dual,size(g))
+        Xvec = VectorData(x,y)
+        s = ScalarData(Xvec)
+        s.data .= x
+        H(w,s)
+
+        L = plan_laplacian(size(w),with_inverse=true)
+        linvd = L\wdual
+        linv = L\w
+        parmat = FD.partials.(linvd.data)
+        idx = findfirst(x -> x != 0, linvd.data)
+        npar = length(parmat[idx])
+        wdpar = deepcopy(wdual)
+
+        @test FD.value.(linvd.data) == linv.data
+        for k=1:npar
+            linvdpar = FD.partials.(linvd.data,k)
+            wdpar.data .= FD.partials.(wdual.data,k)
+            linvpar = L\wdpar
+            @test linvdpar == linvpar.data
+        end
+    end
 
 end
 
