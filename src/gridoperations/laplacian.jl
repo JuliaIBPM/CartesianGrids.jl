@@ -384,7 +384,7 @@ end
 for (datatype) in (:Nodes, :XEdges, :YEdges)
   @eval function ldiv!(out::$datatype{C,NX, NY,T},
                    L::Laplacian{MX, MY, T, true, inplace},
-                   s::$datatype{C, NX, NY,T}) where {C <: CellType, NX, NY, MX, MY, T<:Union{Float64,ComplexF64}, inplace}
+                   s::$datatype{C, NX, NY,T}) where {C <: CellType, NX, NY, MX, MY, T<:ComplexF64, inplace}
 
     mul!(out.data, L.conv, s.data)
     inv_factor = 1.0/L.factor
