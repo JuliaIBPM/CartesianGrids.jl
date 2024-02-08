@@ -16,7 +16,7 @@ end
 
   # sample point
   i = 5; j = 7
-  cellzero = Nodes(Dual,(nx,ny))
+  cellzero = Nodes(Dual,(nx,ny),dtype=Float64)
   nodezero = Nodes(Primal,cellzero)
   facezero = Edges(Primal,cellzero)
   dualfacezero = Edges(Dual,cellzero)
@@ -104,16 +104,16 @@ end
     q = Edges(Dual,w)
     q.u .= 1.0
     q2 = 2*q
-    @test all(q2.u.data .== 2.0)
+    @test all(q2.u .== 2.0)
     q2 .= q + q2
-    @test all(q2.u.data .== 3.0)
+    @test all(q2.u .== 3.0)
 
     t = EdgeGradient(Dual,w)
     t .= 1.0
     t2 = 2*t
-    @test all(t2.data .== 2.0)
+    @test all(t2 .== 2.0)
     t2 = -t
-    @test all(t2.data .== -1.0)
+    @test all(t2 .== -1.0)
 
 
   end
