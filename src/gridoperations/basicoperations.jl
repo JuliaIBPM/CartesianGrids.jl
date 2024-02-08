@@ -57,7 +57,7 @@ function (-)(p1::Number,p2::GridData)
     p.data .= p1 .- p2.data
     return p
 end
-function (*)(p1::GridData,p2::Number)
+function (-)(p1::GridData,p2::Number)
     p = deepcopy(p1)
     p.data .= p1.data .- p2
     return p
@@ -70,12 +70,12 @@ function (+)(p1::T,p2::T) where {T <: GridData}
 end
 function (+)(p1::Number,p2::GridData)
     p = deepcopy(p2)
-    p.data .= p1 .* p2.data
+    p.data .= p1 .+ p2.data
     return p
 end
 function (+)(p1::GridData,p2::Number)
     p = deepcopy(p1)
-    p.data .= p1.data .* p2
+    p.data .= p1.data .+ p2
     return p
 end
 
