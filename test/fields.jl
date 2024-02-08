@@ -985,7 +985,7 @@ end
     end
 
     @testset "Discrete Laplacian" begin
-        s = Nodes(Dual,(30,40))
+        s = Nodes(Dual,(30,40),dtype=Float64)
         s[3:end-2, 3:end-2] .= rand(26, 36)
 
         L = plan_laplacian(30, 40)
@@ -1004,7 +1004,7 @@ end
     end
 
     @testset "Integrating factor" begin
-        s = Nodes(Dual,(30,40))
+        s = Nodes(Dual,(30,40),dtype=Float64)
         s[15,15] = 1.0
 
         E1 = plan_intfact(1,s)
@@ -1036,7 +1036,7 @@ end
     end
 
     @testset "Discrete Divergence" begin
-        s = Nodes(Dual,(5,4))
+        s = Nodes(Dual,(5,4),dtype=Float64)
         s .= rand(5, 4)
 
         @test norm(divergence(curl(s))) ≈ 0 atol=eps()
@@ -1058,7 +1058,7 @@ end
     end
 
     @testset "Discrete Curl" begin
-        s = Nodes(Dual,(5,4))
+        s = Nodes(Dual,(5,4),dtype=Float64)
         s .= reshape(1:20, 4, 5)'
 
         q = curl(s)
@@ -1077,7 +1077,7 @@ end
 
     @testset "Shifting Primal Edges to Dual Edges" begin
 
-        q = Edges(Primal,(5,4))
+        q = Edges(Primal,(5,4),dtype=Float64)
         q.u .= reshape(1:15, 5, 3)
         q.v .= reshape(1:16, 4, 4)
         Qq = Edges(Dual,q)
@@ -1098,7 +1098,7 @@ end
 
     @testset "Shifting Dual Edges to Primal Edges" begin
 
-        q = Edges(Dual,(5,4))
+        q = Edges(Dual,(5,4),dtype=Float64)
         q.u .= reshape(1:16, 4, 4)
         q.v .= reshape(1:15, 5, 3)
         v = Edges(Primal,q)
@@ -1119,7 +1119,7 @@ end
 
     @testset "Shifting Dual Nodes to Dual Edges" begin
 
-        w = Nodes(Dual,(5,4))
+        w = Nodes(Dual,(5,4),dtype=Float64)
         w .= reshape(1:20, 5, 4)
 
         Ww = Edges(Dual,w)
