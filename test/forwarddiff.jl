@@ -29,7 +29,7 @@ function get_ddf_type(::DDF{ddftype,OVERDX}) where {ddftype,OVERDX}
     return ddftype
 end
 
-@testset "Regularization accepting FD.Dual numbers" begin
+@testset "Grid operators accepting FD.Dual numbers" begin
     Hdual = Regularize(xdual,ydual,cellsize(g),I0=origin(g),issymmetric=true)
     H = Regularize(x,y,cellsize(g),I0=origin(g),issymmetric=true)
 
