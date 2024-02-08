@@ -56,7 +56,7 @@ end
     end 
 
     @testset "Inverse Laplacian for FD.Dual numbers" begin
-        wdual = Nodes(Dual,size(g))
+        wdual = Nodes(Dual,size(g),dtype=Real)
         Xdvec = VectorData(xdual,ydual)
         sdual = ScalarData(Xdvec)
         sdual.data .= xdual

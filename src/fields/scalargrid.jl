@@ -69,7 +69,7 @@ macro scalarfield(wrapper,primaldn,dualdn)
 
     # Constructors
 
-    function $wrapper(::Type{C}, dualnodedims::Tuple{Int, Int};dtype=Real) where {C <: CellType}
+    function $wrapper(::Type{C}, dualnodedims::Tuple{Int, Int};dtype=Float64) where {C <: CellType}
         dims = $indexfcn(C, dualnodedims)
         $wrapper{C, dualnodedims...,dtype,typeof(zeros(dtype,dims))}(zeros(dtype,dims))
     end

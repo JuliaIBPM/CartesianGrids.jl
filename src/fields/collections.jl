@@ -36,7 +36,7 @@ macro collectionfield(wrapper,nctypes)
 
     # This provides the most straightforward constructor, calling upon the constructor
     # above to deal with the split between components
-    function $wrapper($(ctypetype...), dualnodedims::Tuple{Int, Int};dtype=Real) where {$(crtype...)}
+    function $wrapper($(ctypetype...), dualnodedims::Tuple{Int, Int};dtype=Float64) where {$(crtype...)}
         len = 0
         for ft in _fieldtypes($wrapper{$(ctype...),dualnodedims...,dtype})
           if ft <: GridData
@@ -68,7 +68,7 @@ and horizontal faces of the corresponding cell.
 - `Edges(C,w)` performs the same construction, but uses existing field data `w`
   of `GridData` type to determine the size of the grid.
 -  Adding the `dtype=` keyword allows the data type of the field data to be
-  changed. The default is `Real`, but can be changed to, e.g., `ComplexF64`
+  changed. The default is `Float64`, but can be changed to, e.g., `ComplexF64`
 """
 struct Edges{C <: CellType, NX, NY, T <: Number, DT} <: VectorGridData{NX,NY,T}
     data::DT
@@ -127,7 +127,7 @@ and the offdiagonal at the other set (e.g. Dual).
 - `EdgeGradient(C,w)` performs the same construction, but uses existing field data `w`
   of `GridData` type to determine the size of the grid.
 -  Adding the `dtype=` keyword allows the data type of the field data to be
-  changed. The default is `Real`, but can be changed to, e.g., `ComplexF64`
+  changed. The default is `Float64`, but can be changed to, e.g., `ComplexF64`
 """
 struct EdgeGradient{C <: CellType,D <: CellType, NX,NY, T<: Number, DT} <: TensorGridData{NX,NY,T}
   data :: DT
@@ -141,7 +141,7 @@ end
 @collectionfield EdgeGradient 2
 
 # Only provide one of the cell types -- the other cell type is set automatically
-EdgeGradient(::Type{C}, dualnodedims::Tuple{Int, Int};dtype=Real) where {C <: CellType} =
+EdgeGradient(::Type{C}, dualnodedims::Tuple{Int, Int};dtype=Float64) where {C <: CellType} =
     EdgeGradient(C,othertype(C),dualnodedims,dtype=dtype)
 
 
@@ -186,7 +186,7 @@ form the faces of a virtual cell centered at one of the faces of the primal cell
 - `NodePair(C,w)` performs the same construction, but uses existing field data `w`
   of `GridData` type to determine the size of the grid.
 -  Adding the `dtype=` keyword allows the data type of the field data to be
-  changed. The default is `Real`, but can be changed to, e.g., `ComplexF64`
+  changed. The default is `Float64`, but can be changed to, e.g., `ComplexF64`
 """
 struct NodePair{C <: CellType,D <: CellType, NX,NY,T, DT} <: VectorGridData{NX,NY,T}
   data :: DT
@@ -197,7 +197,7 @@ end
 @collectionfield NodePair 2
 
 # Only provide one of the cell types -- the other cell type is set automatically
-NodePair(::Type{C}, dualnodedims::Tuple{Int, Int};dtype=Real) where {C <: CellType} =
+NodePair(::Type{C}, dualnodedims::Tuple{Int, Int};dtype=Float64) where {C <: CellType} =
     NodePair(C,othertype(C),dualnodedims,dtype=dtype)
 
 
