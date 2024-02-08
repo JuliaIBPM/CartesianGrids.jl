@@ -139,7 +139,7 @@ function Regularize(x::AbstractVector{D},y::AbstractVector{D},dx::T;
   @assert length(y)==n
   if !_issymmetric
     if typeof(weights) == T
-      wtvec = similar(x)
+      wtvec = similar(x,T)
       fill!(wtvec,weights/(dx*dx))
     else
       @assert length(weights)==n
