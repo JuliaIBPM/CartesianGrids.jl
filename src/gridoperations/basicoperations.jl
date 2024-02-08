@@ -15,9 +15,15 @@ struct Identity end
 
 ### On scalar grid data ####
 
+# function (-)(p_in::GridData)
+#   Base.broadcast(-,p_in)
+# end
+
 function (-)(p_in::GridData)
-  Base.broadcast(-,p_in)
-end
+    p = deepcopy(p_in)
+    p.data .= -p_in.data
+    return p
+  end
 
 # for op in (:+, :-, :*)
 #     @eval function $op(p1::T,p2::T) where {T <: GridData}
