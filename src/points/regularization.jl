@@ -713,19 +713,33 @@ function _unsafe_mul!(f,Emat::InterpolationMatrix,u)
 end
 
 # Interpolation of regularization, used for developing the filtering matrix
-function mul!(C::Array{Float64},Emat::InterpolationMatrix{G,F},
-                              Hmat::RegularizationMatrix{G,F}) where {G<:GridData,F<:PointData}
-  fill!(C,0.0)
-  Enzv = Emat.M.nzval
-  Erv = Emat.M.rowval
-  @inbounds for row = 1:Emat.M.n, col = 1:Hmat.M.n
-      tmp = zero(eltype(C))
-      for j = Emat.M.colptr[row]:(Emat.M.colptr[row + 1] - 1)
-          tmp += transpose(Enzv[j])*Hmat[Erv[j],col]
-      end
-      C[row,col] += tmp
-  end
-  return C
+# function mul!(C::Array{Float64},Emat::InterpolationMatrix{G,F},
+#                               Hmat::RegularizationMatrix{G,F}) where {G<:GridData,F<:PointData}
+#   fill!(C,0.0)
+#   Enzv = Emat.M.nzval
+#   Erv = Emat.M.rowval
+#   @inbounds for row = 1:Emat.M.n, col = 1:Hmat.M.n
+#       tmp = zero(eltype(C))
+#       for j = Emat.M.colptr[row]:(Emat.M.colptr[row + 1] - 1)
+#           tmp += transpose(Enzv[j])*Hmat[Erv[j],col]
+#       end
+#       C[row,col] += tmp
+#   end
+#   return C
+# end
+function mul!(C::Array{T},Emat::InterpolationMatrix{G,F},
+  Hmat::RegularizationMatrix{G,F}) where {G<:GridData,F<:PointData,T<:Real}
+fill!(C,0.0)
+Enzv = Emat.M.nzval
+Erv = Emat.M.rowval
+@inbounds for row = 1:Emat.M.n, col = 1:Hmat.M.n
+tmp = zero(eltype(C))
+for j = Emat.M.colptr[row]:(Emat.M.colptr[row + 1] - 1)
+tmp += transpose(Enzv[j])*Hmat[Erv[j],col]
+end
+C[row,col] += tmp
+end
+return C
 end
 
 
