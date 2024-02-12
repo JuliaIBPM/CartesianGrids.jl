@@ -86,7 +86,7 @@ end
         wdual = Nodes(Dual,size(g),dtype=Real)
         Xvec = VectorData(xdual,ydual)
         sdual = ScalarData(Xvec)
-        Hmat_dual = RegularizationMatrix(Hdual,sdual,wdual)
+        Hmat_dual, Emat_dual = RegularizationMatrix(Hdual,sdual,wdual)
 
         sdual.data .= xdual
         wdual2 = Nodes(Dual,size(g),dtype=Real)
@@ -102,7 +102,6 @@ end
         end
 
         # Interpolate grid data of type FD.Dual onto the point sources
-        Emat_dual = InterpolationMatrix(Hdual,wdual,sdual)
         sdual2 = ScalarData(sdual)
         mul!(sdual,Emat_dual,wdual)
         Hdual(sdual2,wdual)
