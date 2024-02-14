@@ -412,9 +412,9 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
       # matrix including partials of FD.Dual numbers
       npar = length(FD.partials.(s.data)[idx])
       outpar = [similar(outval) for k=1:npar]
-      parts = ntuple(k -> mul!(outpar[k],L.conv,FD.partials.(wdual.data,k)), npar)
+      parts = ntuple(k -> mul!(outpar[k],L.conv,FD.partials.(s.data,k)), npar)
       for k=1:npar
-          parts[k] .-= (sum(FD.partials.(wdual.data,k))/2π)*(GAMMA+log(8)/2-log(L.dx))
+          parts[k] .-= (sum(FD.partials.(s.data,k))/2π)*(GAMMA+log(8)/2-log(L.dx))
       end
       out.data .= FD.Dual{tag}.(outval,tuple.(parts...))
     end
