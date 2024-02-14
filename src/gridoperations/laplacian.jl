@@ -401,35 +401,24 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
                     s::$datatype{C,NX,NY,T}) where {C<:CellType, NX, NY, MX, MY, T<:Real, TL, inplace}
 
     # matrix including values of FD.Dual numbers
-    valmat = FD.value.(s.data)
-    outval = deepcopy(valmat)
-    mul!(outval,L.conv,valmat)
-    outval .-= (sum(valmat)/2π)*(GAMMA+log(8)/2-log(L.dx))
+    outval = deepcopy(FD.value.(s.data))
+    mul!(outval,L.conv,FD.value.(s.data))
+    outval .-= (sum(FD.value.(s.data))/2π)*(GAMMA+log(8)/2-log(L.dx))
     out.data .= outval
 
-    parmat = FD.partials.(s.data)
-    if !(all(isempty, parmat))
+    if !(all(isempty, FD.partials.(s.data)))
       idx = findfirst(x -> x != 0, s.data)
       tag = get_tag(s.data[idx])
       # matrix including partials of FD.Dual numbers
-      parval = similar(valmat)
-      npar = length(parmat[idx])
-      outpar = []
-
-      for k in 1:npar
-        fill!(parval, 0)
-        parval .= FD.partials.(s.data,k)
-        _outpar = similar(parval)
-        mul!(_outpar,L.conv,parval)
-        push!(outpar,_outpar)
-        outpar[k] .-= (sum(parval)/2π)*(GAMMA+log(8)/2-log(L.dx))
+      npar = length(FD.partials.(s.data)[idx])
+      outpar = [similar(outval) for k=1:npar]
+      parts = ntuple(k -> mul!(outpar[k],L.conv,FD.partials.(wdual.data,k)), npar)
+      for k=1:npar
+          parts[k] .-= (sum(FD.partials.(wdual.data,k))/2π)*(GAMMA+log(8)/2-log(L.dx))
       end
-
-      out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
+      out.data .= FD.Dual{tag}.(outval,tuple.(parts...))
     end
     inv_factor = 1.0/L.factor
-    # Adjust the behavior at large distance to match continuous kernel
-    #out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(L.dx))
     out.data .*= inv_factor
     out
   end
@@ -437,7 +426,46 @@ for (datatype) in (:Nodes, :XEdges, :YEdges)
   #@eval \(L::Laplacian{MX,MY,T,R,false},s::$datatype{C,NX,NY}) where {MX,MY,T,R,C <: CellType,NX,NY} =
   #  ldiv!($datatype(C,s), L, s)
 
-end
+  end
+
+  #==== ldiv! accepting ForwardDiff.Dual numbers ====#
+  # @eval function ldiv!(out::$datatype{C,NX,NY,T},
+  #   L::Laplacian{MX, MY, TL, true, inplace},
+  #   s::$datatype{C,NX,NY,T}) where {C<:CellType, NX, NY, MX, MY, T<:Real, TL, inplace}
+
+  #   # matrix including values of FD.Dual numbers
+  #   valmat = FD.value.(s.data)
+  #   outval = deepcopy(valmat)
+  #   mul!(outval,L.conv,valmat)
+  #   outval .-= (sum(valmat)/2π)*(GAMMA+log(8)/2-log(L.dx))
+  #   out.data .= outval
+
+  #   parmat = FD.partials.(s.data)
+  #   if !(all(isempty, parmat))
+  #     idx = findfirst(x -> x != 0, s.data)
+  #     tag = get_tag(s.data[idx])
+  #     # matrix including partials of FD.Dual numbers
+  #     parval = similar(valmat)
+  #     npar = length(parmat[idx])
+  #     outpar = []
+
+  #     for k in 1:npar
+  #       fill!(parval, 0)
+  #       parval .= FD.partials.(s.data,k)
+  #       _outpar = similar(parval)
+  #       mul!(_outpar,L.conv,parval)
+  #       push!(outpar,_outpar)
+  #       outpar[k] .-= (sum(parval)/2π)*(GAMMA+log(8)/2-log(L.dx))
+  #     end
+
+  #     out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
+  #   end
+  #   inv_factor = 1.0/L.factor
+  #   # Adjust the behavior at large distance to match continuous kernel
+  #   #out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(L.dx))
+  #   out.data .*= inv_factor
+  #   out
+  # end
 
 function get_tag(::FD.Dual{T}) where T
   return T
