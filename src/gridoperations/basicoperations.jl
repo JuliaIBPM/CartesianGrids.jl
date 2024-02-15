@@ -23,7 +23,7 @@ function (-)(p_in::GridData)
     p = deepcopy(p_in)
     p.data .= -p_in.data
     return p
-  end
+end
 
 # for op in (:+, :-, :*)
 #     @eval function $op(p1::T,p2::T) where {T <: GridData}
