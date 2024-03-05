@@ -315,72 +315,7 @@ function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
     mul!(s,L,deepcopy(s))
 end
 
-#==== * accepting ForwardDiff.Dual numbers ====#
-# function (*)(L::Laplacian{MX,MY,T,R,false}, s::GridData) where {MX,MY,T,R}
-#   parmat = FD.partials.(s.data)
-#   if all(isempty, parmat)
-#     return L.factor*laplacian(s)
-#   end
-#   out = deepcopy(s)
-#   out.data .= FD.value.(s.data)
-#   out = L.factor*laplacian(out)
-#   outval = out.data
-#   idx = findfirst(x -> x != 0, s.data)
-#   tag = get_tag(s.data[idx])
-#   # matrix including partials of FD.Dual numbers
-#   npar = length(parmat[idx])
-#   outpar = []
 
-#   for k in 1:npar
-#     out.data .= FD.partials.(s.data,k)
-#     out = L.factor*laplacian(out)
-#     push!(outpar,out.data)
-#   end
-
-#   out.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
-#   out
-# end
-
-# function (*)(L::Laplacian{MX,MY,T,R,true}, s::GridData) where {MX,MY,T,R}
-#   parmat = FD.partials.(s.data)
-#   if all(isempty, parmat)
-#     mul!(s,L,deepcopy(s))
-#     return s
-#   end
-#   out = deepcopy(s)
-#   out.data .= FD.value.(s.data)
-#   mul!(out,L,deepcopy(out))
-#   outval = out.data
-#   idx = findfirst(x -> x != 0, s.data)
-#   tag = get_tag(s.data[idx])
-#   # matrix including partials of FD.Dual numbers
-#   npar = length(parmat[idx])
-#   outpar = []
-
-#   for k in 1:npar
-#     out.data .= FD.partials.(s.data,k)
-#     mul!(out,L,deepcopy(out))
-#     push!(outpar,out.data)
-#   end
-
-#   s.data .= [FD.Dual{tag}(outval[i,j], [outpar[k][i,j] for k in 1:npar]...) for i in 1:size(out.data, 1), j in 1:size(out.data, 2)]
-#   s
-# end
-
-#=
-function ldiv!(out::Nodes{C,NX, NY,T},
-                   L::Laplacian{MX, MY, T, true, inplace},
-                   s::Nodes{C, NX, NY,T}) where {C <: CellType, NX, NY, MX, MY, T, inplace}
-
-    mul!(out.data, L.conv, s.data)
-    inv_factor = 1.0/L.factor
-
-    # Adjust the behavior at large distance to match continuous kernel
-    out.data .-= (sum(s.data)/2π)*(GAMMA+log(8)/2-log(L.dx))
-    out.data .*= inv_factor
-    out
-end
-=#
 for (datatype) in (:Nodes, :XEdges, :YEdges)
   @eval function ldiv!(out::$datatype{C,NX, NY,T},
                    L::Laplacian{MX, MY, T, true, inplace},
