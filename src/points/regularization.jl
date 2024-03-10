@@ -166,7 +166,7 @@ end
 
 Regularize(x::T,y::T,a...;b...) where {T<:Real} = Regularize([x],[y],a...;b...)
 
-Regularize(x::VectorData,a...;b...) = Regularize(x.u,x.v,a...;b...)
+Regularize(x::VectorData,a...;b...) = Regularize(x.u.data,x.v.data,a...;b...)
 
 function Base.show(io::IO, H::Regularize{N,F}) where {N,F}
     filter = F ? "filtered" : "non-filtered"
