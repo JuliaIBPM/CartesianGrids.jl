@@ -3,7 +3,7 @@ import LinearAlgebra: transpose!, transpose
 
 export pointwise_dot, pointwise_tensorproduct!, pointwise_dot!, pointwise_cross, pointwise_cross!
 
-import Base: -, +, *, /
+import Base: -, +, *, /, findall
 # function (-)(p_in::PointData)
 #   Base.broadcast(-,p_in)
 # end
@@ -526,6 +526,8 @@ function dot(A::Tuple{T,T},B::TensorData) where {T<:Number}
     @. C.v = x*B.dvdx + y*B.dvdy
     return C
 end
+
+Base.findall(f::Function,p::PointData{N,Real}) where {N} = Base.findall(f,p.data)
 
 
 ### BROADCASTING
