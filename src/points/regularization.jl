@@ -1,12 +1,10 @@
-
-
 struct Regularize{N,F}
 
   "x values of points, normalized to grid index space"
-  x :: Vector{Float64}
+  x :: Vector{Real}
 
   "y values of points, normalized to grid index space"
-  y :: Vector{Float64}
+  y :: Vector{Real}
 
   "1/dV factor"
   overdv :: Float64
@@ -128,12 +126,12 @@ v (in grid orientation)
  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0
 ```
 """
-function Regularize(x::AbstractVector{T},y::AbstractVector{T},dx::T;
+function Regularize(x::AbstractVector{D},y::AbstractVector{D},dx::T;
                     ddftype::DataType=Yang3,graddir::Int=0,
                     I0::Tuple{Int,Int}=(1,1),
                     weights::Union{T,Vector{T}}=1.0,
                     filter::Bool = false,
-                    issymmetric::Bool = false) where {T<:Real}
+                    issymmetric::Bool = false) where {T<:Real,D<:Real}
 
   _issymmetric = (filter ? false : issymmetric)
 
@@ -141,7 +139,7 @@ function Regularize(x::AbstractVector{T},y::AbstractVector{T},dx::T;
   @assert length(y)==n
   if !_issymmetric
     if typeof(weights) == T
-      wtvec = similar(x)
+      wtvec = similar(x,T)
       fill!(wtvec,weights/(dx*dx))
     else
       @assert length(weights)==n
@@ -151,7 +149,7 @@ function Regularize(x::AbstractVector{T},y::AbstractVector{T},dx::T;
     # if the regularization and interpolation are symmetric, then the
     # weights are automatically set to be the cell area in order to cancel it
     # in the denominator of the regularization operator.
-    wtvec = similar(x)
+    wtvec = similar(FD.value.(x))
     fill!(wtvec,1.0)
   end
 
@@ -168,7 +166,7 @@ end
 
 Regularize(x::T,y::T,a...;b...) where {T<:Real} = Regularize([x],[y],a...;b...)
 
-Regularize(x::VectorData,a...;b...) = Regularize(x.u,x.v,a...;b...)
+Regularize(x::VectorData,a...;b...) = Regularize(x.u.data,x.v.data,a...;b...)
 
 function Base.show(io::IO, H::Regularize{N,F}) where {N,F}
     filter = F ? "filtered" : "non-filtered"
@@ -190,7 +188,7 @@ function _get_regularization_radius(ddf::DDF)
 end
 
 _delta_block(radius,shift) = -radius+shift, radius+shift
-_index_range(x,xmin,xmax,n,dn) = max(1,ceil(Int,x+xmin)), min(n-dn,floor(Int,x+xmax))
+_index_range(x,xmin,xmax,n,dn) = max(1,ceil(Int,FD.value(x)+xmin)), min(n-dn,floor(Int,FD.value(x)+xmax))
 _distance_list(x,imin,imax,shift) = float(imin)-shift-x:float(imax)-shift-x
 
 
@@ -205,8 +203,8 @@ using `mul!(u,Hmat,f)`. It can also be used as just `Hmat*f`.
 If `H` is a symmetric regularization and interpolation operator, then this
 actually returns a tuple `Hmat, Emat`, where `Emat` is the interpolation matrix.
 """
-struct RegularizationMatrix{TU,TF} <: AbstractMatrix{Float64}
-  M :: SparseMatrixCSC{Float64,Int64}
+struct RegularizationMatrix{TU,TF} <: AbstractMatrix{Real}
+  M :: SparseMatrixCSC{Real,Int64}
 end
 
 
@@ -218,8 +216,8 @@ for data of type `u` to data of type `f`. The resulting matrix `Emat` can then b
 used to apply on grid data of type `u` to interpolate it to point data of type `f`,
 using `mul!(f,Emat,u)`. It can also be used as just `Emat*u`.
 """
-struct InterpolationMatrix{TU,TF} <: AbstractMatrix{Float64}
-  M :: SparseMatrixCSC{Float64,Int64}
+struct InterpolationMatrix{TU,TF} <: AbstractMatrix{Real}
+  M :: SparseMatrixCSC{Real,Int64}
 end
 
 @wraparray RegularizationMatrix M 2
@@ -715,19 +713,19 @@ function _unsafe_mul!(f,Emat::InterpolationMatrix,u)
 end
 
 # Interpolation of regularization, used for developing the filtering matrix
-function mul!(C::Array{Float64},Emat::InterpolationMatrix{G,F},
-                              Hmat::RegularizationMatrix{G,F}) where {G<:GridData,F<:PointData}
-  fill!(C,0.0)
-  Enzv = Emat.M.nzval
-  Erv = Emat.M.rowval
-  @inbounds for row = 1:Emat.M.n, col = 1:Hmat.M.n
-      tmp = zero(eltype(C))
-      for j = Emat.M.colptr[row]:(Emat.M.colptr[row + 1] - 1)
-          tmp += transpose(Enzv[j])*Hmat[Erv[j],col]
-      end
-      C[row,col] += tmp
-  end
-  return C
+function mul!(C::Array{T},Emat::InterpolationMatrix{G,F},
+  Hmat::RegularizationMatrix{G,F}) where {G<:GridData,F<:PointData,T<:Real}
+fill!(C,0.0)
+Enzv = Emat.M.nzval
+Erv = Emat.M.rowval
+@inbounds for row = 1:Emat.M.n, col = 1:Hmat.M.n
+tmp = zero(eltype(C))
+for j = Emat.M.colptr[row]:(Emat.M.colptr[row + 1] - 1)
+tmp += transpose(Enzv[j])*Hmat[Erv[j],col]
+end
+C[row,col] += tmp
+end
+return C
 end
 
 

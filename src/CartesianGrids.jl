@@ -10,6 +10,8 @@ using FFTW
 using SpecialFunctions
 using Statistics
 using Serialization
+using ForwardDiff
+const FD = ForwardDiff
 
 using LinearAlgebra
 using SparseArrays
@@ -38,7 +40,7 @@ export Primal, Dual, ScalarGridData, VectorGridData, TensorGridData, GridData,
        DDF, GradDDF,
        Regularize, RegularizationMatrix, InterpolationMatrix,
        CircularConvolution,    
-       GeneratedField, datatype, grid, PulseField, ModulatedField
+       GeneratedField, datatype, grid, PulseField, ModulatedField, get_tag
 
 abstract type CellType end
 abstract type Primal <: CellType end

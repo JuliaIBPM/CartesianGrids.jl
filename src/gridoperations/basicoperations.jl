@@ -1,3 +1,5 @@
+# TODO : write lines 187-198 for Dual type grid data
+
 import Base: -, +, *, /, \, ∘, zero, conj, real, imag, abs, abs2
 import LinearAlgebra: transpose!, transpose
 
@@ -13,27 +15,87 @@ struct Identity end
 
 ### On scalar grid data ####
 
+# function (-)(p_in::GridData)
+#   Base.broadcast(-,p_in)
+# end
+
 function (-)(p_in::GridData)
-  Base.broadcast(-,p_in)
+    p = deepcopy(p_in)
+    p.data .= -p_in.data
+    return p
 end
 
-for op in (:+, :-, :*)
-    @eval function $op(p1::T,p2::T) where {T <: GridData}
-       Base.broadcast($op,p1,p2)
-    end
-    @eval function $op(p1::Number,p2::GridData)
-       Base.broadcast($op,p1,p2)
-    end
-    @eval function $op(p1::GridData,p2::Number)
-       Base.broadcast($op,p1,p2)
-    end
+# for op in (:+, :-, :*)
+#     @eval function $op(p1::T,p2::T) where {T <: GridData}
+#        Base.broadcast($op,p1,p2)
+#     end
+#     @eval function $op(p1::Number,p2::GridData)
+#        Base.broadcast($op,p1,p2)
+#     end
+#     @eval function $op(p1::GridData,p2::Number)
+#        Base.broadcast($op,p1,p2)
+#     end
+# end
+
+function (*)(p1::T,p2::T) where {T <: GridData}
+    p = deepcopy(p1)
+    p.data .= p1.data .* p2.data
+    return p
+end
+function (*)(p1::Number,p2::GridData)
+    p = deepcopy(p2)
+    p.data .= p1 .* p2.data
+    return p
+end
+function (*)(p1::GridData,p2::Number)
+    p = deepcopy(p1)
+    p.data .= p1.data .* p2
+    return p
 end
 
-for op in (:/,)
-    @eval function $op(p1::GridData,p2::Number)
-       Base.broadcast($op,p1,p2)
-    end
+function (-)(p1::T,p2::T) where {T <: GridData}
+    p = deepcopy(p1)
+    p.data .= p1.data .- p2.data
+    return p
 end
+function (-)(p1::Number,p2::GridData)
+    p = deepcopy(p2)
+    p.data .= p1 .- p2.data
+    return p
+end
+function (-)(p1::GridData,p2::Number)
+    p = deepcopy(p1)
+    p.data .= p1.data .- p2
+    return p
+end
+
+function (+)(p1::T,p2::T) where {T <: GridData}
+    p = deepcopy(p1)
+    p.data .= p1.data .+ p2.data
+    return p
+end
+function (+)(p1::Number,p2::GridData)
+    p = deepcopy(p2)
+    p.data .= p1 .+ p2.data
+    return p
+end
+function (+)(p1::GridData,p2::Number)
+    p = deepcopy(p1)
+    p.data .= p1.data .+ p2
+    return p
+end
+
+function (/)(p1::GridData,p2::Number)
+    p = deepcopy(p1)
+    p.data .= p1.data ./ p2
+    return p
+end
+
+# for op in (:/,)
+#     @eval function $op(p1::GridData,p2::Number)
+#        Base.broadcast($op,p1,p2)
+#     end
+# end
 
 """
     product!(out::GridData,p::GridData,q::GridData)

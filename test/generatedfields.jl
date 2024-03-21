@@ -13,7 +13,7 @@ end
 
 
 gr = PhysicalGrid((-3.0,3.0),(-2.0,2.0),0.03)
-w = Nodes(Dual,size(gr))
+w = Nodes(Dual,size(gr),dtype=Float64)
 xg, yg = coordinates(w,gr)
 
 gfield = GeneratedField(w,g,gr)
@@ -43,7 +43,7 @@ xc, yc = coordinates(w,gr)
 @test genfield2(1.0)[104,24] ≈ myfun2(xc[24],yc[104],1.0)
 
 
-q = Edges(Primal,size(gr))
+q = Edges(Primal,size(gr),dtype=Float64)
 gauss = SpatialGaussian(0.5,0.5,0,0,1)
 gaussfield = GeneratedField(q,gauss,EmptySpatialField(),gr)
 q .= gaussfield()
@@ -57,7 +57,7 @@ ffield = PulseField(gaussfield,0.5,0.1)
 
 @test datatype(ffield) == datatype(gaussfield) <: VectorGridData
 
-gq = EdgeGradient(Dual,size(gr))
+gq = EdgeGradient(Dual,size(gr),dtype=Float64)
 tfield = GeneratedField(gq,[g,gauss,EmptySpatialField(),EmptySpatialField()],gr)
 gq .= tfield()
 @test maximum(gq.dudx) ≈ 3.825607182823737
