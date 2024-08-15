@@ -15,6 +15,10 @@ if GROUP == "All" || GROUP == "Points"
   include("points.jl")
 end
 
+if GROUP == "All" || GROUP == "Interpolation"
+  include("interpolation.jl")
+end
+
 if GROUP == "All" || GROUP == "GeneratedFields"
   include("generatedfields.jl")
 end
