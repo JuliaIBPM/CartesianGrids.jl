@@ -54,35 +54,52 @@ macro ddffunc(ddftype)
     dfname = Symbol("ddf_d",lowercase(string(ddftype)))
     return esc(quote
             abstract type $ddftype <: DDFType end
-            @inline (::DDF{$ddftype,OVERDX})(x::T) where {OVERDX,T <: Real} =
+            @inline (::DDF{$ddftype,OVERDX})(x::T) where {OVERDX,T <: Float64} =
                   $fname(abs(x)*OVERDX)*OVERDX
-            @inline (::DDF{$ddftype,OVERDX})(x::T,y::T) where {OVERDX,T <: Real} =
+            @inline (::DDF{$ddftype,OVERDX})(x::T,y::T) where {OVERDX,T <: Float64} =
                           $fname(abs(x)*OVERDX)*OVERDX*$fname(abs(y)*OVERDX)*OVERDX
-            @inline (::DDF{$ddftype,OVERDX})(x::T,y::T,z::T) where {OVERDX,T <: Real} =
+            @inline (::DDF{$ddftype,OVERDX})(x::T,y::T,z::T) where {OVERDX,T <: Float64} =
                           $fname(abs(x)*OVERDX)*OVERDX*$fname(abs(y)*OVERDX)*OVERDX*$fname(abs(z)*OVERDX)*OVERDX
 
-            @inline (d::DDF{$ddftype,OVERDX})(x::AbstractVector{T},y::AbstractVector{T}) where {OVERDX,T <: Real} =
+            @inline (d::DDF{$ddftype,OVERDX})(x::AbstractVector{T},y::AbstractVector{T}) where {OVERDX,T <: Float64} =
                           d.(x)*d.(y')
 
-            @inline (::GradDDF{$ddftype,OVERDX,N})(x::T) where {OVERDX,N,T <: Real} =
+            @inline (::GradDDF{$ddftype,OVERDX,N})(x::T) where {OVERDX,N,T <: Float64} =
                    $dfname(x*OVERDX)*OVERDX*OVERDX
-            @inline (::GradDDF{$ddftype,OVERDX,1})(x::T,y::T) where {OVERDX,T <: Real} =
+            @inline (::GradDDF{$ddftype,OVERDX,1})(x::T,y::T) where {OVERDX,T <: Float64} =
                    $dfname(x*OVERDX)*OVERDX*OVERDX*$fname(abs(y)*OVERDX)*OVERDX
-            @inline (::GradDDF{$ddftype,OVERDX,2})(x::T,y::T) where {OVERDX,T <: Real} =
+            @inline (::GradDDF{$ddftype,OVERDX,2})(x::T,y::T) where {OVERDX,T <: Float64} =
                    $fname(abs(x)*OVERDX)*OVERDX*$dfname(y*OVERDX)*OVERDX*OVERDX
 
-            @inline (dd::GradDDF{$ddftype,OVERDX,1})(x::AbstractVector{T},y::AbstractVector{T}) where {OVERDX,T <: Real} =
+            @inline (dd::GradDDF{$ddftype,OVERDX,1})(x::AbstractVector{T},y::AbstractVector{T}) where {OVERDX,T <: Float64} =
                           dd.(x)*$fname.(abs.(y')*OVERDX)*OVERDX
-            @inline (dd::GradDDF{$ddftype,OVERDX,2})(x::AbstractVector{T},y::AbstractVector{T}) where {OVERDX,T <: Real} =
+            @inline (dd::GradDDF{$ddftype,OVERDX,2})(x::AbstractVector{T},y::AbstractVector{T}) where {OVERDX,T <: Float64} =
                           $fname.(abs.(x)*OVERDX)*OVERDX*dd.(y')
 
-            @inline (::GradDDF{$ddftype,OVERDX,1})(x::T,y::T,z::T) where {OVERDX,T <: Real} =
+            @inline (::GradDDF{$ddftype,OVERDX,1})(x::T,y::T,z::T) where {OVERDX,T <: Float64} =
                    $dfname(x*OVERDX)*OVERDX*OVERDX*$fname(abs(y)*OVERDX)*OVERDX*$fname(abs(z)*OVERDX)*OVERDX
-            @inline (::GradDDF{$ddftype,OVERDX,2})(x::T,y::T,z::T) where {OVERDX,T <: Real} =
+            @inline (::GradDDF{$ddftype,OVERDX,2})(x::T,y::T,z::T) where {OVERDX,T <: Float64} =
                    $fname(abs(x)*OVERDX)*OVERDX*$dfname(y*OVERDX)*OVERDX*OVERDX*$fname(abs(z)*OVERDX)*OVERDX
-            @inline (::GradDDF{$ddftype,OVERDX,3})(x::T,y::T,z::T) where {OVERDX,T <: Real} =
+            @inline (::GradDDF{$ddftype,OVERDX,3})(x::T,y::T,z::T) where {OVERDX,T <: Float64} =
                    $fname(abs(x)*OVERDX)*OVERDX*$fname(abs(y)*OVERDX)*OVERDX*$dfname(z*OVERDX)*OVERDX*OVERDX
             end)
+end
+
+#==== DDF accepting ForwardDiff.Dual numbers ====#
+function (ddf::DDF{ddftype,OVERDX})(x::AbstractArray{FD.Dual{T,V,M}},y::AbstractArray{FD.Dual{T,V,M}}) where {T,V,M,OVERDX,ddftype<: DDFType}
+       ddfx = GradDDF(1,ddftype=ddftype,dx=1.0)
+       ddfy = GradDDF(2,ddftype=ddftype,dx=1.0)
+       valx, valy = FD.value.(x), FD.value.(y)
+       valddf = ddf(valx,valy)
+       valddfx, valddfy = ddfx(valx, valy), ddfy(valx, valy)
+       ddf_Dual = similar(valddf,FD.Dual{T})
+       ddf_Dual .= FD.Dual{T}.(valddf, valddfx .* FD.partials.(x) .+ valddfy .* FD.partials.(y'))
+       # for i=1:length(x)
+       #        for j=1:length(y)
+       #               ddf_Dual[i,j] = FD.Dual{T}(valddf[i,j], valddfx[i,j]*FD.partials(x[i]) + valddfy[i,j]*FD.partials(y[j]))
+       #        end
+       # end
+       return ddf_Dual
 end
 
 #==== ROMA ====#

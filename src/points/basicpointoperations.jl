@@ -3,27 +3,85 @@ import LinearAlgebra: transpose!, transpose
 
 export pointwise_dot, pointwise_tensorproduct!, pointwise_dot!, pointwise_cross, pointwise_cross!
 
-import Base: -, +, *, /
+import Base: -, +, *, /, findall
+# function (-)(p_in::PointData)
+#   Base.broadcast(-,p_in)
+# end
 function (-)(p_in::PointData)
-  Base.broadcast(-,p_in)
+    p = deepcopy(p_in)
+    p.data .= -p_in.data
+    return p
 end
 
-for op in (:+, :-, :*)
-    @eval function $op(p1::T,p2::T) where {T <: PointData}
-       Base.broadcast($op,p1,p2)
-    end
-    @eval function $op(p1::Number,p2::PointData)
-       Base.broadcast($op,p1,p2)
-    end
-    @eval function $op(p1::PointData,p2::Number)
-       Base.broadcast($op,p1,p2)
-    end
+# for op in (:+, :-, :*)
+#     @eval function $op(p1::T,p2::T) where {T <: PointData}
+#        Base.broadcast($op,p1,p2)
+#     end
+#     @eval function $op(p1::Number,p2::PointData)
+#        Base.broadcast($op,p1,p2)
+#     end
+#     @eval function $op(p1::PointData,p2::Number)
+#        Base.broadcast($op,p1,p2)
+#     end
+# end
+
+# for op in (:/,)
+#     @eval function $op(p1::PointData,p2::Number)
+#        Base.broadcast($op,p1,p2)
+#     end
+# end
+function (*)(p1::T,p2::T) where {T <: PointData}
+    p = deepcopy(p1)
+    p.data .= p1.data .* p2.data
+    return p
+end
+function (*)(p1::Number,p2::PointData)
+    p = deepcopy(p2)
+    p.data .= p1 .* p2.data
+    return p
+end
+function (*)(p1::PointData,p2::Number)
+    p = deepcopy(p1)
+    p.data .= p1.data .* p2
+    return p
 end
 
-for op in (:/,)
-    @eval function $op(p1::PointData,p2::Number)
-       Base.broadcast($op,p1,p2)
-    end
+function (-)(p1::T,p2::T) where {T <: PointData}
+    p = deepcopy(p1)
+    p.data .= p1.data .- p2.data
+    return p
+end
+function (-)(p1::Number,p2::PointData)
+    p = deepcopy(p2)
+    p.data .= p1 .- p2.data
+    return p
+end
+function (-)(p1::PointData,p2::Number)
+    p = deepcopy(p1)
+    p.data .= p1.data .- p2
+    return p
+end
+
+function (+)(p1::T,p2::T) where {T <: PointData}
+    p = deepcopy(p1)
+    p.data .= p1.data .+ p2.data
+    return p
+end
+function (+)(p1::Number,p2::PointData)
+    p = deepcopy(p2)
+    p.data .= p1 .+ p2.data
+    return p
+end
+function (+)(p1::PointData,p2::Number)
+    p = deepcopy(p1)
+    p.data .= p1.data .+ p2
+    return p
+end
+
+function (/)(p1::PointData,p2::Number)
+    p = deepcopy(p1)
+    p.data .= p1.data ./ p2
+    return p
 end
 
 #=
@@ -468,6 +526,8 @@ function dot(A::Tuple{T,T},B::TensorData) where {T<:Number}
     @. C.v = x*B.dvdx + y*B.dvdy
     return C
 end
+
+Base.findall(f::Function,p::PointData{N,Real}) where {N} = Base.findall(f,p.data)
 
 
 ### BROADCASTING

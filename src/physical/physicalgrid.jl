@@ -155,7 +155,7 @@ function test_cputime(nx,ny,nthreads_max;nsamp=1,testtype=:laplacian,kwargs...)
       w = Nodes(Dual,(nx,ny),dtype=ComplexF64)
       w .= rand(ComplexF64,size(w))
     else
-      w = Nodes(Dual,(nx,ny))
+      w = Nodes(Dual,(nx,ny),dtype=Float64)
       w .= rand(Float64,size(w))
     end
     op = _cputime_test_operator(w,nthreads_max,Val(testtype);kwargs...)
