@@ -310,6 +310,10 @@ function (*)(factor, L::Laplacian{NX,NY,T,R,inplace}) where {NX,NY,T,R,inplace}
     return Laplacian{NX, NY, T, R, inplace}(factor * L.factor, L.dx, L.conv)
 end
 
+function (*)(L::Laplacian{NX,NY,T,R,inplace}, factor) where {NX,NY,T,R,inplace}
+    return Laplacian{NX, NY, T, R, inplace}(factor * L.factor, L.dx, L.conv)
+end
+
 mul!(out::T, L::Laplacian, s::T) where T<:GridData = (laplacian!(out, s); out .*= L.factor)
 
 *(L::Laplacian{MX,MY,T,R,false}, s::GridData) where {MX,MY,T,R} =
