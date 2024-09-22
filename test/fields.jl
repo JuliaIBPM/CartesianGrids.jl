@@ -571,20 +571,18 @@ end
 
   end
 
-  Lscale = plan_laplacian(nx,ny;with_inverse=true,factor=2.0)
-
   @testset "Laplacian of the LGF with factor" begin
-     ψ = Lscale\cellunit
-     lapψ = Lscale*ψ
-     @test lapψ[i,j]≈1.0
+    for Lscale in [plan_laplacian(nx,ny;with_inverse=true,factor=2.0), 2.0 * L, L * 2.0]
+      ψ = Lscale\cellunit
+      lapψ = Lscale*ψ
+      @test lapψ[i,j]≈1.0
 
-     ψ = Lscale*cellunit
-     @test ψ[i,j]≈-8.0 && ψ[i+1,j]≈2.0
+      ψ = Lscale*cellunit
+      @test ψ[i,j]≈-8.0 && ψ[i+1,j]≈2.0
 
-     mul!(ψ,Lscale,cellunit)
-     @test ψ[i,j]≈-8.0 && ψ[i-1,j]≈2.0
-
-
+      mul!(ψ,Lscale,cellunit)
+      @test ψ[i,j]≈-8.0 && ψ[i-1,j]≈2.0
+    end
   end
 
 
