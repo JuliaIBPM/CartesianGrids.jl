@@ -14,7 +14,6 @@ Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 PkgBenchmark = "32113eaa-f34f-5b0d-bd6c-c81e245fc73d"
-ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -27,7 +26,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 BenchmarkTools = "0.5, 0.7, 1"
 ColorTypes = "<0.10.1, 0.10, 0.11"
 FFTW = "^1"
-FastGaussQuadrature = "0.4.2, 0.5"
+FastGaussQuadrature = "0.4.2, 0.5, 1"
 ForwardDiff = "0.10"
 Interpolations = "0.12.10, 0.13, 0.14, 0.15"
 LaTeXStrings = "^1.0, 1.1"
@@ -44,8 +43,9 @@ Statistics = "1.6"
 julia = "1.6"
 
 [extras]
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Random"]
+test = ["Test", "Random", "ProgressMeter"]
