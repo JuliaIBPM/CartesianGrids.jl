@@ -75,6 +75,7 @@ const TENSORLIST = [:EdgeGradient, [:Dual,:Primal]],
 
 
 const MAX_NTHREADS = length(Sys.cpu_info())
+const DEFAULT_NTHREADS = 1
 
 function othertype end
 

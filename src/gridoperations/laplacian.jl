@@ -273,26 +273,26 @@ Base.eltype(::Laplacian{NX,NY,T}) where {NX,NY,T} = T
 for (lf,inplace) in ((:plan_laplacian,false),
                      (:plan_laplacian!,true))
     @eval function $lf(dims::Tuple{Int,Int};
-                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Real = 1.0, dx = 1.0, dtype = Float64, nthreads = MAX_NTHREADS)
+                   with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor::Real = 1.0, dx = 1.0, dtype = Float64, optimize=false, nthreads = DEFAULT_NTHREADS)
         NX, NY = dims
         if !with_inverse
             return Laplacian{NX, NY, dtype, false, $inplace}(convert(dtype,factor),convert(Float64,dx),nothing)
         end
 
         G = view(LGF_TABLE, 1:NX, 1:NY)
-        Laplacian{NX, NY, dtype, true, $inplace}(convert(dtype,factor),convert(Float64,dx),CircularConvolution(G, fftw_flags,dtype=dtype,nthreads=nthreads))
+        Laplacian{NX, NY, dtype, true, $inplace}(convert(dtype,factor),convert(Float64,dx),CircularConvolution(G, fftw_flags,dtype=dtype,optimize=optimize,nthreads=nthreads))
     end
 
     @eval function $lf(nx::Int, ny::Int;
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64, nthreads = MAX_NTHREADS)
-        $lf((nx, ny), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype, nthreads = nthreads)
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64, optimize=false, nthreads = DEFAULT_NTHREADS)
+        $lf((nx, ny), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype, optimize=optimize, nthreads = nthreads)
     end
 
     # Base the size on the dual grid associated with any grid data, since this
     # is what the efficient grid size in PhysicalGrid has been established with
     @eval function $lf(::GridData{NX,NY};
-        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64, nthreads = MAX_NTHREADS) where {NX,NY}
-        $lf((NX,NY), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype, nthreads = nthreads)
+        with_inverse = false, fftw_flags = FFTW.ESTIMATE, factor = 1.0, dx = 1.0, dtype = Float64, optimize=false, nthreads = DEFAULT_NTHREADS) where {NX,NY}
+        $lf((NX,NY), with_inverse = with_inverse, fftw_flags = fftw_flags, factor = factor, dx = dx, dtype = dtype, optimize=optimize, nthreads = nthreads)
     end
 end
 

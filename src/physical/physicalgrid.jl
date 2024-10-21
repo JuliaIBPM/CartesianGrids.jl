@@ -63,7 +63,7 @@ of the cell to which the physical origin corresponds. Note that the corner
 corresponding to the lowest limit in each direction has indices (1,1).
 """
 function PhysicalGrid(xlim::Tuple{Real,Real},
-                      ylim::Tuple{Real,Real},Δx::Float64;optimize=true,nthreads_max=MAX_NTHREADS)
+                      ylim::Tuple{Real,Real},Δx::Float64;optimize=true,nthreads_max=DEFAULT_NTHREADS)
 
 
   #= set grid spacing and the grid position of the origin
@@ -168,15 +168,15 @@ function test_cputime(nx,ny,nthreads_max;nsamp=1,testtype=:laplacian,kwargs...)
     return mean(cput), std(cput)
 end
 
-_cputime_test_operator(w::GridData,nthreads_max,::Val{:laplacian}) = plan_laplacian(w,with_inverse=true,nthreads=nthreads_max)
+_cputime_test_operator(w::GridData,nthreads_max,::Val{:laplacian}) = plan_laplacian(w,with_inverse=true,optimize=true,nthreads=nthreads_max)
 
 function _cputime_test_operator(w::GridData,nthreads_max,::Val{:intfact};a=-1.0)
-  L = plan_laplacian(w,with_inverse=true,nthreads=nthreads_max)
+  L = plan_laplacian(w,with_inverse=true,optimize=true,nthreads=nthreads_max)
   return exp(L,a,w)
 end
 
 _cputime_test_operator(w::GridData,nthreads_max,::Val{:helmholtz};α=0.1) =
-      plan_helmholtz(w,α,with_inverse=true,nthreads=nthreads_max)
+      plan_helmholtz(w,α,with_inverse=true,optimize=true,nthreads=nthreads_max)
 
 
 """
@@ -187,7 +187,7 @@ that minimizes the compute time. Optional arguments are the maximum number
 of threads (if multithreading is allowed) and the number of samples to take
 of the cpu time for each trial. Returns optimal `nx`, `ny`, and the corresponding CPU time.
 """
-function optimize_gridsize(nx0,ny0;region_size=4,nthreads_max=MAX_NTHREADS,kwargs...)
+function optimize_gridsize(nx0,ny0;region_size=4,nthreads_max=DEFAULT_NTHREADS,kwargs...)
     cput0_mean, cput0_std = test_cputime(nx0,ny0,nthreads_max;kwargs...)
     nx_opt, ny_opt = nx0, ny0
     cput_mean_opt = cput0_mean
