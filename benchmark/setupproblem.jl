@@ -1,7 +1,7 @@
 Δx = 0.01
 xlim = (-2,2)
 ylim = (-2,2)
-gr = PhysicalGrid(xlim,ylim,Δx)
+gr = PhysicalGrid(xlim,ylim,Δx,opt_type=:prime,nthreads_max=4)
 w = Nodes(Dual,size(gr));
 q = Edges(Primal,w);
 p = Nodes(Primal,w);

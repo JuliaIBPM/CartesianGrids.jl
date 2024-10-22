@@ -49,9 +49,11 @@ function Base.show(io::IO, c::CircularConvolution{M, N, T}) where {M, N, T}
     print(io, "Circular convolution on a $M × $N matrix of data type $T")
 end
 
-function CircularConvolution(G::AbstractMatrix{T},fftw_flags = FFTW.ESTIMATE; dtype = Float64, optimize = true, nthreads = DEFAULT_NTHREADS) where {T}
-  nt_opt = nthreads
+function CircularConvolution(G::AbstractMatrix{T},fftw_flags = FFTW.ESTIMATE; dtype = Float64, optimize = false, nthreads = DEFAULT_NTHREADS) where {T}
+  nt_opt = optimize ? _optimize_convolution_threads(G,nthreads,fftw_flags,dtype) : nthreads
+  #=
   if optimize
+    
     # find the optimal number of threads, up to `nthreads`
     C = _circular_convolution(G,fftw_flags,dtype,1)
     cput_mean_opt, cput_std_opt = test_cputime_convolution(_circular_convolution(G,fftw_flags,dtype,1),nsamp=3)
@@ -64,7 +66,23 @@ function CircularConvolution(G::AbstractMatrix{T},fftw_flags = FFTW.ESTIMATE; dt
       end
     end
   end
+  =#
   C = _circular_convolution(G,fftw_flags,dtype,nt_opt)
+end
+
+function _optimize_convolution_threads(G,max_nthreads,fftw_flags,dtype; nsamp = 3)
+
+  C = _circular_convolution(G,fftw_flags,dtype,1)
+  cput_mean_opt, cput_std_opt = test_cputime_convolution(_circular_convolution(G,fftw_flags,dtype,1),nsamp=nsamp)
+  nt_opt = 1
+  for nt in 2:max_nthreads
+    cput_mean, cput_std = test_cputime_convolution(_circular_convolution(G,fftw_flags,dtype,nt),nsamp=nsamp)
+    if cput_mean < cput_mean_opt
+      cput_mean_opt = cput_mean
+      nt_opt = nt
+    end
+  end
+  return nt_opt
 end
 
 function _circular_convolution(G,fftw_flags,dtype,nthreads)

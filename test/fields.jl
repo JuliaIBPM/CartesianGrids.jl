@@ -1150,5 +1150,11 @@ end
         @test cellsize(g) == 0.02
         @test Threads.nthreads(g) == 1
 
+        g = PhysicalGrid((-1.0,3.0),(-2.0,3.0),0.02,opt_type=:prime)
+        xc, yc = coordinates(Nodes(Primal,size(g)),g)
+        i0 = findall(x -> x ≈ 0.0,xc)
+        j0 = findall(y -> y ≈ 0.0,yc)
+        @test length(i0) == 1 && length(j0) == 1
+
     end
 end

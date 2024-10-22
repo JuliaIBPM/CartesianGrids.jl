@@ -50,7 +50,7 @@ struct PhysicalGrid{ND}
 end
 
 """
-    PhysicalGrid(xlim::Tuple{Real,Real},ylim::Tuple{Real,Real},Δx::Float64;[optimize=true,nthreads_max=length(Sys.cpu_info())])
+    PhysicalGrid(xlim::Tuple{Real,Real},ylim::Tuple{Real,Real},Δx::Float64;[opt_type=:none,optimize_threads=false,nthreads_max=1])
 
 Constructor to set up a grid connected to physical space. The region to be
 discretized by the grid is defined by the limits `xlim` and `ylim`, and the
@@ -61,9 +61,22 @@ an integer number. It also pads each side with a ghost cell.
 It also determines the indices corresponding to the corner
 of the cell to which the physical origin corresponds. Note that the corner
 corresponding to the lowest limit in each direction has indices (1,1).
+
+There are a few optional arguments devoted to optimization of the grid size.
+The `nthreads_max` sets the number of FFT compute threads to use and 
+can be set to a value up to the total number available on the
+architecture. It defaults to 1. 
+
+The keyword `opt_type` can be set to `:threads`, `:prime` (default), or `:none`.
+If `:none`, then the grid is set as close to the specified range as possible.
+If `:prime`, then the grid is expanded in each direction to a number that is
+a product of primes (and therefore efficient in an FFT). If `:threads`, then
+the grid is tested with a representative calculation on various grid sizes
+to identify one that has the minimum cpu time. If `optimize_threads = true`,
+then the number of threads is also varied (between 1 and `nthreads_max`).
 """
 function PhysicalGrid(xlim::Tuple{Real,Real},
-                      ylim::Tuple{Real,Real},Δx::Float64;optimize=true,nthreads_max=DEFAULT_NTHREADS)
+                      ylim::Tuple{Real,Real},Δx::Float64;opt_type=:prime,optimize_threads=false,nthreads_max=DEFAULT_NTHREADS)
 
 
   #= set grid spacing and the grid position of the origin
@@ -84,16 +97,24 @@ function PhysicalGrid(xlim::Tuple{Real,Real},
   NX0, i0, xlimnew = _set_1d_grid(xmin,xmax,Δx)
   NY0, j0, ylimnew = _set_1d_grid(ymin,ymax,Δx)
 
+  nthreads = nthreads_max
+
   # Expand this grid and find the optimal number of threads
-  if optimize
-    NX, NY, cput_opt = optimize_gridsize(NX0,NY0,nthreads_max=nthreads_max,nsamp=3)
+  if opt_type == :threads
+    NX, NY, cput_opt = optimize_gridsize(NX0,NY0,optimize_threads=optimize_threads,nthreads_max=nthreads_max,nsamp=3)
     NX, i0, xlimnew = _expand_1d_grid(NX,NX0,xlimnew...,Δx)
     NY, j0, ylimnew = _expand_1d_grid(NY,NY0,ylimnew...,Δx)
-  else
+    nthreads = convert(Int64,FFTW.get_num_threads())
+  elseif opt_type == :prime
+    NX, i0, xlimnew = _find_efficient_1d_grid(xmin,xmax,Δx)
+    NY, j0, ylimnew = _find_efficient_1d_grid(ymin,ymax,Δx)
+    #NX0, i0, xlim = _set_1d_grid(xmin,xmax,Δx)
+    #NY0, j0, ylim = _set_1d_grid(ymin,ymax,Δx)
+  elseif opt_type == :none
     NX, NY = NX0, NY0
   end
 
-  PhysicalGrid((NX,NY),(i0,j0),Δx,(xlimnew,ylimnew),nthreads_max)
+  PhysicalGrid((NX,NY),(i0,j0),Δx,(xlimnew,ylimnew),nthreads)
 end
 
 function _set_1d_grid(xmin::Real,xmax::Real,Δx::Float64)
@@ -130,12 +151,19 @@ function _find_efficient_1d_grid(xmin::Real,xmax::Real,Δx::Float64)
     # that can be factorized into small primes for efficient FFT calculations.
     N, i0, xlimnew = _set_1d_grid(xmin,xmax,Δx)
     pow, Nr = _factor_prime(N)
+    leftside = false
     while Nr > 1 || sum(pow[end-1:end]) > 1
         xminnew, xmaxnew = xlimnew
-        xminnew -= Δx
-        xmaxnew += Δx
+        if leftside
+            xminnew -= Δx
+        else
+            xmaxnew += Δx
+        end
+        #xminnew -= Δx
+        #xmaxnew += Δx
         N, i0, xlimnew = _set_1d_grid(xminnew,xmaxnew,Δx)
         pow, Nr = _factor_prime(N)
+        leftside = !leftside
     end
     return N, i0, xlimnew
 end
@@ -150,7 +178,7 @@ used to perform an average timing over multiple samples. The test type is
 specified with the `testtype` optional argument. The default test
 is inversion of a Laplacian (`:laplacian`). Other options are `:intfact` and `:helmholtz`.
 """
-function test_cputime(nx,ny,nthreads_max;nsamp=1,testtype=:laplacian,kwargs...)
+function test_cputime(nx,ny,nthreads_max;optimize=true,nsamp=1,testtype=:laplacian,kwargs...)
     if testtype == :helmholtz
       w = Nodes(Dual,(nx,ny),dtype=ComplexF64)
       w .= rand(ComplexF64,size(w))
@@ -158,7 +186,7 @@ function test_cputime(nx,ny,nthreads_max;nsamp=1,testtype=:laplacian,kwargs...)
       w = Nodes(Dual,(nx,ny),dtype=Float64)
       w .= rand(Float64,size(w))
     end
-    op = _cputime_test_operator(w,nthreads_max,Val(testtype);kwargs...)
+    op = _cputime_test_operator(w,optimize,nthreads_max,Val(testtype);kwargs...)
     ldiv!(w,op,w) # to compile the function
     cput = zeros(Float64,nsamp)
     for n in 1:nsamp
@@ -168,34 +196,34 @@ function test_cputime(nx,ny,nthreads_max;nsamp=1,testtype=:laplacian,kwargs...)
     return mean(cput), std(cput)
 end
 
-_cputime_test_operator(w::GridData,nthreads_max,::Val{:laplacian}) = plan_laplacian(w,with_inverse=true,optimize=true,nthreads=nthreads_max)
+_cputime_test_operator(w::GridData,optimize,nthreads_max,::Val{:laplacian}) = plan_laplacian(w,with_inverse=true,optimize=optimize,nthreads=nthreads_max)
 
-function _cputime_test_operator(w::GridData,nthreads_max,::Val{:intfact};a=-1.0)
-  L = plan_laplacian(w,with_inverse=true,optimize=true,nthreads=nthreads_max)
+function _cputime_test_operator(w::GridData,optimize,nthreads_max,::Val{:intfact};a=-1.0)
+  L = plan_laplacian(w,with_inverse=true,optimize=optimize,nthreads=nthreads_max)
   return exp(L,a,w)
 end
 
-_cputime_test_operator(w::GridData,nthreads_max,::Val{:helmholtz};α=0.1) =
-      plan_helmholtz(w,α,with_inverse=true,optimize=true,nthreads=nthreads_max)
+_cputime_test_operator(w::GridData,optimize,nthreads_max,::Val{:helmholtz};α=0.1) =
+      plan_helmholtz(w,α,with_inverse=true,optimize=optimize,nthreads=nthreads_max)
 
 
 """
-    optimize_gridsize(nx0,ny0[;region_size=4,nthreads_max=length(cpu_info()),nsamp=1])
+    optimize_gridsize(nx0,ny0[;region_size=4,optimize_threads=true,nthreads_max=length(cpu_info()),nsamp=1])
 
 Given a nominal grid size (`nx0` x `ny0`), determine the optimal grid size
-that minimizes the compute time. Optional arguments are the maximum number
-of threads (if multithreading is allowed) and the number of samples to take
+that minimizes the compute time. Optional arguments are the `optimize_threads` flag
+and the maximum number of threads `nthreads_max` (if multithreading is allowed) and the number of samples to take
 of the cpu time for each trial. Returns optimal `nx`, `ny`, and the corresponding CPU time.
 """
-function optimize_gridsize(nx0,ny0;region_size=4,nthreads_max=DEFAULT_NTHREADS,kwargs...)
-    cput0_mean, cput0_std = test_cputime(nx0,ny0,nthreads_max;kwargs...)
+function optimize_gridsize(nx0,ny0;region_size=4,optimize_threads=true,nthreads_max=DEFAULT_NTHREADS,kwargs...)
+    cput0_mean, cput0_std = test_cputime(nx0,ny0,nthreads_max;optimize=optimize_threads,kwargs...)
     nx_opt, ny_opt = nx0, ny0
     cput_mean_opt = cput0_mean
     cput_std_opt = cput0_std
 
     ny = ny0
     for nx in nx0:2:nx0+2region_size
-        cput_mean, cput_std = test_cputime(nx,ny,nthreads_max;kwargs...)
+        cput_mean, cput_std = test_cputime(nx,ny,nthreads_max;optimize=optimize_threads,kwargs...)
         if cput_mean < cput_mean_opt
             cput_mean_opt = cput_mean
             cput_std_opt = cput_std
@@ -204,13 +232,14 @@ function optimize_gridsize(nx0,ny0;region_size=4,nthreads_max=DEFAULT_NTHREADS,k
     end
     nx = nx_opt
     for ny in ny0:2:ny0+2region_size
-        cput_mean, cput_std = test_cputime(nx,ny,nthreads_max;kwargs...)
+        cput_mean, cput_std = test_cputime(nx,ny,nthreads_max;optimize=optimize_threads,kwargs...)
         if cput_mean < cput_mean_opt
             cput_mean_opt = cput_mean
             cput_std_opt = cput_std
             ny_opt = ny
         end
     end
+    cput_mean, cput_std = test_cputime(nx_opt,ny_opt,nthreads_max;optimize=optimize_threads,kwargs...)
     return nx_opt, ny_opt, cput_mean_opt
 end
 
