@@ -203,9 +203,12 @@ using `mul!(u,Hmat,f)`. It can also be used as just `Hmat*f`.
 If `H` is a symmetric regularization and interpolation operator, then this
 actually returns a tuple `Hmat, Emat`, where `Emat` is the interpolation matrix.
 """
-struct RegularizationMatrix{TU,TF} <: AbstractMatrix{Real}
-  M :: SparseMatrixCSC{Real,Int64}
+struct RegularizationMatrix{TU,TF,T} <: AbstractMatrix{T}
+  M :: SparseMatrixCSC{T,Int64}
 end
+#struct RegularizationMatrix{TU,TF} <: AbstractMatrix{Real}
+#  M :: SparseMatrixCSC{Real,Int64}
+#end
 
 
 """
@@ -216,9 +219,12 @@ for data of type `u` to data of type `f`. The resulting matrix `Emat` can then b
 used to apply on grid data of type `u` to interpolate it to point data of type `f`,
 using `mul!(f,Emat,u)`. It can also be used as just `Emat*u`.
 """
-struct InterpolationMatrix{TU,TF} <: AbstractMatrix{Real}
-  M :: SparseMatrixCSC{Real,Int64}
+struct InterpolationMatrix{TU,TF,T} <: AbstractMatrix{T}
+  M :: SparseMatrixCSC{T,Int64}
 end
+#struct InterpolationMatrix{TU,TF} <: AbstractMatrix{Real}
+#  M :: SparseMatrixCSC{Real,Int64}
+#end
 
 @wraparray RegularizationMatrix M 2
 @wraparray InterpolationMatrix M 2
@@ -323,9 +329,9 @@ for (gridtype,ctype,dnx,dny,shiftx,shifty) in @generate_scalarlist(SCALARLIST)
     if H._issymmetric
       # In symmetric case, these matrices are identical. (Interpolation is stored
       # as its transpose.)
-      return RegularizationMatrix{typeof(u),typeof(f)}(Hmat),InterpolationMatrix{typeof(u),typeof(f)}(Hmat)
+      return RegularizationMatrix{typeof(u),typeof(f),eltype(Hmat)}(Hmat),InterpolationMatrix{typeof(u),typeof(f),eltype(Hmat)}(Hmat)
     else
-      return RegularizationMatrix{typeof(u),typeof(f)}(Hmat)
+      return RegularizationMatrix{typeof(u),typeof(f),eltype(Hmat)}(Hmat)
     end
   end
 
@@ -355,7 +361,7 @@ for (gridtype,ctype,dnx,dny,shiftx,shifty) in @generate_scalarlist(SCALARLIST)
       append!(vals,vec(H.ddf(prangex,prangey)))
     end
     Emat = sparse(rows,cols,vals,length(u),length(f))
-    InterpolationMatrix{typeof(u),typeof(f)}(Emat)
+    InterpolationMatrix{typeof(u),typeof(f),eltype(Emat)}(Emat)
   end
 
   # Construct interpolation matrix with filtering. Because we construct
@@ -393,7 +399,7 @@ for (gridtype,ctype,dnx,dny,shiftx,shifty) in @generate_scalarlist(SCALARLIST)
     end
     Emat = sparse(rows,cols,vals,length(u),length(f))
 
-    InterpolationMatrix{typeof(u),typeof(f)}(Emat)
+    InterpolationMatrix{typeof(u),typeof(f),eltype(Emat)}(Emat)
   end
 
 end
@@ -429,11 +435,11 @@ for (gridtype,ctype,dunx,duny,dvnx,dvny,shiftux,shiftuy,shiftvx,shiftvy) in @gen
       # as its transpose.)
       Hmat[1:lenu,          1:N]    = RegularizationMatrix(H,src.u,target.u)[1].M
       Hmat[lenu+1:lenu+lenv,N+1:2N] = RegularizationMatrix(H,src.v,target.v)[1].M
-      return RegularizationMatrix{typeof(target),typeof(src)}(Hmat),InterpolationMatrix{typeof(target),typeof(src)}(Hmat)
+      return RegularizationMatrix{typeof(target),typeof(src),eltype(Hmat)}(Hmat),InterpolationMatrix{typeof(target),typeof(src),eltype(Hmat)}(Hmat)
     else
       Hmat[1:lenu,          1:N]    = RegularizationMatrix(H,src.u,target.u).M
       Hmat[lenu+1:lenu+lenv,N+1:2N] = RegularizationMatrix(H,src.v,target.v).M
-      return RegularizationMatrix{typeof(target),typeof(src)}(Hmat)
+      return RegularizationMatrix{typeof(target),typeof(src),eltype(Hmat)}(Hmat)
     end
   end
 
@@ -446,7 +452,7 @@ for (gridtype,ctype,dunx,duny,dvnx,dvny,shiftux,shiftuy,shiftvx,shiftvy) in @gen
     Emat = spzeros(lenu+lenv,2N)
     Emat[1:lenu,          1:N]    = InterpolationMatrix(H,src.u,target.u).M
     Emat[lenu+1:lenu+lenv,N+1:2N] = InterpolationMatrix(H,src.v,target.v).M
-    InterpolationMatrix{typeof(src),typeof(target)}(Emat)
+    InterpolationMatrix{typeof(src),typeof(target),eltype(Emat)}(Emat)
   end
 
 end
@@ -619,7 +625,7 @@ for (gridtype,ctype,dunx,duny,dvnx,dvny,shiftux,shiftuy,shiftvx,shiftvy) in @gen
       Hmat[lenu+1:lenu+lenv,N+1:2N] = Hdudy.M
       Hmat[lenu+lenv+1:lenu+2lenv,2N+1:3N] = Hdudy.M
       Hmat[lenu+2lenv+1:2lenu+2lenv,3N+1:4N] = Hdudx.M
-      return RegularizationMatrix{typeof(target),typeof(src)}(Hmat),InterpolationMatrix{typeof(target),typeof(src)}(Hmat)
+      return RegularizationMatrix{typeof(target),typeof(src),eltype(Hmat)}(Hmat),InterpolationMatrix{typeof(target),typeof(src),eltype(Hmat)}(Hmat)
     else
       Hdudx = RegularizationMatrix(H,src.dudx,target.dudx)
       Hdudy = RegularizationMatrix(H,src.dudy,target.dudy)
@@ -627,7 +633,7 @@ for (gridtype,ctype,dunx,duny,dvnx,dvny,shiftux,shiftuy,shiftvx,shiftvy) in @gen
       Hmat[lenu+1:lenu+lenv,N+1:2N] = Hdudy.M
       Hmat[lenu+lenv+1:lenu+2lenv,2N+1:3N] = Hdudy.M
       Hmat[lenu+2lenv+1:2lenu+2lenv,3N+1:4N] = Hdudx.M
-      return RegularizationMatrix{typeof(target),typeof(src)}(Hmat)
+      return RegularizationMatrix{typeof(target),typeof(src),eltype(Hmat)}(Hmat)
     end
   end
 
@@ -646,7 +652,7 @@ for (gridtype,ctype,dunx,duny,dvnx,dvny,shiftux,shiftuy,shiftvx,shiftvy) in @gen
     Emat[lenu+lenv+1:lenu+2lenv,2N+1:3N] = Edudy.M
     Emat[lenu+2lenv+1:2lenu+2lenv,3N+1:4N] = Edudx.M
 
-    InterpolationMatrix{typeof(src),typeof(target)}(Emat)
+    InterpolationMatrix{typeof(src),typeof(target),eltype(Emat)}(Emat)
   end
 
 end
