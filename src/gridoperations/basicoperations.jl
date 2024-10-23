@@ -25,19 +25,18 @@ function (-)(p_in::GridData)
     return p
 end
 
- for op in (:+, :-, :*)
-     @eval function $op(p1::T,p2::T) where {T <: GridData}
-        Base.broadcast($op,p1,p2)
-     end
-     @eval function $op(p1::Number,p2::GridData)
-        Base.broadcast($op,p1,p2)
-     end
-     @eval function $op(p1::GridData,p2::Number)
-        Base.broadcast($op,p1,p2)
-     end
- end
+# for op in (:+, :-, :*)
+#     @eval function $op(p1::T,p2::T) where {T <: GridData}
+#        Base.broadcast($op,p1,p2)
+#     end
+#     @eval function $op(p1::Number,p2::GridData)
+#        Base.broadcast($op,p1,p2)
+#     end
+#     @eval function $op(p1::GridData,p2::Number)
+#        Base.broadcast($op,p1,p2)
+#     end
+# end
 
- #=
 function (*)(p1::T,p2::T) where {T <: GridData}
     p = deepcopy(p1)
     p.data .= p1.data .* p2.data
@@ -91,13 +90,12 @@ function (/)(p1::GridData,p2::Number)
     p.data .= p1.data ./ p2
     return p
 end
-=#
 
-for op in (:/,)
-     @eval function $op(p1::GridData,p2::Number)
-        Base.broadcast($op,p1,p2)
-     end
-end
+# for op in (:/,)
+#     @eval function $op(p1::GridData,p2::Number)
+#        Base.broadcast($op,p1,p2)
+#     end
+# end
 
 """
     product!(out::GridData,p::GridData,q::GridData)

@@ -4,35 +4,32 @@ import LinearAlgebra: transpose!, transpose
 export pointwise_dot, pointwise_tensorproduct!, pointwise_dot!, pointwise_cross, pointwise_cross!
 
 import Base: -, +, *, /, findall
- function (-)(p_in::PointData)
-   Base.broadcast(-,p_in)
- end
- #=
+# function (-)(p_in::PointData)
+#   Base.broadcast(-,p_in)
+# end
 function (-)(p_in::PointData)
     p = deepcopy(p_in)
     p.data .= -p_in.data
     return p
 end
-=#
 
- for op in (:+, :-, :*)
-     @eval function $op(p1::T,p2::T) where {T <: PointData}
-        Base.broadcast($op,p1,p2)
-     end
-     @eval function $op(p1::Number,p2::PointData)
-        Base.broadcast($op,p1,p2)
-     end
-     @eval function $op(p1::PointData,p2::Number)
-        Base.broadcast($op,p1,p2)
-     end
- end
+# for op in (:+, :-, :*)
+#     @eval function $op(p1::T,p2::T) where {T <: PointData}
+#        Base.broadcast($op,p1,p2)
+#     end
+#     @eval function $op(p1::Number,p2::PointData)
+#        Base.broadcast($op,p1,p2)
+#     end
+#     @eval function $op(p1::PointData,p2::Number)
+#        Base.broadcast($op,p1,p2)
+#     end
+# end
 
- for op in (:/,)
-     @eval function $op(p1::PointData,p2::Number)
-        Base.broadcast($op,p1,p2)
-     end
- end
-#=
+# for op in (:/,)
+#     @eval function $op(p1::PointData,p2::Number)
+#        Base.broadcast($op,p1,p2)
+#     end
+# end
 function (*)(p1::T,p2::T) where {T <: PointData}
     p = deepcopy(p1)
     p.data .= p1.data .* p2.data
@@ -86,7 +83,7 @@ function (/)(p1::PointData,p2::Number)
     p.data .= p1.data ./ p2
     return p
 end
-=#
+
 #=
 # Set it to negative of itself
 function (-)(p_in::PointData)
