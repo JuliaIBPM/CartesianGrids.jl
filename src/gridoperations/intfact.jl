@@ -75,7 +75,7 @@ end
 for (lf,inplace) in ((:plan_intfact,false),
                      (:plan_intfact!,true))
 
-    @eval function $lf(a::Real,dims::Tuple{Int,Int};fftw_flags = FFTW.ESTIMATE, nthreads = MAX_NTHREADS)
+    @eval function $lf(a::Real,dims::Tuple{Int,Int};fftw_flags = FFTW.ESTIMATE, optimize=false, nthreads = DEFAULT_NTHREADS)
         NX, NY = dims
 
         if a == 0
@@ -95,13 +95,13 @@ for (lf,inplace) in ((:plan_intfact,false),
         end
         qtab = [max(x,y) <= Nmax ? intfact(x, y, a_internal) : 0.0 for x in 0:NX-1, y in 0:NY-1]
         #IntFact{NX, NY, a, $inplace}(Nullable(CircularConvolution(qtab, fftw_flags)))
-        IntFact{NX, NY, signType, $inplace}(a_internal,CircularConvolution(qtab, fftw_flags,nthreads=nthreads))
+        IntFact{NX, NY, signType, $inplace}(a_internal,CircularConvolution(qtab, fftw_flags,optimize=optimize,nthreads=nthreads))
       end
 
       # Base the size on the dual grid associated with any grid data, since this
       # is what the efficient grid size in PhysicalGrid has been established with
-      @eval $lf(a::Real,::GridData{NX,NY}; fftw_flags = FFTW.ESTIMATE, nthreads = MAX_NTHREADS) where {NX,NY} =
-          $lf(a,(NX,NY), fftw_flags = fftw_flags, nthreads = nthreads)
+      @eval $lf(a::Real,::GridData{NX,NY}; fftw_flags = FFTW.ESTIMATE, optimize=false, nthreads = DEFAULT_NTHREADS) where {NX,NY} =
+          $lf(a,(NX,NY), fftw_flags = fftw_flags, optimize=optimize, nthreads = nthreads)
 
 
 end
@@ -123,7 +123,7 @@ it scales the exponent with this factor. The number of threads used by
 the resulting operator can be set by the `nthreads` optional argument; by
 default, it takes this number from `L`.
 """
-exp(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY));nthreads=MAX_NTHREADS) where {NX,NY} =
+exp(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY));nthreads=DEFAULT_NTHREADS) where {NX,NY} =
             plan_intfact(L.factor*a,prototype;nthreads=nthreads)
 # Do not use the number of threads in L (if it has any), since it is not
 # meaningful for the integrating factor tests.
@@ -133,7 +133,7 @@ exp(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY));nthreads=MAX_NTHREADS) w
 
 Create the in-place version of the integrating factor exp(L*a).
 """
-exp!(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY));nthreads=MAX_NTHREADS) where {NX,NY} =
+exp!(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY));nthreads=DEFAULT_NTHREADS) where {NX,NY} =
             plan_intfact!(L.factor*a,prototype;nthreads=nthreads)
 
 

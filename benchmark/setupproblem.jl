@@ -1,12 +1,12 @@
 Δx = 0.01
 xlim = (-2,2)
 ylim = (-2,2)
-gr = PhysicalGrid(xlim,ylim,Δx)
+gr = PhysicalGrid(xlim,ylim,Δx,opt_type=:prime,nthreads_max=4)
 w = Nodes(Dual,size(gr));
 q = Edges(Primal,w);
 p = Nodes(Primal,w);
 
-L = plan_laplacian(w,with_inverse=true);
+L = plan_laplacian(gr,with_inverse=true);
 
 n = 300
 θ = range(0,2π,length=n+1)

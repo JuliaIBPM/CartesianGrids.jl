@@ -38,7 +38,7 @@ end
 for (lf,inplace) in ((:plan_implicit_diffusion,false),
                      (:plan_implicit_diffusion!,true))
 
-    @eval function $lf(a::Real,dims::Tuple{Int,Int};fftw_flags = FFTW.ESTIMATE, nthreads = MAX_NTHREADS)
+    @eval function $lf(a::Real,dims::Tuple{Int,Int};fftw_flags = FFTW.ESTIMATE, optimize = false, nthreads = DEFAULT_NTHREADS)
         NX, NY = dims
 
         # Find the minimum number of Gauss points
@@ -64,13 +64,13 @@ for (lf,inplace) in ((:plan_implicit_diffusion,false),
         # Create the table of values
         qtab = [max(x,y) <= Nmax ? implicit_diffusion(x, y, a, quad) : 0.0 for x in 0:NX-1, y in 0:NY-1]
 
-        ImplicitDiffusion{NX, NY, $inplace}(a,CircularConvolution(qtab, fftw_flags,nthreads=nthreads))
+        ImplicitDiffusion{NX, NY, $inplace}(a,CircularConvolution(qtab, fftw_flags,optimize=optimize,nthreads=nthreads))
       end
 
       # Base the size on the dual grid associated with any grid data, since this
       # is what the efficient grid size in PhysicalGrid has been established with
-      @eval $lf(a::Real,::GridData{NX,NY}; fftw_flags = FFTW.ESTIMATE, nthreads = MAX_NTHREADS) where {NX,NY} =
-          $lf(a,(NX,NY), fftw_flags = fftw_flags, nthreads = nthreads)
+      @eval $lf(a::Real,::GridData{NX,NY}; fftw_flags = FFTW.ESTIMATE, optimize=false, nthreads = DEFAULT_NTHREADS) where {NX,NY} =
+          $lf(a,(NX,NY), fftw_flags = fftw_flags, optimize=optimize, nthreads = nthreads)
 
 
 end
