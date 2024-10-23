@@ -322,3 +322,6 @@ plan_intfact!(a::Real,g::PhysicalGrid;kwargs...) = plan_intfact!(a,size(g);nthre
 
 plan_helmholtz(g::PhysicalGrid,α::Number;kwargs...) = plan_helmholtz(size(g),α;nthreads=g.nthreads,kwargs...)
 plan_helmholtz!(g::PhysicalGrid,α::Number;kwargs...) = plan_helmholtz!(size(g),α;nthreads=g.nthreads,kwargs...)
+
+plan_implicit_diffusion(a::Number,g::PhysicalGrid;kwargs...) = plan_implicit_diffusion(a,size(g);nthreads=g.nthreads,kwargs...)
+plan_implicit_diffusion!(a::Number,g::PhysicalGrid;kwargs...) = plan_implicit_diffusion!(a,size(g);nthreads=g.nthreads,kwargs...)

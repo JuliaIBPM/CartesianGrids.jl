@@ -6,7 +6,7 @@ w = Nodes(Dual,size(gr));
 q = Edges(Primal,w);
 p = Nodes(Primal,w);
 
-L = plan_laplacian(w,with_inverse=true);
+L = plan_laplacian(gr,with_inverse=true);
 
 n = 300
 θ = range(0,2π,length=n+1)
