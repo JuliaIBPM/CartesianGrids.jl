@@ -1017,8 +1017,12 @@ end
         @test s ≈ E2*s2
 
         L = plan_laplacian(s,factor=2)
-        EL = exp(L,1)
+        EL = exp(L)
         @test EL*s ≈ E2*s
+
+        L2 = plan_laplacian(s)
+        EL2 = exp(2*L2)
+        @test EL2*s ≈ E2*s
 
         p = XEdges(Primal,s)
         p[15,15] = 1.0
@@ -1028,7 +1032,7 @@ end
         q.u[15,15] = 1.0
         @test E1*(E1*q) ≈ E2*q
 
-        EmL = exp(L,-1)
+        EmL = exp(-1*L)
         @test EmL\s == EL*s
 
     end

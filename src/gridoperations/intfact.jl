@@ -114,27 +114,28 @@ function Base.show(io::IO, E::IntFact{NX, NY, signType, inplace}) where {NX, NY,
 end
 
 """
-    exp(L::Laplacian,a[,Nodes(Dual)][;nthreads=L.conv.nthreads])
+    exp(L::Laplacian[,Nodes(Dual)][;nthreads=L.conv.nthreads])
 
-Create the integrating factor exp(L*a). The default size of the operator is
+Create the integrating factor exp(L). The default size of the operator is
 the one appropriate for dual nodes; another size can be specified by supplying
 grid data in the optional third argument. Note that, if `L` contains a factor,
+e.g., by multiplying a `Laplacian` by a scalar,
 it scales the exponent with this factor. The number of threads used by
 the resulting operator can be set by the `nthreads` optional argument; by
 default, it takes this number from `L`.
 """
-exp(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY));nthreads=DEFAULT_NTHREADS) where {NX,NY} =
-            plan_intfact(L.factor*a,prototype;nthreads=nthreads)
+exp(L::Laplacian{NX,NY},prototype=Nodes(Dual,(NX,NY));nthreads=DEFAULT_NTHREADS) where {NX,NY} =
+            plan_intfact(L.factor,prototype;nthreads=nthreads)
 # Do not use the number of threads in L (if it has any), since it is not
 # meaningful for the integrating factor tests.
 
 """
-    exp!(L::Laplacian,a[,Nodes(Dual)][;nthreads=L.conv.nthreads])
+    exp!(L::Laplacian[,Nodes(Dual)][;nthreads=L.conv.nthreads])
 
-Create the in-place version of the integrating factor exp(L*a).
+Create the in-place version of the integrating factor exp(L).
 """
-exp!(L::Laplacian{NX,NY},a,prototype=Nodes(Dual,(NX,NY));nthreads=DEFAULT_NTHREADS) where {NX,NY} =
-            plan_intfact!(L.factor*a,prototype;nthreads=nthreads)
+exp!(L::Laplacian{NX,NY},prototype=Nodes(Dual,(NX,NY));nthreads=DEFAULT_NTHREADS) where {NX,NY} =
+            plan_intfact!(L.factor,prototype;nthreads=nthreads)
 
 
 
