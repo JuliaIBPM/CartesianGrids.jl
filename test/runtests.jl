@@ -26,3 +26,7 @@ end
 if GROUP == "All" || GROUP == "ForwardDiff"
   include("forwarddiff.jl")
 end
+
+if GROUP == "All" || GROUP == "Aqua"
+  include("aqua.jl")
+end
