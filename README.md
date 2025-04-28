@@ -4,7 +4,7 @@ _Tools for working with spatial fields discretized on or immersed in Cartesian g
 
 | Documentation | Build Status |
 |:---:|:---:|
-| [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaIBPM.github.io/CartesianGrids.jl/stable) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaIBPM.github.io/CartesianGrids.jl/dev) | [![Build Status](https://github.com/JuliaIBPM/CartesianGrids.jl/workflows/CI/badge.svg)](https://github.com/JuliaIBPM/CartesianGrids.jl/actions) [![Coverage](https://codecov.io/gh/JuliaIBPM/CartesianGrids.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaIBPM/CartesianGrids.jl) |
+| [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaIBPM.github.io/CartesianGrids.jl/stable) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaIBPM.github.io/CartesianGrids.jl/dev) | [![Build Status](https://github.com/JuliaIBPM/CartesianGrids.jl/workflows/CI/badge.svg)](https://github.com/JuliaIBPM/CartesianGrids.jl/actions) [![Coverage](https://codecov.io/gh/JuliaIBPM/CartesianGrids.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaIBPM/CartesianGrids.jl) [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)|
 
 ## About the package
 
