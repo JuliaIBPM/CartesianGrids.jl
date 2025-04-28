@@ -672,7 +672,7 @@ for f in [:Nodes,:XEdges,:YEdges]
 end
 # Handle all collected grid data in a stricter fashion, since underlying data
 # is always stored as Vector type
-mul!(u::G,Hmat::RegularizationMatrix{G,F},f) where {G <: CollectedGridData,F} = _mul!(u,Hmat,f)
+mul!(u::G,Hmat::RegularizationMatrix{G,F},f::PointData) where {G <: CollectedGridData,F} = _mul!(u,Hmat,f)
 mul!(f,Emat::InterpolationMatrix{G,F},u::G) where {G <: CollectedGridData,F} = _mul!(f,Emat,u)
 (*)(Emat::InterpolationMatrix{G,F},u::H) where {F,G <: CollectedGridData, H <: GridData} = mul!(F(),Emat,u)
 # This is meant to generate a MethodError for non-matching point types:
