@@ -147,7 +147,7 @@ function mul!(out, C::CircularConvolution{M, N, T}, B) where {M, N, T}
 
 end
 
-C::CircularConvolution * B = mul!(similar(B), C, B)
+C::CircularConvolution * B::GridData = mul!(similar(B), C, B)
 
 ### UTILITIES ###
 

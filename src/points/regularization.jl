@@ -164,9 +164,9 @@ function Regularize(x::AbstractVector{D},y::AbstractVector{D},dx::T;
                       wtvec,ddf,_get_regularization_radius(baseddf),_issymmetric)
 end
 
-Regularize(x::T,y::T,a...;b...) where {T<:Real} = Regularize([x],[y],a...;b...)
+Regularize(x::T,y::T,dx::Real;b...) where {T<:Real} = Regularize([x],[y],dx;b...)
 
-Regularize(x::VectorData,a...;b...) = Regularize(x.u.data,x.v.data,a...;b...)
+Regularize(x::VectorData,dx::Real;b...) = Regularize(x.u.data,x.v.data,dx;b...)
 
 function Base.show(io::IO, H::Regularize{N,F}) where {N,F}
     filter = F ? "filtered" : "non-filtered"
@@ -664,7 +664,7 @@ end
 # they are built for, but allow the underyling data type (DT parameter)
 # to be different, since one might be, e.g., a SubArray and the other an Array.
 for f in [:Nodes,:XEdges,:YEdges]
-    @eval mul!(u::S1,Hmat::RegularizationMatrix{S2,F},f) where {F,S1<:$f{C,NX,NY,T},S2<:$f{C,NX,NY,T}} where {C,NX,NY,T} = _mul!(u,Hmat,f)
+    @eval mul!(u::S1,Hmat::RegularizationMatrix{S2,F},f::PointData) where {F,S1<:$f{C,NX,NY,T},S2<:$f{C,NX,NY,T}} where {C,NX,NY,T} = _mul!(u,Hmat,f)
     @eval mul!(f,Emat::InterpolationMatrix{S2,F},u::S1) where {F,S1<:$f{C,NX,NY,T},S2<:$f{C,NX,NY,T}} where {C,NX,NY,T} = _mul!(f,Emat,u)
     @eval (*)(Emat::InterpolationMatrix{S2,F},u::S1) where {F,S1<:$f{C,NX,NY,T},S2<:$f{C,NX,NY,T}} where {C,NX,NY,T} = mul!(F(),Emat,u)
     # This is meant to generate a MethodError for non-matching point types:
@@ -674,9 +674,9 @@ end
 # is always stored as Vector type
 mul!(u::G,Hmat::RegularizationMatrix{G,F},f) where {G <: CollectedGridData,F} = _mul!(u,Hmat,f)
 mul!(f,Emat::InterpolationMatrix{G,F},u::G) where {G <: CollectedGridData,F} = _mul!(f,Emat,u)
-(*)(Emat::InterpolationMatrix{G,F},u::G) where {F,G <: CollectedGridData} = mul!(F(),Emat,u)
+(*)(Emat::InterpolationMatrix{G,F},u::H) where {F,G <: CollectedGridData, H <: GridData} = mul!(F(),Emat,u)
 # This is meant to generate a MethodError for non-matching point types:
-(*)(Emat::InterpolationMatrix{G,F},u) where {F,G <: CollectedGridData} = mul!(F(),Emat,u)
+#(*)(Emat::InterpolationMatrix{G,F},u) where {F,G <: CollectedGridData} = mul!(F(),Emat,u)
 
 
 # Now dispatch on the point data type
@@ -685,7 +685,10 @@ for f in [:ScalarData,:VectorData,:TensorData]
   @eval _mul!(f::S2,Emat::InterpolationMatrix{G,S1},u) where {G,S1<:$f{N,T},S2<:$f{N,T}} where {N,T} = _unsafe_mul!(f,Emat,u)
   @eval (*)(Hmat::RegularizationMatrix{G,S1},f::S2) where {G,S1<:$f{N,T},S2<:$f{N,T}} where {N,T} = mul!(G(),Hmat,f)
   # This is meant to generate a MethodError for non-matching point types:
-  @eval (*)(Hmat::RegularizationMatrix{G,S1},f) where {G,S1<:$f{N,T}} where {N,T} = mul!(G(),Hmat,f)
+  for g in [:ScalarData,:VectorData,:TensorData]
+    g == f && continue
+    @eval (*)(Hmat::RegularizationMatrix{G,S1},f::S2) where {G,S1<:$f{N,T},S2<:$g{N,T}} where {N,T} = mul!(G(),Hmat,f)
+  end
 end
 
 

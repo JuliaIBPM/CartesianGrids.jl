@@ -528,6 +528,8 @@ function dot(A::Tuple{T,T},B::TensorData) where {T<:Number}
 end
 
 Base.findall(f::Function,p::PointData{N,Real}) where {N} = Base.findall(f,p.data)
+Base.findall(f::Base.Fix2{typeof(in)},p::PointData{N,Real}) where {N} = Base.findall(f,p.data)
+
 
 
 ### BROADCASTING

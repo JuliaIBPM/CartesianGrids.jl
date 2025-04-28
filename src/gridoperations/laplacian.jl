@@ -306,11 +306,11 @@ function Base.show(io::IO, L::Laplacian{NX, NY, T, R, inplace}) where {NX, NY, T
                factor $(L.factor) and spacing $(L.dx)")
 end
 
-function (*)(factor, L::Laplacian{NX,NY,T,R,inplace}) where {NX,NY,T,R,inplace}
+function (*)(factor::Number, L::Laplacian{NX,NY,T,R,inplace}) where {NX,NY,T,R,inplace}
     return Laplacian{NX, NY, T, R, inplace}(factor * L.factor, L.dx, L.conv)
 end
 
-function (*)(L::Laplacian{NX,NY,T,R,inplace}, factor) where {NX,NY,T,R,inplace}
+function (*)(L::Laplacian{NX,NY,T,R,inplace}, factor::Number) where {NX,NY,T,R,inplace}
     return Laplacian{NX, NY, T, R, inplace}(factor * L.factor, L.dx, L.conv)
 end
 
