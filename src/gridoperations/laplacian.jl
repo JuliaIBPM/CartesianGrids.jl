@@ -278,8 +278,8 @@ for (lf,inplace) in ((:plan_laplacian,false),
         if !with_inverse
             return Laplacian{NX, NY, dtype, false, $inplace}(convert(dtype,factor),convert(Float64,dx),nothing)
         end
-
-        G = view(LGF_TABLE, 1:NX, 1:NY)
+        lgf_table = load_lgf(NX+1)
+        G = view(lgf_table, 1:NX, 1:NY)
         Laplacian{NX, NY, dtype, true, $inplace}(convert(dtype,factor),convert(Float64,dx),CircularConvolution(G, fftw_flags,dtype=dtype,optimize=optimize,nthreads=nthreads))
     end
 
